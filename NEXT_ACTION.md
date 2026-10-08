@@ -1,30 +1,25 @@
 # NEXT_ACTION — War Drone Sim
 
-**Last updated:** 2026-10-08. **Stage:** G0 — planning baseline DONE; implementation NOT STARTED. **Build available:** NO. **Engine project:** NOT YET CREATED. **GitHub backlog:** 55 open work item issues.
+**Updated:** 2026-10-08. **Stage:** browser G0/G1 experimental playable implementation, device gate open. **Primary channel:** portrait mobile browser per owner. **Prototype:** root `index.html` with Canvas perspective renderer and JavaScript model.
 
-## First action for the next agent
+## Completed in browser prototype v0.1
 
-**[T-001](https://github.com/statego2/War-Drone-Sim/issues/1) / [T-002](https://github.com/statego2/War-Drone-Sim/issues/2) (P0): Perform engine and delivery feasibility spike.** Inspect repo docs and determine whether Unity 6 URP native iOS + Android is feasible with the available Mac / development environment and which native / browser path best matches the owner's ability to try the game. Create a minimal empty-engine project on a separate branch, pin editor/package versions, make a basic portrait app render on at least one **real device**. Record actual results (or precise blockers), not assumptions.
+- One-screen start → fly → fictional moving vehicle / tree / miss → result → retry.
+- Seeded forest corridor, road, perspective camera, relative touch drag and keyboard, auto-forward arcade flight, local best score and brief synth cue.
+- Five model tests and JS syntax checks passed locally on Node 24.19.0; CI workflow added.
+- See `docs/18_BROWSER_PROTOTYPE.md` for commands, design tradeoffs and precise limitations.
 
-See [docs/09_DECISIONS.md](docs/09_DECISIONS.md), [docs/07_DELIVERY_AND_RELEASE.md](docs/07_DELIVERY_AND_RELEASE.md), WBS IDs T-001..T-006 and corresponding GitHub issues.
+## Immediate next action
 
-## Prioritized execution queue
-1. **G0** — T-001 engine/target and distribution spike; T-002 real-device proof; T-003 repo/Unity scaffolding; T-004 smoke tests + CI; T-005 performance baseline; T-006 compare touch/tilt/one-stick prototypes.
-2. **G1** — T-010..T-019 greybox first playable: controller, chase camera, one road + target, physics collisions, score/payoff/rapid retry, internal playtest.
-3. **G2** — T-020..T-029 phone-stable vertical slice: forest LOD, traffic routes, spotting/visibility, polished core feedback, 30/60 performance on actual devices.
-4. **G3+** — Expand, polish, optimize, evaluate retention; monetize only after explicit approval.
+1. Configure and verify GitHub Pages if not already enabled; open the deployed URL in a browser.
+2. **Real iPhone portrait test (T-002 re-scoped):** complete hit, tree collision, miss, pause/resume and retry; record iPhone/iOS/browser, screenshot, control latency, rendering and FPS feel in `docs/11_PLAYTESTS.md`. No physical device test has happened in this session.
+3. Fix any observed input/visual/contact faults. Then ask 5 first players to try it (T-018) before claiming G1 acceptance.
+4. Rebaseline native Unity-specific G0 tasks and the 330h schedule for the browser-first decision; do not close those tasks as completed by a Canvas implementation.
 
-## Non-negotiable evidence required before advancing
-- **G0→G1:** project compiles + documented device build or explicitly approved alternative distribution.
-- **G1→G2:** phone-playable, understandable fly→spot→hit→retry prototype; at least 5 target users, qualitative + task success recorded.
-- **G2→G3:** frame-time profile and thermal test; accepted control scheme; coherent art/audio feel; no systematic unfair collisions.
-- All stage gates require **owner product acceptance**.
+## Known validation limits
 
-## Open decisions, not defaults
-- Native iOS/Android **vs** link-playable mobile web (GitHub Pages like Rocket Panic). Unity WebGL on iOS browser is a feasibility spike; not a promise.
-- Stylized low-poly **vs** semi-realistic forest. Start greybox; choose only after performance and readability tests.
-- Exact Unity LTS version/package versions and minimum OS/device support.
-- Final collision loop semantics (instant respawn, limited lives, or run timer). Prototype alternatives.
+Browser automation here was blocked because headless Chromium was not installed and its download failed. The cloud browser could not reach localhost. Tests confirm model logic only, not actual Safari render, controls, FPS or fun. No paid assets, backend, real-world control or weapon integration were added.
 
-## Honest status
-Planning baseline, 55 GitHub issues, and a 330h dependency-validated scheduling scenario have been created. No engine build was downloaded, compiled or run. **Do not claim an app exists.** Next agent's first job is [T-001](https://github.com/statego2/War-Drone-Sim/issues/1), then G0 device feasibility; see [Project Status](docs/17_PROJECT_STATUS.md) and [Resource Schedule](docs/16_RESOURCE_SCHEDULE.md).
+## Product gates
+
+The user chose link-playable browser; full polygonal 3D renderer vs current software perspective remains an open product/technical call after seeing this slice. G0/G1 owner acceptance and real-phone evidence remain open. Do not interpret merged code or CI as a successful device test.
