@@ -4,6 +4,14 @@
 
 ## Landed in main
 
+## Unified one-finger control V3 — 2026-10-08
+
+- **Merged PR #82** into `main` as `e819c1c`. Owner asked for complete thumb-only movement and removal of the CRUISE/FAST/REVERSE button. The browser version now maps short vertical touch motion to gentle climb, progressive braking/near-hover, faster reverse and gravity-led dive; sideways and diagonal steering get stronger response during braking. The speed-mode control and key R cycling were removed (FPV, sound and pause remain). Default no-touch movement remains an automatic forward cruise to preserve the current encounter loop.
+- Added `src/touchflight.mjs`, `tests/touchflight.test.mjs`, three targeted flight regression tests and portrait browser smoke assertions for no speed button and 52px upward brake gesture. Headless Chromium visual and Node logic checks both **passed** on feature SHA `71ae737` in [CI run 37833842027](https://github.com/statego2/War-Drone-Sim/actions/runs/37833842027). Documentation: [docs/31_ONE_FINGER_FLIGHT_V3.md](docs/31_ONE_FINGER_FLIGHT_V3.md). Check new `main` deployment/CI independently.
+- **Owner acceptance still OPEN:** actual iPhone portrait control feel, one-finger reversal speed, target readability, impacts and performance. In particular compare short-up brake to full-up reverse, left/right adjustment while near-hover, full down dive and releasing gesture.
+- If button removal impedes controllability, first retune gesture bands/velocity response; don't reinstate a complicated speed selector without owner feedback. Separate low-FPS simulation time issue #81 remains unresolved.
+
+
 ## Pullback reverse flight v2 — 2026-10-08
 
 - **Merged PR #80** as `da5ba76`. Full upward gesture now smoothly tips the craft nose-high, cancels existing forward momentum over time and reverses arcade travel; small upward drags still climb forward. At full pullback it retains assisted climb and recovery from dive, with stronger diagonal left/right control and reduced forced yaw. Camera look-up is restrained; the speed display marks backward travel. Documentation: `docs/30_FLIGHT_PULLBACK_V2.md`.
