@@ -553,7 +553,7 @@ muteButton.addEventListener('click', () => {
   if (value) sound.unlock();
 });
 function startFlight() {
-  sound.unlock(); sound.setActive(true); sound.cue('start');
+  sound.unlock().then(() => sound.cue('start')); sound.setActive(true);
   encounter = makeEncounter(); syncTargets();
   spawnDrone(); mode = 'flying'; view = 'chase'; pointer = null;
   cameraYaw = flight.heading; cameraPitch=.05; throttleMode='cruise';
@@ -609,7 +609,7 @@ function setPause() {
 pauseButton.addEventListener('click', setPause);
 primary.addEventListener('click', () => {
   if (mode === 'paused') {
-    mode = 'flying'; overlay.className = 'panel hidden'; sound.unlock(); sound.setActive(true); sound.cue('start');
+    mode = 'flying'; overlay.className = 'panel hidden'; sound.unlock().then(() => sound.cue('start')); sound.setActive(true);
     hud.classList.remove('hidden'); pauseButton.classList.remove('hidden');
     viewButton.classList.remove('hidden'); boostButton.classList.remove('hidden'); muteButton.classList.remove('hidden');
      last = performance.now();
