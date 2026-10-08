@@ -53,7 +53,7 @@ try {
   await page.waitForTimeout(900);
   await page.mouse.up();
   const stateRight=await page.evaluate(() => window.__openSkySnapshot());
-  assert.ok(stateRight.x > state0.x+2, 'drag right must translate right');
+  assert.ok(stateRight.x < state0.x-2, 'drag right must travel toward screen-right (world -X in this view)');
   assert.ok(Math.abs(stateRight.heading - state0.heading)<.001, 'direct movement must not yaw');
   await page.mouse.move(275, 570);
   await page.mouse.down();
@@ -61,7 +61,26 @@ try {
   await page.waitForTimeout(900);
   await page.mouse.up();
   const stateLeft=await page.evaluate(() => window.__openSkySnapshot());
-  assert.ok(stateLeft.x < stateRight.x-2, 'drag left must translate left');
+  assert.ok(stateLeft.x > stateRight.x+2, 'drag left must travel toward screen-left');
+  // Explicit camera orbit is separate from steering. FACE then changes the travel bearing.
+  await page.locator('#look-mode').click();
+  const priorView=await page.evaluate(() => window.__openSkySnapshot());
+  await page.mouse.move(150,520);
+  await page.mouse.down();
+  await page.mouse.move(270,580,{steps:10});
+  await page.mouse.up();
+  const orbited=await page.evaluate(() => window.__openSkySnapshot());
+  assert.ok(orbited.cameraYaw>priorView.cameraYaw+.2,'LOOK should rotate camera horizontally');
+  assert.ok(orbited.cameraPitch>priorView.cameraPitch+.1,'LOOK should tilt camera vertically');
+  assert.ok(Math.abs(orbited.heading-priorView.heading)<.01,'Orbit alone must not change heading');
+  await page.locator('#align-view').click();
+  const aligned=await page.evaluate(() => window.__openSkySnapshot());
+  assert.ok(Math.abs(aligned.heading-aligned.cameraYaw)<.001,'FACE must align route to current viewpoint');
+  await page.locator('#look-mode').click();
+  for (const expected of ['FAST','REVERSE','HOVER','CRUISE']) {
+    await page.locator('#boost').click();
+    assert.equal(await page.locator('#boost').innerText(),expected);
+  }
   await page.locator('#view-mode').click();
   assert.equal(await page.locator('#view-mode').innerText(), 'CHASE');
   await page.locator('#boost').click();
@@ -77,7 +96,7 @@ try {
   await mkdir(join(root, 'artifacts'), { recursive: true });
   await page.screenshot({ path: join(root, 'artifacts', 'open-sky-webgl.png') });
   assert.deepEqual(errors, [], 'JavaScript page errors must be absent');
-  console.log('PASS: WebGL initialized; direct left/right, climb, FPV, cruise, audio mute, pause/resume; screenshot captured');
+  console.log('PASS: WebGL renders; camera-relative lateral, camera orbit/tilt, face bearing, throttle modes, mute, pause and resume');
 } finally {
   if (browser) await browser.close();
   await new Promise(resolveClose => server.close(resolveClose));

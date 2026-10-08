@@ -1,35 +1,35 @@
 # NEXT_ACTION — War Drone Sim
 
-Updated: 2026-10-08. Current work: Open Sky v0.3, under review at PR #60; based on v0.2 PR #59. Do not confuse code delivery with iPhone performance approval.
+Updated: 2026-10-08. Current branch: fix/camera-relative-controls-navigation-v0-4. PR v0.2 #59 / v0.3 #60 remain open. GitHub Pages main still hosts the prior baseline, not this branch. Review before merge.
 
-## User feedback received
+## Latest real user feedback
 
-User provided iPhone portrait screenshot of v0.2 at approximately 49 m AGL showing genuine 3D but clearly low-poly scene. Explicitly requested direct left/right/up/down movement, dramatic visual upgrade, an interesting believable world, sounds, and deferred gameplay design. This screenshot proves WebGL runs on the user's iPhone, NOT sustained performance.
+The physical iPhone screen shows that v0.3 still moves LEFT when the user commands RIGHT. They also cannot freely change direction/camera, and there is no gameplay. This is real user feedback, higher priority than green checks based on incorrect coordinate sign.
 
-## Implemented in PR #60
+## v0.4 changes
 
-- Replaced yaw steering with screen-relative direct horizontal translation and climb/descent; added unit/browser checks.
+- Correct screen-to-world mapping using negative X as camera-right when camera looks toward +Z. Rotate this vector when camera orbits.
 
-- Expanded art with procedural ground/asphalt texture, varied forest pigments, local shadow decals, better body/rotor/gimbal detail, sky clouds, cabin clusters, decorative streams, grass/flowers/rocks, roadside details and a hand-placed lake with terrain basin.
+- LOOK orbit/tilt toggle for the portrait swipe area; FACE action aligns forward drone direction with camera view.
 
-- Original synth motor/wind/birds soundscape behind a user-gesture unlock and explicit mute/pause, no packaged audio dependencies.
+- Speed button now cycles cruise, fast, reverse, hover. No gameplay modifications, scoring missions or weapon features.
 
-- UI labels updated; prior v0.2/free flight and v0.1 Canvas gameplay remain preserved on earlier branch and legacy-canvas.html.
+- Unit tests and browser smoke tests verify camera-relative direction and orbit controls.
 
-## Critical next actions
+- docs/21_CAMERA_SPACE_NAVIGATION_V04.md contains full rationale and manual phone acceptance.
 
-1. Confirm GitHub Actions model, syntax and browser WebGL smoke tests green for the final PR head. Investigate failures and preserve relevant failure evidence.
+## Next unblocked actions
 
-2. Test PR #60 through a pinned preview on the user's physical iPhone: screen-right drag goes right (not yaw), left goes left, up climbs, down descends. Confirm UX with user.
+1. Run GitHub Actions tests for this PR head and inspect both logic and WebGL visual outcomes. Fix regressions.
 
-3. Compare actual screenshot with v0.2, inspect cabins and lake at map location, shader/sky/road texture. This is handcrafted prototype art, not photorealistic or certified simulation.
+2. Ask owner to open the commit-pinned v0.4 preview in iPhone portrait and personally verify left/right motion and camera/orientation semantics.
 
-4. Listen to audio after user gesture and test silence on pause/mute/resume. Test Safari interruption / memory / 5-minute FPS and temperature. Browser automation does not prove audio or sustained performance.
+3. Continue portrait HUD tuning if buttons obstruct the game. Test HOVER, REVERSE, LOOK, FACE, pause/audio and hardware performance.
 
-5. Avoid adding gameplay systems yet: owner wants gameplay purpose separately designed and reviewed. No physical-world targeting or hardware integrations.
+4. Gameplay remains unbuilt by intent: design a short, highly repeatable fictional-vehicle cinematic-impact skill loop as a separate owner's design decision before implementing it; no generic racing or aimless free-flight-only goal.
 
-6. After review, merge v0.2 first then rebase/retarget v0.3 on main (or merge as a single reviewed lineage). Do not overwrite main without validation.
+5. Merge only after visual sign-off; previously approved WebGL art v0.2 and v0.3 PRs are still separate. Use correct base order.
 
-## Caveats
+## Validation honesty
 
-The view is still a stylized browser-first environment. Audio synthesis and simple terrain/flight are not military simulation. CDN Three.js needs network; original screenshot and a headless Chromium pass do not prove G1 or G2.
+Do not equate world-coordinate unit assertions to visual screen movement. CI browser smoke is simulated Chromium with software WebGL, not Safari or device thermals. No military training equivalence or real drone controls.

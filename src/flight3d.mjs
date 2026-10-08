@@ -42,22 +42,28 @@ export function makeFlight() {
            yawRate: 0, sideRate: 0, climbRate: 0, speed: 24, throttle: 0.54,
            distance: 0, time: 0, groundContact: false };
 }
+// A camera looking along +Z has its screen-right pointing toward world -X.
+// Calculate movement using the CURRENT camera yaw, not world X or aircraft yaw.
+export function screenRightVector(cameraYaw) {
+  return { x: -Math.cos(cameraYaw), z: Math.sin(cameraYaw) };
+}
 // Screen-relative direct controls: right/right, left/left, drag-up/ascend.
 export function stepFlight(f, input, dt) {
   dt = clamp(dt, 0, 0.05);
   const horizontal = clamp(input.x || 0, -1, 1);
   const vertical = clamp(input.y || 0, -1, 1);
+  const cameraYaw = Number.isFinite(input.cameraYaw) ? input.cameraYaw : f.heading;
+  const right = screenRightVector(cameraYaw);
   const response = 1 - Math.exp(-13 * dt);
   f.sideRate = lerp(f.sideRate || 0, horizontal * 29, response);
   f.climbRate = lerp(f.climbRate, vertical * 24, response);
-  f.throttle = clamp(f.throttle, 0, 1);
-  f.speed = lerp(f.speed, f.throttle * 47, 1 - Math.exp(-2.5 * dt));
+  f.throttle = clamp(f.throttle, -0.6, 1);
+  f.speed = lerp(f.speed, f.throttle * 47, 1 - Math.exp(-4 * dt));
 
-  // Stable chase heading: lateral commands translate the aircraft, not rotate
-  // the horizon or cause confusing delayed turns. This is an arcade model.
-  const sx = Math.cos(f.heading), sz = -Math.sin(f.heading);
-  const dx = (Math.sin(f.heading) * f.speed + sx * f.sideRate) * dt;
-  const dz = (Math.cos(f.heading) * f.speed + sz * f.sideRate) * dt;
+  // The camera looks toward cameraYaw. Move in the same direction as the finger
+  // appears to move on screen, even after the player orbits the camera.
+  const dx = (Math.sin(f.heading) * f.speed + right.x * f.sideRate) * dt;
+  const dz = (Math.cos(f.heading) * f.speed + right.z * f.sideRate) * dt;
   f.x += dx;
   f.z += dz;
   f.y += f.climbRate * dt;

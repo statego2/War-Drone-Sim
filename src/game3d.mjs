@@ -9,7 +9,8 @@ const $ = id => document.getElementById(id);
 const canvas = $('scene'), overlay = $('overlay'), primary = $('primary');
 const hud = $('hud'), pauseButton = $('pause'), distanceEl = $('distance');
 const altitudeEl = $('altitude'), speedEl = $('speed'), hint = $('hint');
-const viewButton = $('view-mode'), boostButton = $('boost'), muteButton = $('sound-toggle'), warning = $('warning');
+const viewButton = $('view-mode'), boostButton = $('boost'), muteButton = $('sound-toggle');
+const lookButton = $('look-mode'), alignButton = $('align-view'), warning = $('warning');
 const sound = createFlightAudio();
 const scenery = createScenery(THREE, { TILE, hash, groundHeight, roadCenter, lakeProximity });
 const mobile = matchMedia('(pointer: coarse)').matches;
@@ -119,7 +120,8 @@ const broadPalette = [0x4d6740, 0x688050, 0x7d8c54, 0x496e42, 0x73845d, 0x42644b
 const temp = new THREE.Object3D();
 const greenPalette = [0x213e32, 0x294d36, 0x375740, 0x305238, 0x466344, 0x2c4d3f, 0x4c5e39, 0x335f45];
 const tiles = new Map();
-let flight = makeFlight(), mode = 'home', view = 'chase', boost = false, last = 0, lastSector = '', frameCount = 0, smoothMs = 17;
+let flight = makeFlight(), mode = 'home', view = 'chase', lookMode = false, cameraYaw = 0, cameraPitch = .05;
+let throttleMode = 'cruise', last = 0, lastSector = '', frameCount = 0, smoothMs = 17;
 let pointer = null;
 const keys = new Set();
 
@@ -440,14 +442,23 @@ window.addEventListener('resize', resize);
 resize();
 canvas.addEventListener('pointerdown', e => {
   if (mode !== 'flying' || pointer) return;
-  pointer = { id: e.pointerId, x: e.clientX, y: e.clientY, dx: 0, dy: 0 };
+  pointer = { id: e.pointerId, x: e.clientX, y: e.clientY, dx: 0, dy: 0, lastX: e.clientX, lastY: e.clientY };
   canvas.setPointerCapture(e.pointerId);
   hint.style.opacity = '0';
 });
 canvas.addEventListener('pointermove', e => {
   if (e.pointerId !== pointer?.id) return;
-  pointer.dx = clamp((e.clientX - pointer.x) / 85, -1, 1);
-  pointer.dy = clamp((pointer.y - e.clientY) / 95, -1, 1);
+  if (lookMode) {
+    const deltaX = clamp(e.clientX-pointer.lastX,-70,70);
+    const deltaY = clamp(e.clientY-pointer.lastY,-70,70);
+    cameraYaw += deltaX * .0048;
+    cameraPitch = clamp(cameraPitch + deltaY*.0038,-.82,.88);
+    pointer.dx = 0; pointer.dy = 0;
+  } else {
+    pointer.dx = clamp((e.clientX - pointer.x) / 85, -1, 1);
+    pointer.dy = clamp((pointer.y - e.clientY) / 95, -1, 1);
+  }
+  pointer.lastX=e.clientX;pointer.lastY=e.clientY;
 });
 function release(e) { if (pointer?.id === e.pointerId) pointer = null; }
 canvas.addEventListener('pointerup', release);
@@ -457,6 +468,9 @@ window.addEventListener('keydown', e => {
   if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(k)) e.preventDefault();
   keys.add(k);
   if (k === 'c' && !e.repeat) toggleView();
+  if (k === 'l' && !e.repeat) toggleLook();
+  if (k === 'f' && !e.repeat) faceCamera();
+  if (k === 'r' && !e.repeat) cycleThrottle();
   if (k === ' ' && !e.repeat && mode === 'flying') setPause();
 });
 window.addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
@@ -468,11 +482,30 @@ function toggleView() {
   drone.visible = view === 'chase';
 }
 viewButton.addEventListener('click', toggleView);
-boostButton.addEventListener('click', () => {
-  boost = !boost;
-  boostButton.textContent = boost ? 'FAST' : 'CRUISE';
-  boostButton.setAttribute('aria-pressed', String(boost));
-});
+function toggleLook() {
+  if (mode !== 'flying') return;
+  lookMode = !lookMode; pointer = null;
+  lookButton.textContent = lookMode ? 'LOOK ✓' : 'LOOK';
+  lookButton.setAttribute('aria-pressed', String(lookMode));
+  hint.textContent = lookMode ? 'Σύρε για να περιστρέψεις την κάμερα · FACE για νέα πορεία' :
+    'Σύρε αριστερά / δεξιά για μετακίνηση · πάνω / κάτω για ύψος';
+  hint.style.opacity='1';
+}
+function faceCamera() {
+  if (mode !== 'flying') return;
+  // Preserve the camera bearing as the new forward flight direction.
+  flight.heading = cameraYaw;
+}
+const modes = ['hover','cruise','fast','reverse'];
+function cycleThrottle() {
+  if (mode !== 'flying') return;
+  throttleMode = modes[(modes.indexOf(throttleMode)+1)%modes.length];
+  boostButton.textContent = throttleMode.toUpperCase();
+  boostButton.setAttribute('aria-label','Ταχύτητα: '+throttleMode);
+}
+lookButton.addEventListener('click',toggleLook);
+alignButton.addEventListener('click',faceCamera);
+boostButton.addEventListener('click', cycleThrottle);
 muteButton.addEventListener('click', () => {
   const value = !sound.enabled;
   sound.setEnabled(value);
@@ -482,12 +515,16 @@ muteButton.addEventListener('click', () => {
 });
 function startFlight() {
   sound.unlock(); sound.setActive(true);
-  flight = makeFlight(); mode = 'flying'; boost = false; view = 'chase'; pointer = null;
+  flight = makeFlight(); mode = 'flying'; view = 'chase'; pointer = null;
+  cameraYaw = flight.heading; cameraPitch=.05; lookMode=false; throttleMode='cruise';
   drone.visible = true; boostButton.textContent = 'CRUISE'; viewButton.textContent = 'FPV';
+  lookButton.textContent = 'LOOK';lookButton.setAttribute('aria-pressed','false');
+  hint.textContent = 'Σύρε αριστερά / δεξιά για μετακίνηση · πάνω / κάτω για ύψος';
   overlay.className = 'panel hidden'; hud.classList.remove('hidden');
   pauseButton.classList.remove('hidden'); viewButton.classList.remove('hidden'); boostButton.classList.remove('hidden');
   warning.textContent = '';
   muteButton.classList.remove('hidden');
+  lookButton.classList.remove('hidden');alignButton.classList.remove('hidden');
   lastSector = ''; rebuildTiles(true); moveTiles(); updateFarLand(); last = performance.now();
 }
 function setPause() {
@@ -495,6 +532,7 @@ function setPause() {
   mode = 'paused'; pointer = null; keys.clear(); sound.setActive(false);
   hud.classList.add('hidden'); pauseButton.classList.add('hidden');
   viewButton.classList.add('hidden'); boostButton.classList.add('hidden'); muteButton.classList.add('hidden');
+  lookButton.classList.add('hidden');alignButton.classList.add('hidden');
   overlay.className = 'panel paused';
   overlay.querySelector('.kicker').textContent = 'FREE FLIGHT · PAUSED';
   overlay.querySelector('h1').innerHTML = 'ABOVE<br><em>THE TREES</em>';
@@ -507,43 +545,49 @@ primary.addEventListener('click', () => {
     mode = 'flying'; overlay.className = 'panel hidden'; sound.unlock(); sound.setActive(true);
     hud.classList.remove('hidden'); pauseButton.classList.remove('hidden');
     viewButton.classList.remove('hidden'); boostButton.classList.remove('hidden'); muteButton.classList.remove('hidden');
+    lookButton.classList.remove('hidden');alignButton.classList.remove('hidden');
     last = performance.now();
   } else startFlight();
 });
 function inputState() {
   const x = (pointer?.dx || 0) + (keys.has('d') || keys.has('arrowright') ? 1 : 0) - (keys.has('a') || keys.has('arrowleft') ? 1 : 0);
   const y = (pointer?.dy || 0) + (keys.has('w') || keys.has('arrowup') ? 1 : 0) - (keys.has('s') || keys.has('arrowdown') ? 1 : 0);
-  return { x: clamp(x, -1, 1), y: clamp(y, -1, 1) };
+  return { x: clamp(lookMode?0:x, -1, 1), y: clamp(lookMode?0:y, -1, 1), cameraYaw };
 }
 const cameraTarget = new THREE.Vector3();
 function updateCamera(dt) {
-  const dirX = Math.sin(flight.heading), dirZ = Math.cos(flight.heading);
+  // Position is ALWAYS relative to the drone's current heading-independent view.
+  const dirX = Math.sin(cameraYaw), dirZ = Math.cos(cameraYaw);
+  const lookX=dirX*Math.cos(cameraPitch), lookZ=dirZ*Math.cos(cameraPitch);
+  const lookY=Math.sin(cameraPitch);
+  const smoothing=1-Math.exp(-8*dt);
   if (view === 'fpv') {
-    cameraTarget.set(0, flight.y + .35, 0);
-    camera.position.lerp(cameraTarget, 1 - Math.exp(-8 * dt));
-    camera.up.set(Math.sin(flight.bank) * .09, 1, 0).normalize();
-    camera.lookAt(dirX * 50, flight.y + 3 + flight.pitch * 27, dirZ * 50);
+    cameraTarget.set(0, flight.y+.42, 0);
+    camera.position.lerp(cameraTarget,smoothing);
+    camera.up.set(0,1,0);
+    camera.lookAt(lookX*60, flight.y+lookY*60,lookZ*60);
   } else {
-    cameraTarget.set(-dirX * 13, flight.y + 4.1, -dirZ * 13);
-    camera.position.lerp(cameraTarget, 1 - Math.exp(-5 * dt));
-    camera.up.set(Math.sin(flight.bank) * .09, 1, 0).normalize();
-    camera.lookAt(dirX * 23, flight.y + 1.7 + flight.pitch * 17, dirZ * 23);
+    cameraTarget.set(-lookX*15,flight.y+4.4-lookY*9,-lookZ*15);
+    camera.position.lerp(cameraTarget,1-Math.exp(-6*dt));
+    camera.up.set(0,1,0);
+    camera.lookAt(lookX*28,flight.y+1.9+lookY*26,lookZ*28);
   }
-  // Camera matrix is updated only when the projection actually changes (resize / view distance).
-  drone.position.set(0, flight.y, 0);
-  drone.rotation.order = 'YXZ';
-  drone.rotation.set(-flight.pitch * .9, flight.heading, flight.bank, 'YXZ');
+  drone.position.set(0,flight.y,0);
+  drone.rotation.order='YXZ';
+  drone.rotation.set(-flight.pitch*.9,flight.heading,flight.bank,'YXZ');
 }
+
 function updateHUD() {
   distanceEl.textContent = Math.round(flight.distance).toLocaleString('en-US') + ' M';
   altitudeEl.textContent = Math.round(Math.max(0, flight.y - groundHeight(flight.x, flight.z))) + ' M AGL';
-  speedEl.textContent = Math.round(flight.speed * 3.6) + ' KM/H';
+  speedEl.textContent = Math.round(Math.abs(flight.speed) * 3.6) + ' KM/H ' + (flight.speed < -1 ? 'REV' : '');
   warning.textContent = flight.groundContact ? 'LOW ALTITUDE · CLIMB' : '';
 }
 function frame(now) {
   const dt = Math.min((now - last) / 1000 || .016, .1); last = now;
   if (mode === 'flying') {
-    flight.throttle = boost || keys.has('shift') ? .98 : .54;
+    const throttles = {hover:0, cruise:.54, fast:.98, reverse:-.38};
+    flight.throttle = keys.has('shift') ? .98 : throttles[throttleMode];
     advanceFlight(flight, inputState(), dt);
     rebuildTiles(); moveTiles(); updateFarLand(); updateHUD();
     sound.update(flight.speed, Math.max(0, flight.y-groundHeight(flight.x,flight.z)),dt);
@@ -583,6 +627,7 @@ updateCamera(.016);
 // Diagnostic-only state for automated interaction tests; no browser location or telemetry.
 window.__openSkySnapshot = () => ({
   x: flight.x, y: flight.y, z: flight.z, heading: flight.heading,
+  cameraYaw, cameraPitch, lookMode, throttleMode, speed:flight.speed,
   ground: groundHeight(flight.x, flight.z), mode, audioEnabled: sound.enabled
 });
 document.documentElement.dataset.openSkyReady = 'true';

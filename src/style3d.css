@@ -26,3 +26,26 @@
 #vignette { background: radial-gradient(ellipse at 50% 55%, transparent 45%, rgba(7,19,23,.19) 100%); }
 #hint { text-shadow: 0 2px 7px #071e21; font-weight: 600; }
 @media(max-width:360px) { #flight-actions { left: 11px; gap: 5px; } .flight-tool { min-width: 57px; padding: 9px; font-size: 9px; } #sound-toggle { min-width: 76px; } }
+
+/* Navigation v0.4: compact two-row action deck outside the main touch surface. */
+#flight-actions {
+  left: 15px;
+  right: 77px;
+  bottom: calc(env(safe-area-inset-bottom) + 13px);
+  display: flex; flex-wrap: wrap; gap: 6px; z-index: 4;
+  max-width: 330px;
+}
+#flight-actions .flight-tool {
+  flex: 0 0 auto;
+  min-height: 38px; min-width: 60px; padding: 8px 11px;
+  font-size: 10px; line-height: 1.1; letter-spacing: .55px;
+}
+#sound-toggle { min-width: 76px!important; }
+#look-mode[aria-pressed="true"] { background:#cde4b7;color:#153027; }
+#hint { bottom: calc(env(safe-area-inset-bottom) + 115px); }
+#pause { bottom: calc(env(safe-area-inset-bottom) + 16px); }
+@media(max-width:380px) {
+  #flight-actions { right: 62px; left: 9px; gap: 5px; }
+  #flight-actions .flight-tool { min-width: 51px; padding: 8px; font-size: 9px; }
+  #sound-toggle { min-width: 70px!important; }
+}
