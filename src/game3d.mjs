@@ -70,6 +70,8 @@ function pineGeometry() {
 const treeCone = pineGeometry();
 const treeTrunk = new THREE.CylinderGeometry(.28, .41, 1, 5);
 const rockGeo = new THREE.DodecahedronGeometry(1, 0);
+const broadGeo = new THREE.IcosahedronGeometry(1, 1);
+const broadPalette = [0x405d36, 0x566943, 0x6b7848, 0x3b5839, 0x667247];
 const temp = new THREE.Object3D();
 const greenPalette = [0x203e33, 0x294938, 0x31503c, 0x3b563e, 0x435b42, 0x365243];
 const tiles = new Map();
@@ -149,7 +151,7 @@ function setInstance(mesh, i, x, y, z, sx, sy, sz, rotation = 0, color = null) {
   if (color !== null) mesh.setColorAt(i, new THREE.Color(color));
 }
 function addForest(group, cx, cz, near) {
-  const attempts = near ? (mobile ? 96 : 130) : 44, trees = [], rocks = [];
+  const attempts = near ? (mobile ? 96 : 130) : 44, trees = [], broad = [], rocks = [];
   for (let i = 0; i < attempts; i++) {
     const rx = hash(cx * 739 + i * 17, cz * 1909 + 81);
     const rz = hash(cx * 2203 + i * 31, cz * 499 + 12);
@@ -157,8 +159,10 @@ function addForest(group, cx, cz, near) {
     const h = groundHeight(wx, wz);
     if (Math.abs(wx - roadCenter(wz)) < 15) continue;
     const size = (near ? 10 : 7) + 15 * hash(cx * 299 + i, cz * 41 + i * 61);
-    if (i % 9 === 0) rocks.push({ x, z, h, s: 1 + hash(i + cx, cz) * 2.3 });
-    else trees.push({ x, z, h, size, r: 1.7 + size * .19, color: greenPalette[Math.floor(hash(i + cx * 9, cz * 7 + i) * greenPalette.length)], turn: hash(i, cz * 2 + cx) * Math.PI * 2 });
+    const tree = { x, z, h, size, r: 1.7 + size * .19, color: greenPalette[Math.floor(hash(i + cx * 9, cz * 7 + i) * greenPalette.length)], turn: hash(i, cz * 2 + cx) * Math.PI * 2 };
+    if (i % 13 === 0) rocks.push({ x, z, h, s: 1 + hash(i + cx, cz) * 2.3 });
+    else if (i % 6 === 0) broad.push(tree);
+    else trees.push(tree);
   }
   if (trees.length) {
     const crown = instanced(treeCone, leafMat, trees.length, true);
@@ -171,6 +175,24 @@ function addForest(group, cx, cz, near) {
     crown.instanceMatrix.needsUpdate = true;
     if (crown.instanceColor) crown.instanceColor.needsUpdate = true;
     group.add(crown, trunks);
+  }
+  if (broad.length) {
+    const trunks = instanced(treeTrunk, barkMat, broad.length);
+    const leaves = instanced(broadGeo, leafMat, broad.length * 3, true);
+    broad.forEach((t, i) => {
+      const c = broadPalette[Math.floor(hash(i * 17 + cx, cz * 23) * broadPalette.length)];
+      setInstance(trunks, i, t.x, t.h + t.size * .38, t.z, .85, t.size * .75, .85, t.turn);
+      // Three offset leaf masses make a visible, rounded, volumetric canopy.
+      setInstance(leaves, i * 3, t.x, t.h + t.size * .80, t.z, t.r * 1.05, t.size * .29, t.r * 1.04, t.turn, c);
+      setInstance(leaves, i * 3 + 1, t.x + t.r * .34, t.h + t.size * .95, t.z - t.r * .25,
+                  t.r * .71, t.size * .27, t.r * .76, t.turn, c);
+      setInstance(leaves, i * 3 + 2, t.x - t.r * .41, t.h + t.size * .89, t.z + t.r * .25,
+                  t.r * .65, t.size * .29, t.r * .72, t.turn, c);
+    });
+    trunks.instanceMatrix.needsUpdate = true;
+    leaves.instanceMatrix.needsUpdate = true;
+    if (leaves.instanceColor) leaves.instanceColor.needsUpdate = true;
+    group.add(trunks, leaves);
   }
   if (rocks.length) {
     const mesh = instanced(rockGeo, stoneMat, rocks.length);
