@@ -18,3 +18,11 @@
 .panel .controls { color: #dce2dc; }
 .footer { color: #d8d9cd; }
 @media (prefers-reduced-motion: reduce) { #hint { transition: none; } }
+
+/* Slightly translucent flight controls: maintain landscape visibility in portrait. */
+#flight-actions { gap: 7px; }
+.flight-tool { min-width: 68px; padding: 10px 11px; backdrop-filter: blur(9px); border-color: rgba(240,249,241,.45); background: rgba(8,26,29,.58); }
+#sound-toggle { min-width: 86px; }
+#vignette { background: radial-gradient(ellipse at 50% 55%, transparent 45%, rgba(7,19,23,.19) 100%); }
+#hint { text-shadow: 0 2px 7px #071e21; font-weight: 600; }
+@media(max-width:360px) { #flight-actions { left: 11px; gap: 5px; } .flight-tool { min-width: 57px; padding: 9px; font-size: 9px; } #sound-toggle { min-width: 76px; } }
