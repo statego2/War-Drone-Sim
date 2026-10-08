@@ -8,6 +8,10 @@ The repository has moved beyond its initial planning-only state. `main` now depl
 
 Before gameplay planning/coding, read [the web-first Gameplay Focus Rebaseline](docs/27_GAMEPLAY_FOCUS_PLAN.md) and [tracking Issue #68](https://github.com/statego2/War-Drone-Sim/issues/68), together with `NEXT_ACTION.md` and relevant existing tasks. Product objective: **fast one-finger portrait forest flight → several visible fictional unoccupied vehicle choices → dramatic short contact feedback → another airborne drone in about one second**. No racing/free-flight mode, open-world campaign, real vehicle attack or hardware control requirements. Record shipped `main` separately from open PRs (notably dive and graphics proposals), and preserve old WBS traceability while baselining new web tickets. Owner iPhone acceptance is not proven by desktop CI. Coordinate parallel writers rather than overwriting `NEXT_ACTION.md`.
 
+## Creative direction decision — owner approved 2026-10-08
+
+Read [docs/29_APPROVED_CREATIVE_DIRECTION_V2.md](docs/29_APPROVED_CREATIVE_DIRECTION_V2.md) before editing launch, HUD, world appearance, drone/vehicle visuals, pause screens or impact cinematography. **Premium Cinematic Arcade** is the accepted *direction*, not a claim of shipped effects. Use CD-00…CD-09 as art work IDs; keep GP gameplay priority and the current audio/impact implementations intact. Do not treat open design PR #66 as an independent competing art spec. All UI changes must be usable on real portrait phone and reversible if readability, accessibility, frame pacing or one-second respawn worsen.
+
 ## Role and mandate
 Act as pragmatic lead game engineer + technical producer. Ship small, testable vertical slices of a **portrait, mobile-first, arcade 3D drone game**. Preserve player control, screen readability, framerate and restart flow above architecture novelty.
 
