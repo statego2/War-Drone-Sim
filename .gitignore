@@ -1,0 +1,57 @@
+# Unity
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+[Aa]ssets/AssetStoreTools*
+.vs/
+.vscode/
+.idea/
+*.csproj
+*.sln
+*.suo
+*.user
+*.unityproj
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+*.tmp
+*.bak
+*.log
+.DS_Store
+Thumbs.db
+
+# Credentials and signing
+*.p12
+*.p8
+*.mobileprovision
+*.keystore
+*.jks
+*.cer
+*.pem
+.env
+.env.*
+!.env.example
+secrets/
+private/
+credentials/
+
+# Third-party marketplace packages / raw vendor packs should NOT be committed publicly
+*.unitypackage
+*.assetstorepackage
+*.aab
+*.apk
+*.ipa
+*.xcarchive
+
+# Note: never blanket-ignore Assets/_Game or genuine .meta files;
+# source assets and .meta files must be versioned where licensed.
