@@ -141,7 +141,7 @@ test('committed dive retains forward velocity; shallow pitch yields milder downw
   // Pulling out should recover forward travel continuously instead of snapping.
   const before=horizontal(full);
   stepFlight(full,{x:0,y:1},1/60);
-  assert.ok(horizontal(full)>=before && horizontal(full)<before+3);
+  assert.ok(Math.abs(horizontal(full)-before)<3,'pulling up preserves forward inertia at the moment of reversal');
 });
 
 test('true lateral HOVER strafing does not force yaw and diagonal gestures combine axes', () => {
@@ -227,8 +227,9 @@ test('strong nose-up gesture reverses forward speed progressively instead of tel
     const f=makeFlight();
     f.y=300;f.throttle=throttle;
     const startZ=f.z;
-    for(let i=0;i<30;i++)stepFlight(f,{x:0,y:1},1/60);
-    assert.ok(f.speed>0,'existing forward velocity must survive the initial pullback');
+    for(let i=0;i<12;i++)stepFlight(f,{x:0,y:1},1/60);
+    assert.ok(f.speed>10,'reverse command slows gradually; the first frames preserve forward momentum');
+    for(let i=0;i<18;i++)stepFlight(f,{x:0,y:1},1/60);
     assert.ok(f.pitch< -1,'full up drag creates a strong visible nose-up attitude');
     for(let i=0;i<90;i++)stepFlight(f,{x:0,y:1},1/60);
     assert.ok(f.speed< -8,'sustained pullback must actually move backward in every speed mode');
@@ -274,4 +275,35 @@ test('pullback trajectory remains stable across different frame rates', () => {
   for(let i=0;i<108;i++)advanceFlight(fast,{x:-.25,y:1},1/60);
   for(const key of ['x','y','z','vx','vy','vz'])
     assert.ok(Math.abs(slow[key]-fast[key])<1.6,'frame divergence for '+key);
+});
+
+test('one finger alone controls cruise, gentle climb, braking near hover, reverse, and full dive',()=>{
+  const observe=(y)=>{const f=makeFlight();f.y=300;for(let i=0;i<60;i++)stepFlight(f,{x:0,y},1/60);return f;};
+  const cruise=observe(0),climb=observe(.45),brake=observe(.72),reverse=observe(.86),dive=observe(-1);
+  assert.ok(cruise.speed>53,'neutral touch continues free cruise without a throttle mode');
+  assert.ok(climb.vy>5 && climb.speed>45,'gentle up keeps forward climbing');
+  assert.ok(Math.abs(brake.speed)<4 && brake.vy>2,'medium up gesture gives low-speed forward control');
+  assert.ok(reverse.speed< -15 && reverse.vy>3,'farther up gesture gives rearward flight');
+  assert.ok(dive.speed>cruise.speed+8 && dive.vy< -7,'full down retains fast committed descent');
+  assert.ok(Math.abs(reverse.brakeIntent-1)<.01 && reverse.reverseIntent>.5);
+});
+
+test('continuous down-to-up reversal is quick to request yet finite in physical velocity',()=>{
+  const f=makeFlight();f.y=300;
+  for(let i=0;i<65;i++)stepFlight(f,{x:0,y:-1},1/60);
+  const start=f.speed;assert.ok(start>60);
+  stepFlight(f,{x:0,y:1},1/60);
+  assert.ok(f.speed>start-3,'one frame does not instantly reverse velocity');
+  for(let i=0;i<32;i++)stepFlight(f,{x:0,y:1},1/60);
+  assert.ok(f.speed<20,'held command counteracts forward motion rapidly');
+  for(let i=0;i<40;i++)stepFlight(f,{x:0,y:1},1/60);
+  assert.ok(f.speed < -22,'single finger can reverse without tapping any speed button');
+});
+
+test('one-finger sideways control works during braking band without forced yaw',()=>{
+ const a=makeFlight();a.y=300;
+ for(let i=0;i<75;i++)stepFlight(a,{x:1,y:.72},1/60);
+ assert.ok(a.x<roadCenter(0)-12,'medium-up/right drag translates sideways');
+ assert.ok(Math.abs(a.heading)<.7,'braking reduces yaw in favor of strafing');
+ assert.ok(a.bank<-.3);
 });
