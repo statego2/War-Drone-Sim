@@ -1,5 +1,5 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
-import { TILE, clamp, hash, roadCenter, groundHeight, makeFlight, advanceFlight } from './flight3d.mjs';
+import { TILE, clamp, hash, roadCenter, groundHeight, makeFlight, advanceFlight, LAKE, lakeProximity } from './flight3d.mjs';
 import { createFlightAudio } from './audio3d.mjs';
 import { createScenery } from './scenery3d.mjs';
 import { createClouds } from './atmosphere3d.mjs';
@@ -127,6 +127,8 @@ function terrainColor(x, y, z) {
   const n = hash(Math.floor(x / 14), Math.floor(z / 14));
   const slope = Math.abs(groundHeight(x+3,z)-groundHeight(x-3,z)) +
                 Math.abs(groundHeight(x,z+3)-groundHeight(x,z-3));
+  const distanceToLake = lakeProximity(x,z);
+  if (distanceToLake < 1.28) return new THREE.Color(distanceToLake < .9 ? 0x746c53 : 0x8e8065);
   const forest = y > 115 ? [0x7b806f,0x8d896e,0x868f7f] :
                  slope>6 ? [0x64705a,0x676c54,0x716f5d] :
                  [0x4a6540,0x537145,0x62764d,0x516d44,0x6b7445];
@@ -209,7 +211,7 @@ function addForest(group, cx, cz, near) {
     const rz = hash(cx * 2203 + i * 31, cz * 499 + 12);
     const x = rx * TILE, z = rz * TILE, wx = cx * TILE + x, wz = cz * TILE + z;
     const h = groundHeight(wx, wz);
-    if (Math.abs(wx - roadCenter(wz)) < 15) continue;
+    if (Math.abs(wx - roadCenter(wz)) < 15 || lakeProximity(wx,wz) < 1.12) continue;
     const size = (near ? 10 : 7) + 15 * hash(cx * 299 + i, cz * 41 + i * 61);
     const tree = { x, z, h, size, r: 1.7 + size * .19, color: greenPalette[Math.floor(hash(i + cx * 9, cz * 7 + i) * greenPalette.length)], turn: hash(i, cz * 2 + cx) * Math.PI * 2 };
     if (i % 13 === 0) rocks.push({ x, z, h, s: 1 + hash(i + cx, cz) * 2.3 });
@@ -285,6 +287,21 @@ function addScenicVehicle(group, cx, cz) {
   car.rotation.y = heading;
   group.add(car);
 }
+const lakeSurfaceMat = new THREE.MeshPhongMaterial({color:0x477f89,emissive:0x132b2c,shininess:95,transparent:true,opacity:.87,depthWrite:false,side:THREE.DoubleSide});
+const lakeShoreMat = new THREE.MeshLambertMaterial({color:0xc1ac81,side:THREE.DoubleSide});
+function addLake(group,cx,cz) {
+  if (cx !== Math.floor(LAKE.x/TILE) || cz !== Math.floor(LAKE.z/TILE)) return;
+  const water = ownedMesh(new THREE.CircleGeometry(1,86),lakeSurfaceMat);
+  water.rotation.x=-Math.PI/2;
+  water.position.set(LAKE.x-cx*TILE,LAKE.level+.045,LAKE.z-cz*TILE);
+  water.scale.set(LAKE.rx*.79,LAKE.rz*.78,1);
+  group.add(water);
+  const perimeter=ownedMesh(new THREE.RingGeometry(1,1.075,86),lakeShoreMat);
+  perimeter.rotation.x=-Math.PI/2;
+  perimeter.position.set(LAKE.x-cx*TILE,LAKE.level-.17,LAKE.z-cz*TILE);
+  perimeter.scale.set(LAKE.rx*.79,LAKE.rz*.78,1);
+  group.add(perimeter);
+}
 function makeTile(cx, cz, near) {
   const group = new THREE.Group();
   const terrain = ownedMesh(terrainGeometry(cx, cz, near ? 32 : 18), terrainMat);
@@ -301,6 +318,7 @@ function makeTile(cx, cz, near) {
   }
   addForest(group, cx, cz, near);
   scenery.decorateTile(group, cx, cz, near);
+  addLake(group, cx, cz);
   scene.add(group);
   return { group, cx, cz, near };
 }
