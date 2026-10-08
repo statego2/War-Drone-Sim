@@ -170,7 +170,7 @@ export function createFlightAudio() {
     tone(t+.16,1130,850,.23,.007,'sine',.04);
   }
 
-  function cue(name) {
+  function cue(name, mode='') {
     if(!canPlay())return;
     const t=ctx.currentTime;
     // Avoid stacking UI chirps from rapid control changes.
@@ -184,8 +184,15 @@ export function createFlightAudio() {
       tone(t,240,400,.135,.034,'sine',.012);
       noise(t,.16,.024,170,950,.025);
     }else if(name==='mode'){
-      tone(t,340,485,.105,.030,'sine',.012);
-      noise(t,.072,.013,240,950,.019);
+      if(mode==='fast'){
+        // A warm acceleration shimmer, clearly different from the standard click.
+        tone(t,245,390,.18,.040,'sine',.026);
+        noise(t,.24,.040,140,1200,.075);
+      }else if(mode==='hover'||mode==='reverse'){
+        tone(t,370,290,.13,.027,'sine',.012);
+      }else{
+        tone(t,315,420,.115,.030,'sine',.012);
+      }
     }else if(name==='view'){
       tone(t,450,340,.095,.022,'sine',.012);
     }else if(name==='miss'){
