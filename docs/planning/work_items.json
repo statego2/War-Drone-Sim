@@ -108,8 +108,10 @@
       "estimated_hours": 3,
       "depends_on": [
         "T-002",
+        "T-004",
         "T-005",
-        "T-006"
+        "T-006",
+        "T-007"
       ],
       "title": "Hold G0 architecture and distribution approval gate",
       "deliverable": "ADR and signed-off launch channel, target device tier, next critical tasks",
@@ -138,7 +140,8 @@
       "estimated_hours": 10,
       "depends_on": [
         "T-006",
-        "T-008"
+        "T-008",
+        "T-009"
       ],
       "title": "Implement assisted arcade drone motor",
       "deliverable": "Tunable motor with fixed-step movement, drift/turn/climb and reset",
@@ -254,7 +257,9 @@
       "depends_on": [
         "T-011",
         "T-016",
-        "T-017"
+        "T-017",
+        "T-050",
+        "T-051"
       ],
       "title": "Run 5 first-player mobile usability sessions",
       "deliverable": "Interview notes, time-to-understand, confusion patterns, improvement recommendation",
@@ -404,7 +409,9 @@
         "T-023",
         "T-025",
         "T-026",
-        "T-027"
+        "T-027",
+        "T-052",
+        "T-053"
       ],
       "title": "Run vertical-slice regressions on device matrix",
       "deliverable": "QA reports, 30-minute thermal session, recorded fairness outcomes",
@@ -566,7 +573,8 @@
       "depends_on": [
         "T-036",
         "T-037",
-        "T-038"
+        "T-038",
+        "T-054"
       ],
       "title": "Approve beta content and release candidate gate",
       "deliverable": "Beta build identifier, known issues and final scope frozen",
@@ -671,7 +679,8 @@
         "T-040",
         "T-042",
         "T-043",
-        "T-045"
+        "T-045",
+        "T-055"
       ],
       "title": "Prepare owner approval release checklist",
       "deliverable": "Go/no-go memo with evidence, costs and store risks",
