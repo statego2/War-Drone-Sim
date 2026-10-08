@@ -221,3 +221,57 @@ test('coarse browser frame ends at the FIRST ground contact rather than sliding 
   assert.ok(f.y>=groundHeight(f.x,f.z)+1.4-.001);
   assert.ok(f.vy<0,'the impact velocity is preserved');
 });
+
+test('strong nose-up gesture reverses forward speed progressively instead of teleporting', () => {
+  for (const throttle of [0,.72,1]) {
+    const f=makeFlight();
+    f.y=300;f.throttle=throttle;
+    const startZ=f.z;
+    for(let i=0;i<30;i++)stepFlight(f,{x:0,y:1},1/60);
+    assert.ok(f.speed>0,'existing forward velocity must survive the initial pullback');
+    assert.ok(f.pitch< -1,'full up drag creates a strong visible nose-up attitude');
+    for(let i=0;i<90;i++)stepFlight(f,{x:0,y:1},1/60);
+    assert.ok(f.speed< -8,'sustained pullback must actually move backward in every speed mode');
+    assert.ok(f.vy>0,'nose-up reverse remains controllably airborne');
+    assert.ok(f.pullback>.98,'reverse intent tracks full pullback');
+    assert.ok(f.z<startZ+30,'initial forward momentum should give way to back travel');
+  }
+});
+
+test('soft climb keeps forward cruising, deep pullback reverses without jumping speed', () => {
+  const gentle=makeFlight(), hard=makeFlight();
+  gentle.y=hard.y=300;
+  for(let i=0;i<120;i++) {
+    stepFlight(gentle,{x:0,y:.45},1/60);
+    stepFlight(hard,{x:0,y:1},1/60);
+  }
+  assert.ok(gentle.speed>45 && gentle.vy>0);
+  assert.ok(gentle.pitch>-.35 && gentle.pullback===0);
+  assert.ok(hard.speed< -15 && hard.vy>0);
+  const before=hard.speed;
+  stepFlight(hard,{x:0,y:0},1/60);
+  assert.ok(hard.speed>before && hard.speed<before+2,'release changes rearward speed smoothly');
+  for(let i=0;i<120;i++)stepFlight(hard,{x:0,y:0},1/60);
+  assert.ok(hard.speed>40,'after releasing, normal cruise gradually returns');
+});
+
+test('up-left and up-right still give correct lateral direction during reverse glide', () => {
+  for(const side of [-1,1]) {
+    const f=makeFlight();f.y=300;
+    const x=f.x;
+    for(let i=0;i<120;i++)stepFlight(f,{x:side,y:1},1/60);
+    assert.ok((f.x-x)*side< -7,'lateral reverse gestures remain intuitive on screen');
+    assert.ok(f.vy>0 && f.speed< -12);
+    assert.ok(Math.abs(f.bank)>.3);
+    assert.ok(Math.abs(f.heading)<.6,'nose-up pullback should not force a 180-degree turn');
+  }
+});
+
+test('pullback trajectory remains stable across different frame rates', () => {
+  const slow=makeFlight(),fast=makeFlight();
+  for(const f of [slow,fast])f.y=300;
+  for(let i=0;i<54;i++)advanceFlight(slow,{x:-.25,y:1},1/30);
+  for(let i=0;i<108;i++)advanceFlight(fast,{x:-.25,y:1},1/60);
+  for(const key of ['x','y','z','vx','vy','vz'])
+    assert.ok(Math.abs(slow[key]-fast[key])<1.6,'frame divergence for '+key);
+});
