@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { TILE, hash, noise, roadCenter, groundHeight, makeFlight, stepFlight, advanceFlight } from '../src/flight3d.mjs';
+import { TILE, hash, noise, roadCenter, groundHeight, makeFlight, stepFlight, advanceFlight, lakeProximity, LAKE } from '../src/flight3d.mjs';
 
 test('world terrain is deterministic and finite across sectors', () => {
   for (const [x,z] of [[0,0],[-TILE, TILE],[32790,-8730],[.03,-.02],[-100000,100000]]) {
@@ -60,4 +60,11 @@ test('batched elapsed time approximates short frame time', () => {
   assert.ok(Math.abs(slow.x-fast.x)<1.2);
   assert.ok(Math.abs(slow.z-fast.z)<1.2);
   assert.ok(Math.abs(slow.y-fast.y)<1.2);
+});
+
+test('handcrafted lake basin is deterministic and lies below the water plane', () => {
+  assert.equal(lakeProximity(LAKE.x,LAKE.z), 0);
+  assert.ok(groundHeight(LAKE.x,LAKE.z) < LAKE.level - 3);
+  assert.ok(lakeProximity(roadCenter(LAKE.z),LAKE.z) > 1);
+  assert.equal(groundHeight(LAKE.x,LAKE.z),groundHeight(LAKE.x,LAKE.z));
 });
