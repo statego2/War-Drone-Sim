@@ -46,6 +46,22 @@ try {
   await page.mouse.up();
   const after = await page.locator('#altitude').innerText();
   assert.ok(parseInt(after,10) > parseInt(before,10), 'drag-up should increase AGL');
+  // Nose-down attitude and gravity-driven acceleration are independent
+  // of steering. The game remains an entertainment flight experience.
+  const beforeDive = await page.evaluate(() => window.__openSkySnapshot());
+  await page.mouse.move(185,430);
+  await page.mouse.down();
+  await page.mouse.move(185,690,{steps:8});
+  await page.waitForTimeout(1200);
+  const noseDown = await page.evaluate(() => window.__openSkySnapshot());
+  await page.mouse.up();
+  assert.ok(noseDown.pitch > .7,'steep finger-down gesture should tilt nose down');
+  // The previous action climbed, so its upward momentum must first be
+  // cancelled. Browser test checks deceleration, pure model test checks
+  // negative velocity and full recovery from a neutral high-altitude start.
+  assert.ok(noseDown.vy < beforeDive.vy - 1,'steep forward pitch must create downward acceleration');
+  assert.ok(noseDown.cameraPitch < -.3,'camera should follow the diving attitude');
+  assert.match(await page.locator('#vertical-rate').innerText(),/[↑↓]/,'HUD shows signed vertical rate');
   const initial = await page.evaluate(() => window.__openSkySnapshot());
   assert.equal(await page.locator('#look-mode').count(), 0, 'no LOOK button');
   assert.equal(await page.locator('#align-view').count(), 0, 'no FACE button');
@@ -57,7 +73,10 @@ try {
   const turnedRight = await page.evaluate(() => window.__openSkySnapshot());
   await page.mouse.up();
   assert.ok(turnedRight.heading < initial.heading-.75, 'right swipe turns aircraft right');
-  assert.ok(turnedRight.x < initial.x-4, 'aircraft curves into screen-right world space');
+  // With velocity inertia the craft initially drifts along its old track;
+  // test the change in lateral velocity instead of requiring an instant
+  // four-unit displacement. Heading direction remains independently checked.
+  assert.ok(turnedRight.vx < initial.vx-.5,'right turn bends actual velocity toward screen-right');
   assert.ok(turnedRight.cameraYaw < initial.cameraYaw-.32, 'camera follows right-hand turn without LOOK');
   assert.ok(Math.abs(turnedRight.cameraYaw-turnedRight.heading)<.50,'chase camera remains behind heading');
 
@@ -88,7 +107,7 @@ try {
   await mkdir(join(root, 'artifacts'), { recursive: true });
   await page.screenshot({ path: join(root, 'artifacts', 'open-sky-webgl.png') });
   assert.deepEqual(errors, [], 'JavaScript page errors must be absent');
-  console.log('PASS: WebGL, one-finger right/left heading turns, automatic chase camera, altitude, FPV, throttle, mute, pause/resume');
+  console.log('PASS: WebGL, nose-down/gravity dive, pitch-aware camera, single-finger steering, altitude, FPV, throttle, mute, pause/resume');
 } finally {
   if (browser) await browser.close();
   await new Promise(resolveClose => server.close(resolveClose));

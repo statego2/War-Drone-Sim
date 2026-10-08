@@ -36,40 +36,72 @@ export function groundHeight(x, z) {
   return lerp(raw, LAKE.level - 5.8, hollow);
 
 }
-export function makeFlight() {
-  const x = roadCenter(0), z = 10;
-  return { x, y: groundHeight(x, z) + 17, z, heading: 0, bank: 0, pitch: 0,
-           yawRate: 0, sideRate: 0, climbRate: 0, speed: 24, throttle: 0.54,
-           distance: 0, time: 0, groundContact: false };
-}
-// The renderer looks toward +Z. Positive touch X (screen right) means
-// NEGATIVE heading around Y. One input steers the craft and chase camera.
+// Game-feel flight dynamics (not a real autopilot, aircraft model or control law).
+// Use smooth attitude, vector velocity, gravity, momentum and drag. The main
+// controller remains one-finger: horizontal = steer, upward = climb, full
+// downward = steep nose-forward dive without an impossible inverted hover.
 export const TURN_RATE = 1.34;
-export const shortestAngle = (from, to) => Math.atan2(Math.sin(to-from), Math.cos(to-from));
-export function stepFlight(f, input, dt) {
-  if (f.phase && f.phase !== 'playing') return f;
-  dt = clamp(dt,0,.05);
-  const steer = clamp(input.x || 0,-1,1);
-  const climb = clamp(input.y || 0,-1,1);
-  const response = 1-Math.exp(-12*dt);
-  // No sideways-only controls or secondary LOOK/FACE state.
-  f.yawRate = lerp(f.yawRate,-steer*TURN_RATE,response);
-  f.climbRate = lerp(f.climbRate,climb*24,response);
-  f.heading += f.yawRate*dt;
-  // Keep heading bounded through repeated full orbits.
-  f.heading = Math.atan2(Math.sin(f.heading),Math.cos(f.heading));
-  f.throttle = clamp(f.throttle,-.6,1);
-  f.speed = lerp(f.speed,f.throttle*47,1-Math.exp(-4*dt));
-  const dx = Math.sin(f.heading)*f.speed*dt;
-  const dz = Math.cos(f.heading)*f.speed*dt;
-  f.x += dx; f.z += dz; f.y += f.climbRate*dt;
-  f.distance += Math.hypot(dx,dz); f.time += dt;
-  const floor = groundHeight(f.x,f.z)+2.2;
-  f.groundContact = f.y < floor;
-  if(f.groundContact){ f.y=floor;f.climbRate=Math.max(0,f.climbRate); }
-  f.bank = lerp(f.bank,-steer*.20,response);
-  f.pitch = lerp(f.pitch,climb*.11,response);
-  f.sideRate = 0;
+const GRAVITY = 9.81;
+const MAX_DIVE_PITCH = 1.32; // about 76°, deliberately prevents inverted hold
+export const shortestAngle = (from,to) => Math.atan2(Math.sin(to-from),Math.cos(to-from));
+export function makeFlight() {
+  const x=roadCenter(0),z=10;
+  return {
+    x, y:groundHeight(x,z)+17, z, heading:0, bank:0, pitch:0,
+    yawRate:0, sideRate:0, climbRate:0,
+    vx:0, vy:0, vz:24, speed:24, throttle:.54,
+    distance:0, time:0, groundContact:false
+  };
+}
+export function stepFlight(f,input,dt) {
+  if(f.phase && f.phase!=='playing') return f;
+  dt=clamp(dt,0,.05);
+  if(dt===0)return f;
+  const steer=clamp(input.x||0,-1,1);
+  const vertical=clamp(input.y||0,-1,1);
+  const down=Math.max(0,-vertical),up=Math.max(0,vertical);
+  // Full swipe down creates a steep nose-down attitude. Small downward
+  // movements remain controllable; no separate "dive" button.
+  const desiredPitch=down>0
+    ? clamp(.13*down+1.19*Math.pow(down,2.5),0,MAX_DIVE_PITCH)
+    : -.44*up;
+  f.pitch=lerp(f.pitch,desiredPitch,1-Math.exp(-7*dt));
+  f.yawRate=lerp(f.yawRate,-steer*TURN_RATE,1-Math.exp(-12*dt));
+  f.heading=Math.atan2(Math.sin(f.heading+f.yawRate*dt),Math.cos(f.heading+f.yawRate*dt));
+  f.bank=lerp(f.bank,-steer*.2,1-Math.exp(-8*dt));
+  f.throttle=clamp(f.throttle,-.6,1);
+
+  // Velocity follows the aircraft's heading with inertia rather than
+  // teleporting to a speed/direction every animation frame.
+  const fx=Math.sin(f.heading),fz=Math.cos(f.heading);
+  const rx=Math.cos(f.heading),rz=-Math.sin(f.heading);
+  const along=f.vx*fx+f.vz*fz;
+  const across=f.vx*rx+f.vz*rz;
+  const forwardAcceleration=clamp((f.throttle*47-along)*1.8+
+    7.5*Math.sin(f.pitch),-35,35);
+  const lateralAcceleration=-across*2.1;
+  f.vx+=(fx*forwardAcceleration+rx*lateralAcceleration)*dt;
+  f.vz+=(fz*forwardAcceleration+rz*lateralAcceleration)*dt;
+
+  // A tilted craft has less upward support. In an aggressive nose-down
+  // dive gravity exceeds vertical lift, so falling speed ACCUMULATES.
+  // Small/positive vertical gestures get forgiving assisted lift.
+  const supportedLift=(GRAVITY+up*14.5-down*1.6)*Math.cos(f.pitch);
+  const verticalAcceleration=supportedLift-GRAVITY-.22*f.vy-.015*f.vy*Math.abs(f.vy);
+  f.vy+=verticalAcceleration*dt;
+  const dx=f.vx*dt,dz=f.vz*dt;
+  f.x+=dx;f.z+=dz;f.y+=f.vy*dt;
+  f.distance+=Math.hypot(dx,dz);f.time+=dt;
+  f.speed=f.vx*fx+f.vz*fz;
+  f.climbRate=f.vy;
+  const floor=groundHeight(f.x,f.z)+2.2;
+  f.groundContact=f.y<=floor;
+  if(f.groundContact){
+    f.y=floor;
+    f.vy=Math.max(0,f.vy);
+    f.climbRate=f.vy;
+  }
+  f.sideRate=0;
   return f;
 }
 

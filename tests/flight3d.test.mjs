@@ -58,13 +58,34 @@ test('sustained steering turns naturally beyond ninety degrees', () => {
   // Heading itself wraps at +/-PI; accumulate shortest differences to validate full rotation.
   assert.ok(totalYaw < -2.5,'sustained right gesture turns more than 140 degrees');
 });
-test('up climbs and down descends independently of steering', () => {
+test('upward gesture provides lift, downward gesture tips the nose and descends', () => {
   const vertical=makeFlight(),initialY=vertical.y;
-  for(let i=0;i<70;i++)stepFlight(vertical,{x:0,y:1},1/60);
-  assert.ok(vertical.y > initialY+15);
-  const peak=vertical.y;
-  for(let i=0;i<70;i++)stepFlight(vertical,{x:0,y:-1},1/60);
-  assert.ok(vertical.y < peak-10);
+  for(let i=0;i<90;i++)stepFlight(vertical,{x:0,y:1},1/60);
+  assert.ok(vertical.y > initialY+2,'upward drag should produce positive climb');
+  assert.ok(vertical.pitch<0,'nose pitches upward during climb');
+  const risingVelocity = vertical.vy;
+  // After a climb the aircraft must first cancel its upward momentum.
+  vertical.y=300;
+  for(let i=0;i<100;i++)stepFlight(vertical,{x:0,y:-1},1/60);
+  assert.ok(vertical.pitch > 1.1,'full down command pitches steeply forward');
+  assert.ok(vertical.vy < risingVelocity-7,'steep dive must aggressively reduce vertical velocity');
+});
+test('deep dive builds momentum, sharp recovery takes time', () => {
+  const dive=makeFlight(),neutral=makeFlight();
+  dive.y=300;neutral.y=300;
+  for(let i=0;i<85;i++) {
+    stepFlight(dive,{x:0,y:-1},1/60);
+    stepFlight(neutral,{x:0,y:0},1/60);
+  }
+  assert.ok(dive.pitch>1.2 && dive.pitch<Math.PI/2,'game supports near-vertical non-inverted dive');
+  assert.ok(dive.vy<-5,'rapid dive acquires real downward momentum');
+  assert.ok(dive.vy<neutral.vy-4,'tilt produces stronger descent than level flight');
+  assert.ok(Math.hypot(dive.vx,dive.vz)>Math.hypot(neutral.vx,neutral.vz)+1,'forward drive strengthens in dive');
+  const atRelease=dive.vy;
+  for(let i=0;i<10;i++) stepFlight(dive,{x:0,y:0},1/60);
+  assert.ok(dive.vy<0 && atRelease<0,'downward inertia must continue briefly after release');
+  for(let i=0;i<180;i++) stepFlight(dive,{x:0,y:1},1/60);
+  assert.ok(dive.vy>0,'pulling up can recover from a dive if altitude allows');
 });
 test('batched elapsed time approximates short frame time', () => {
   const slow=makeFlight(), fast=makeFlight();

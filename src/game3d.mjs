@@ -531,7 +531,9 @@ function updateCamera(dt) {
   // Avoid linear interpolation across the -PI/+PI angle discontinuity.
   const yawDifference = Math.atan2(Math.sin(flight.heading-cameraYaw),Math.cos(flight.heading-cameraYaw));
   cameraYaw += yawDifference*(1-Math.exp(-5.5*dt));
-  cameraPitch += ((.04+flight.pitch*.15)-cameraPitch)*(1-Math.exp(-4*dt));
+  // Camera follows the actual nose-down attitude: steep pitch shows terrain
+  // rushing up, rather than staying level while the model dives.
+  cameraPitch += (clamp(.035-flight.pitch*.78,-1.08,.48)-cameraPitch)*(1-Math.exp(-5.5*dt));
   const dirX = Math.sin(cameraYaw), dirZ = Math.cos(cameraYaw);
   const lookX=dirX*Math.cos(cameraPitch), lookZ=dirZ*Math.cos(cameraPitch);
   const lookY=Math.sin(cameraPitch);
@@ -549,14 +551,22 @@ function updateCamera(dt) {
   }
   drone.position.set(0,flight.y,0);
   drone.rotation.order='YXZ';
-  drone.rotation.set(-flight.pitch*.9,flight.heading,flight.bank,'YXZ');
+  // Positive pitch rotates the +Z-facing drone nose DOWN in Three.js.
+  drone.rotation.set(flight.pitch,flight.heading,flight.bank,'YXZ');
 }
 
 function updateHUD() {
   distanceEl.textContent = Math.round(flight.distance).toLocaleString('en-US') + ' M';
   altitudeEl.textContent = Math.round(Math.max(0, flight.y - groundHeight(flight.x, flight.z))) + ' M AGL';
-  speedEl.textContent = Math.round(Math.abs(flight.speed) * 3.6) + ' KM/H ' + (flight.speed < -1 ? 'REV' : '');
-  warning.textContent = flight.groundContact ? 'LOW ALTITUDE · CLIMB' : '';
+  const totalSpeed=Math.hypot(flight.vx,flight.vy,flight.vz);
+  speedEl.textContent = Math.round(totalSpeed*3.6) + ' KM/H';
+  const rate=$('vertical-rate');
+  if (rate) {
+    const rising=flight.vy>=0;
+    rate.textContent=(rising?'↑ ':'↓ ')+Math.abs(flight.vy).toFixed(1)+' M/S';
+  }
+  warning.textContent=flight.groundContact ? 'LOW ALTITUDE' :
+    flight.pitch>.95 && flight.vy<-4 ? 'STEEP DIVE' : '';
 }
 function frame(now) {
   const dt = Math.min((now - last) / 1000 || .016, .1); last = now;
@@ -565,7 +575,7 @@ function frame(now) {
     flight.throttle = keys.has('shift') ? .98 : throttles[throttleMode];
     advanceFlight(flight, inputState(), dt);
     rebuildTiles(); moveTiles(); updateFarLand(); updateHUD();
-    sound.update(flight.speed, Math.max(0, flight.y-groundHeight(flight.x,flight.z)),dt);
+    sound.update(Math.hypot(flight.vx,flight.vy,flight.vz),Math.max(0,flight.y-groundHeight(flight.x,flight.z)),dt);
   }
   const height = Math.max(0, flight.y - groundHeight(flight.x, flight.z));
   clouds.update(flight.x,flight.y,flight.z,now/1000);
@@ -603,6 +613,7 @@ updateCamera(.016);
 window.__openSkySnapshot = () => ({
   x: flight.x, y: flight.y, z: flight.z, heading: flight.heading,
   cameraYaw, cameraPitch, throttleMode, speed:flight.speed,
+  vx:flight.vx,vy:flight.vy,vz:flight.vz,pitch:flight.pitch,
   ground: groundHeight(flight.x, flight.z), mode, audioEnabled: sound.enabled
 });
 document.documentElement.dataset.openSkyReady = 'true';
