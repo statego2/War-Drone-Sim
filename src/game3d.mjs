@@ -562,7 +562,9 @@ function spawnDrone() {
   flight.z = 55 + ((encounter.drones-1)%3)*17;
   flight.x = roadCenter(flight.z);
   flight.y = groundHeight(flight.x,flight.z) + 32 + ((encounter.drones-1)%2)*5;
-  flight.vx = 0;flight.vz = 43;flight.vy = 0;flight.throttle = .72;
+  flight.heading = .10;
+  flight.vx = Math.sin(flight.heading)*43;flight.vz = Math.cos(flight.heading)*43;
+  flight.vy = 0;flight.throttle = .72;
   pointer = null;keys.clear();cameraYaw = flight.heading;cameraPitch = .05;
   camera.position.set(0,flight.y+5,-16);
   impactAge=0;impactType='';flash.visible=false;drone.visible=view==='chase';
