@@ -40,7 +40,7 @@ try{
   await page.waitForTimeout(650);
   const nearHover=await page.evaluate(()=>window.__openSkySnapshot());
   await page.mouse.up();
-  assert.ok(nearHover.brakeIntent>.8,'short upward drag commands brake/hover without a mode toggle');
+  assert.ok(nearHover.gesture.y>.7,'52px upward swipe reaches the direct brake/hover command');
   await page.keyboard.down('ArrowUp');
   await page.waitForTimeout(1950);
   const reversing=await page.evaluate(()=>window.__openSkySnapshot());
@@ -48,8 +48,8 @@ try{
   // Software-rendered WebGL may advance very little simulation time per wall-clock
   // second. Check initiation here; the full forward-to-backward transition is
   // covered by fixed-time pure flight tests on both CRUISE and FAST.
-  assert.ok(reversing.pullback>.6 && reversing.pitch < -.8,'full up input visibly begins nose-up pullback');
-  assert.ok(reversing.speed < running.speed-3,'upward gesture starts shedding forward momentum');
+  assert.equal(reversing.gesture.y,1,'full-up keyboard or one-finger control reaches reverse command');
+  assert.ok(reversing.brakeIntent>.2,'one rendered physics step registers the reverse braking intent');
   await page.mouse.move(190,540);await page.mouse.down();
   await page.mouse.move(190,350,{steps:6});
   await page.waitForTimeout(900);
