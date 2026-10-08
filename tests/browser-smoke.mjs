@@ -73,7 +73,10 @@ try {
   const turnedRight = await page.evaluate(() => window.__openSkySnapshot());
   await page.mouse.up();
   assert.ok(turnedRight.heading < initial.heading-.75, 'right swipe turns aircraft right');
-  assert.ok(turnedRight.x < initial.x-4, 'aircraft curves into screen-right world space');
+  // With velocity inertia the craft initially drifts along its old track;
+  // test the change in lateral velocity instead of requiring an instant
+  // four-unit displacement. Heading direction remains independently checked.
+  assert.ok(turnedRight.vx < initial.vx-.5,'right turn bends actual velocity toward screen-right');
   assert.ok(turnedRight.cameraYaw < initial.cameraYaw-.32, 'camera follows right-hand turn without LOOK');
   assert.ok(Math.abs(turnedRight.cameraYaw-turnedRight.heading)<.50,'chase camera remains behind heading');
 
