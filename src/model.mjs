@@ -14,3 +14,4 @@ export function step(run,input,dt){if(run.phase!=='playing')return run;dt=clamp(
   if(run.phase==='playing'&&(run.z>TUNE.targetZ+12||run.time>TUNE.runSeconds)){run.phase='result';run.result='miss';}
   return run;
 }
+export function advance(run,input,elapsed){let remaining=clamp(elapsed,0,.5);while(remaining>0&&run.phase==='playing'){const tick=Math.min(remaining,.05);step(run,input,tick);remaining-=tick;}return run;}

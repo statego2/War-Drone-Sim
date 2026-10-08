@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {TUNE,makeWorld,newRun,step,vehicleX} from '../src/model.mjs';
+import {TUNE,makeWorld,newRun,step,advance,vehicleX} from '../src/model.mjs';
 
 test('world layout is reproducible and keeps the road corridor open',()=>{
   assert.deepEqual(makeWorld(32),makeWorld(32));
@@ -10,6 +10,12 @@ test('world layout is reproducible and keeps the road corridor open',()=>{
 test('flight is frame independent within practical render rates',()=>{
   const a=newRun(),b=newRun();for(let i=0;i<120;i++)step(a,{x:.3,y:-.25},1/60);for(let i=0;i<60;i++)step(b,{x:.3,y:-.25},1/30);
   assert.ok(Math.abs(a.x-b.x)<.18);assert.ok(Math.abs(a.y-b.y)<.18);assert.ok(Math.abs(a.z-b.z)<.01);
+});
+test('slow render frames advance simulation in bounded substeps',()=>{
+  const slow=newRun(),fast=newRun();slow.world.trees=[];fast.world.trees=[];
+  for(let i=0;i<10;i++)advance(slow,{x:.2,y:-.15},.5);
+  for(let i=0;i<100;i++)advance(fast,{x:.2,y:-.15},.05);
+  assert.ok(Math.abs(slow.z-fast.z)<.01);assert.ok(Math.abs(slow.x-fast.x)<.01);
 });
 test('touch intent moves sideways and changes height inside safe bounds',()=>{
   const run=newRun();for(let i=0;i<70;i++)step(run,{x:1,y:-1},1/60);
