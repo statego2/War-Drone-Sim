@@ -1,6 +1,6 @@
 # War Drone Sim
 
-**Status:** Browser v0.1 on main; experimental polygonal WebGL Open Sky v0.2 on a review branch (2026-10-08); real iPhone playtest pending.  
+**Status:** Playable WebGL Forest Encounter v0.8 on GitHub Pages (2026-10-08); real iPhone playtest pending.  
 **Planning baseline:** 2026-10-08 · **Owner:** repository owner · **Document language:** English (implementation specification), Greek discussion / review welcome.
 
 ## Product
@@ -13,22 +13,19 @@ We are **not** building a real-world training tool, tactical navigation system, 
 
 ## Play the browser prototype
 
-**Open Sky v0.2 is under review on a separate branch:** experimental *real polygonal WebGL 3D* browser world with streaming hilly terrain, 3D pine and broadleaf trees, winding road, freely ascending drone, FPV/chase camera, touch steering and speed toggles. This version is **not yet device-tested** and requires Three.js from jsDelivr.
+**[Play Forest Encounter v0.8](https://statego2.github.io/War-Drone-Sim/)** in a portrait phone browser. The 3D forest contains three fictional empty vehicles. Steer with one drag; full downward drag builds a steep dive. Vehicle contact leaves persistent wreckage, while ground contact immediately gives another drone. A new round starts after three hits.
 
-- Root `index.html` on the **feature branch**: Open Sky WebGL free flight. Once reviewed/merged, this becomes the default root experience.
-- `legacy-canvas.html` on that branch: preserved original v0.1 arcade contact/retry game and fallback if WebGL is unavailable.
-- Run `python3 -m http.server 8765` and visit `http://localhost:8765/` from that checkout; run `npm test` for deterministic game model checks.
-- Review implementation constraints and manual iPhone checklist in [Open Sky v0.2 report](docs/19_WEBGL_3D_OPEN_SKY.md).
-
-The [original v0.1 browser preview](https://raw.githack.com/statego2/War-Drone-Sim/main/index.html) remains on main until the branch is reviewed. *Neither 3D visuals nor stable iPhone framerates have been verified on the target phone yet.*
+- `legacy-canvas.html`: preserved original v0.1 preview and fallback if WebGL is unavailable.
+- Run `python3 -m http.server 8765` and visit `http://localhost:8765/` from a checkout; `npm test` checks the deterministic model.
+- [v0.8 implementation and iPhone checklist](docs/25_FOREST_ENCOUNTER_V08.md). Three.js loads from jsDelivr; phone framerate and game feel remain unverified.
 
 
 ## Work status
 
-- Initial repository was planning-only; the current root `index.html` and `src/` now contain an experimental browser game. Phone feel and performance have not been verified.
-- **Prototype runtime:** main has a dependency-free Canvas preview. The Open Sky branch introduces a real WebGL polygonal world powered by Three.js (CDN dependency), with an isolated free-flight model and legacy Canvas fallback.
+- The root `index.html` now contains the 3D encounter. Phone feel and performance have not been verified.
+- **Prototype runtime:** Three.js WebGL world, an isolated arcade flight and encounter model, with a legacy Canvas fallback.
 - **Primary target:** portrait phone browser. Native packages are no longer the first delivery path.
-- **First gate:** owner has explicitly rejected Canvas road/forest visuals; now validate WebGL forest/flight visually on a real phone before deciding how to reintroduce arcade challenges. No premium assets or monetization before testing.
+- **Next gate:** play a full three-vehicle encounter on iPhone Safari, tune speed/dive/contact/feedback and record real device performance. No premium assets or monetization before testing.
 
 ## Documentation
 
@@ -55,6 +52,7 @@ The [original v0.1 browser preview](https://raw.githack.com/statego2/War-Drone-S
 | [docs/16_RESOURCE_SCHEDULE.md](docs/16_RESOURCE_SCHEDULE.md) | Dependency-validated 20h/week schedule & phase rollups |
 | [docs/17_PROJECT_STATUS.md](docs/17_PROJECT_STATUS.md) | Current true project state, phase evidence and first issues |
 | [docs/19_WEBGL_3D_OPEN_SKY.md](docs/19_WEBGL_3D_OPEN_SKY.md) | Open Sky WebGL implementation, validation and device-risk notes (feature branch) |
+| [docs/25_FOREST_ENCOUNTER_V08.md](docs/25_FOREST_ENCOUNTER_V08.md) | Current browser loop and device acceptance checklist |
 | [docs/planning/github_issue_map.json](docs/planning/github_issue_map.json) | All 55 GitHub issue links indexed by work ID |
 
 ## Execution rules
