@@ -562,5 +562,10 @@ rebuildTiles(true);
 moveTiles(); updateFarLand();
 camera.position.set(0, flight.y + 6, -19);
 updateCamera(.016);
+// Diagnostic-only state for automated interaction tests; no browser location or telemetry.
+window.__openSkySnapshot = () => ({
+  x: flight.x, y: flight.y, z: flight.z, heading: flight.heading,
+  ground: groundHeight(flight.x, flight.z), mode, audioEnabled: sound.enabled
+});
 document.documentElement.dataset.openSkyReady = 'true';
 requestAnimationFrame(frame);
