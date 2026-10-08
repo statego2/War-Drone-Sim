@@ -23,7 +23,8 @@ renderer.setPixelRatio(qualityDpr);
 const scene = new THREE.Scene();
 const clouds = createClouds(THREE,scene,hash);
 scene.fog = new THREE.FogExp2(0xb0beb5, .00032);
-const camera = new THREE.PerspectiveCamera(mobile ? 73 : 70, 1, .15, 6500);
+const baseFov = mobile ? 73 : 70;
+const camera = new THREE.PerspectiveCamera(baseFov, 1, .15, 6500);
 const hemi = new THREE.HemisphereLight(0xcde6ee, 0x39432d, 2.1);
 scene.add(hemi);
 const sunlight = new THREE.DirectionalLight(0xffddaa, 2.6);
@@ -530,10 +531,11 @@ function updateCamera(dt) {
   // small smoothing lag so turns feel physical instead of snapping.
   // Avoid linear interpolation across the -PI/+PI angle discontinuity.
   const yawDifference = Math.atan2(Math.sin(flight.heading-cameraYaw),Math.cos(flight.heading-cameraYaw));
-  cameraYaw += yawDifference*(1-Math.exp(-5.5*dt));
+  // Stable cinematic damping makes the environment easier to read.
+  cameraYaw += yawDifference*(1-Math.exp(-4.4*dt));
   // Camera follows the actual nose-down attitude: steep pitch shows terrain
   // rushing up, rather than staying level while the model dives.
-  cameraPitch += (clamp(.035-flight.pitch*.78,-1.08,.48)-cameraPitch)*(1-Math.exp(-5.5*dt));
+  cameraPitch += (clamp(.035-flight.pitch*.67,-.93,.43)-cameraPitch)*(1-Math.exp(-4.1*dt));
   const dirX = Math.sin(cameraYaw), dirZ = Math.cos(cameraYaw);
   const lookX=dirX*Math.cos(cameraPitch), lookZ=dirZ*Math.cos(cameraPitch);
   const lookY=Math.sin(cameraPitch);
@@ -587,6 +589,14 @@ function frame(now) {
   }
   sky.scale.setScalar(camera.far * .93);
   updateCamera(dt);
+  // Speed conveys energy through the lens rather than altering aircraft physics.
+  const visualSpeed = Math.hypot(flight.vx,flight.vy,flight.vz);
+  const targetFov = baseFov + clamp((visualSpeed - 16) / 90,0,1) * 8;
+  const nextFov = camera.fov + (targetFov-camera.fov)*(1-Math.exp(-2.1*dt));
+  if (Math.abs(nextFov-camera.fov)>.02) {
+    camera.fov=nextFov;
+    camera.updateProjectionMatrix();
+  }
   sky.position.copy(camera.position);
   for (let i = 0; i < rotors.length; i++) rotors[i].rotation.y += dt * (i % 2 ? -43 : 43);
   renderer.render(scene, camera);
