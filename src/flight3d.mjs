@@ -42,42 +42,34 @@ export function makeFlight() {
            yawRate: 0, sideRate: 0, climbRate: 0, speed: 24, throttle: 0.54,
            distance: 0, time: 0, groundContact: false };
 }
-// A camera looking along +Z has its screen-right pointing toward world -X.
-// Calculate movement using the CURRENT camera yaw, not world X or aircraft yaw.
-export function screenRightVector(cameraYaw) {
-  return { x: -Math.cos(cameraYaw), z: Math.sin(cameraYaw) };
-}
-// Screen-relative direct controls: right/right, left/left, drag-up/ascend.
+// The renderer looks toward +Z. Positive touch X (screen right) means
+// NEGATIVE heading around Y. One input steers the craft and chase camera.
+export const TURN_RATE = 1.34;
+export const shortestAngle = (from, to) => Math.atan2(Math.sin(to-from), Math.cos(to-from));
 export function stepFlight(f, input, dt) {
-  dt = clamp(dt, 0, 0.05);
-  const horizontal = clamp(input.x || 0, -1, 1);
-  const vertical = clamp(input.y || 0, -1, 1);
-  const cameraYaw = Number.isFinite(input.cameraYaw) ? input.cameraYaw : f.heading;
-  const right = screenRightVector(cameraYaw);
-  const response = 1 - Math.exp(-13 * dt);
-  f.sideRate = lerp(f.sideRate || 0, horizontal * 29, response);
-  f.climbRate = lerp(f.climbRate, vertical * 24, response);
-  f.throttle = clamp(f.throttle, -0.6, 1);
-  f.speed = lerp(f.speed, f.throttle * 47, 1 - Math.exp(-4 * dt));
-
-  // The camera looks toward cameraYaw. Move in the same direction as the finger
-  // appears to move on screen, even after the player orbits the camera.
-  const dx = (Math.sin(f.heading) * f.speed + right.x * f.sideRate) * dt;
-  const dz = (Math.cos(f.heading) * f.speed + right.z * f.sideRate) * dt;
-  f.x += dx;
-  f.z += dz;
-  f.y += f.climbRate * dt;
-  f.distance += Math.hypot(dx, dz);
-  f.time += dt;
-  const floor = groundHeight(f.x, f.z) + 2.2;
+  if (f.phase && f.phase !== 'playing') return f;
+  dt = clamp(dt,0,.05);
+  const steer = clamp(input.x || 0,-1,1);
+  const climb = clamp(input.y || 0,-1,1);
+  const response = 1-Math.exp(-12*dt);
+  // No sideways-only controls or secondary LOOK/FACE state.
+  f.yawRate = lerp(f.yawRate,-steer*TURN_RATE,response);
+  f.climbRate = lerp(f.climbRate,climb*24,response);
+  f.heading += f.yawRate*dt;
+  // Keep heading bounded through repeated full orbits.
+  f.heading = Math.atan2(Math.sin(f.heading),Math.cos(f.heading));
+  f.throttle = clamp(f.throttle,-.6,1);
+  f.speed = lerp(f.speed,f.throttle*47,1-Math.exp(-4*dt));
+  const dx = Math.sin(f.heading)*f.speed*dt;
+  const dz = Math.cos(f.heading)*f.speed*dt;
+  f.x += dx; f.z += dz; f.y += f.climbRate*dt;
+  f.distance += Math.hypot(dx,dz); f.time += dt;
+  const floor = groundHeight(f.x,f.z)+2.2;
   f.groundContact = f.y < floor;
-  if (f.groundContact) {
-    f.y = floor;
-    f.climbRate = Math.max(0, f.climbRate);
-  }
-  f.bank = lerp(f.bank, -horizontal * 0.14, response);
-  f.pitch = lerp(f.pitch, vertical * 0.11, response);
-  f.yawRate = 0;
+  if(f.groundContact){ f.y=floor;f.climbRate=Math.max(0,f.climbRate); }
+  f.bank = lerp(f.bank,-steer*.20,response);
+  f.pitch = lerp(f.pitch,climb*.11,response);
+  f.sideRate = 0;
   return f;
 }
 
