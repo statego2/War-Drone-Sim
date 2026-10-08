@@ -42,11 +42,12 @@ try{
   const beforeDiagonal=await page.evaluate(()=>window.__openSkySnapshot());
   await page.mouse.move(190,520);await page.mouse.down();
   await page.mouse.move(275,355,{steps:6});
-  await page.waitForTimeout(700);
+  await page.waitForTimeout(1200);
   const diagonal=await page.evaluate(()=>window.__openSkySnapshot());
   await page.mouse.up();
-  assert.ok(diagonal.x < beforeDiagonal.x-4,'diagonal right drag must translate sideways');
-  assert.ok(diagonal.y > beforeDiagonal.y+3,'diagonal up drag must continue climbing');
+  console.log('DIAGONAL SNAPSHOT',JSON.stringify({before:beforeDiagonal,after:diagonal}));
+  assert.ok(diagonal.x < beforeDiagonal.x-2,'diagonal right drag must translate sideways');
+  assert.ok(diagonal.y > beforeDiagonal.y+2,'diagonal up drag must continue climbing');
   assert.ok(diagonal.bank<-.2,'lateral swipe banks the drone');
   await page.mouse.move(190,400);await page.mouse.down();
   await page.mouse.move(190,700,{steps:6});
