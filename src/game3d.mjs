@@ -496,7 +496,7 @@ canvas.addEventListener('pointerdown', e => {
 });
 canvas.addEventListener('pointermove', e => {
   if (e.pointerId !== pointer?.id) return;
-  // Right swipe turns right on screen, left swipe turns left, upward swipe climbs.
+  // Drag right/left for lateral bank + assisted turn; combine both axes for diagonal flight.
   pointer.dx = clamp((e.clientX-pointer.x)/85,-1,1);
   pointer.dy = clamp((pointer.y-e.clientY)/95,-1,1);
 });
@@ -549,7 +549,7 @@ function startFlight() {
   spawnDrone(); mode = 'flying'; view = 'chase'; pointer = null;
   cameraYaw = flight.heading; cameraPitch=.05; throttleMode='cruise';
   drone.visible = true; boostButton.textContent = 'CRUISE'; viewButton.textContent = 'FPV';
-  hint.textContent = 'Στρίψε με το δάχτυλο · τέρμα κάτω: βουτιά στα οχήματα';
+  hint.textContent = 'Σύρε διαγώνια για πλάγια πτήση · τέρμα κάτω: γρήγορη βουτιά';
   overlay.className = 'panel hidden'; hud.classList.remove('hidden');
   pauseButton.classList.remove('hidden'); viewButton.classList.remove('hidden'); boostButton.classList.remove('hidden');
   warning.textContent = '';
@@ -728,7 +728,7 @@ updateCamera(.016);
 window.__openSkySnapshot = () => ({
   x: flight.x, y: flight.y, z: flight.z, heading: flight.heading,
   cameraYaw, cameraPitch, throttleMode, speed:flight.speed,
-  vx:flight.vx,vy:flight.vy,vz:flight.vz,pitch:flight.pitch,
+  vx:flight.vx,vy:flight.vy,vz:flight.vz,pitch:flight.pitch,bank:flight.bank,sideRate:flight.sideRate,
   ground: groundHeight(flight.x, flight.z), mode, audioEnabled: sound.enabled
   , hits:encounter.hits, drones:encounter.drones, vehicles:encounter.vehicles.map(v=>v.destroyed)
 });
