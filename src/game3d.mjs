@@ -40,7 +40,34 @@ const stripeMat = new THREE.MeshBasicMaterial({ color: 0xb7aa83 });
 const leafMat = new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true });
 const barkMat = new THREE.MeshLambertMaterial({ color: 0x42352b });
 const stoneMat = new THREE.MeshLambertMaterial({ color: 0x929081, flatShading: true });
-const treeCone = new THREE.ConeGeometry(1, 1, 7);
+// Procedural layered conifers: each is an actual irregular 3D mesh, not a sprite or 2D triangle.
+function pineGeometry() {
+  const vertices = [], indices = [];
+  const layers = [
+    { base: -.49, tip: .11, radius: .50 },
+    { base: -.21, tip: .31, radius: .40 },
+    { base: .08, tip: .48, radius: .30 },
+    { base: .31, tip: .55, radius: .18 }
+  ];
+  for (let tier = 0; tier < layers.length; tier++) {
+    const { base, tip, radius } = layers[tier], start = vertices.length / 3, slices = 9;
+    for (let j = 0; j < slices; j++) {
+      const a = j * Math.PI * 2 / slices;
+      const uneven = 1 + Math.sin(j * 7.23 + tier * 2.67) * .095;
+      vertices.push(Math.cos(a) * radius * uneven, base + Math.sin(j * 4 + tier) * .024, Math.sin(a) * radius * uneven);
+    }
+    vertices.push(0, tip, 0);
+    for (let j = 0; j < slices; j++) {
+      indices.push(start + j, start + slices, start + (j + 1) % slices);
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+  g.setIndex(indices);
+  g.computeVertexNormals();
+  return g;
+}
+const treeCone = pineGeometry();
 const treeTrunk = new THREE.CylinderGeometry(.28, .41, 1, 5);
 const rockGeo = new THREE.DodecahedronGeometry(1, 0);
 const temp = new THREE.Object3D();
@@ -134,12 +161,11 @@ function addForest(group, cx, cz, near) {
     else trees.push({ x, z, h, size, r: 1.7 + size * .19, color: greenPalette[Math.floor(hash(i + cx * 9, cz * 7 + i) * greenPalette.length)], turn: hash(i, cz * 2 + cx) * Math.PI * 2 });
   }
   if (trees.length) {
-    const crown = instanced(treeCone, leafMat, trees.length * 2, true);
+    const crown = instanced(treeCone, leafMat, trees.length, true);
     const trunks = instanced(treeTrunk, barkMat, trees.length);
     trees.forEach((t, i) => {
-      setInstance(trunks, i, t.x, t.h + t.size * .27, t.z, .63, t.size * .54, .63, t.turn);
-      setInstance(crown, i * 2, t.x, t.h + t.size * .52, t.z, t.r, t.size * .75, t.r, t.turn, t.color);
-      setInstance(crown, i * 2 + 1, t.x, t.h + t.size * .83, t.z, t.r * .7, t.size * .64, t.r * .7, t.turn + .2, t.color);
+      setInstance(trunks, i, t.x, t.h + t.size * .29, t.z, .65, t.size * .58, .65, t.turn);
+      setInstance(crown, i, t.x, t.h + t.size * .68, t.z, t.r * 2.0, t.size, t.r * 2.0, t.turn, t.color);
     });
     trunks.instanceMatrix.needsUpdate = true;
     crown.instanceMatrix.needsUpdate = true;
@@ -185,10 +211,7 @@ function makeTile(cx, cz, near) {
   const terrain = ownedMesh(terrainGeometry(cx, cz, near ? 26 : 14), terrainMat);
   group.add(terrain);
   // Asphalt/shoulders follow the hills; each ribbon is genuine triangulated geometry.
-  const possible = [cz * TILE, cz * TILE + TILE / 2, (cz + 1) * TILE].some(z => {
-    const x = roadCenter(z);
-    return x > cx * TILE - 15 && x < (cx + 1) * TILE + 15;
-  });
+  const possible = cx === Math.floor(roadCenter((cz + .5) * TILE) / TILE);
   if (possible) {
     group.add(makeRoadStrip(cx, cz, 6.2, .4, shoulderMat));
     group.add(makeRoadStrip(cx, cz, 4.65, .47, roadMat));
@@ -210,7 +233,8 @@ function disposeTile(tile) {
 }
 function rebuildTiles(force = false) {
   const cx = Math.floor(flight.x / TILE), cz = Math.floor(flight.z / TILE);
-  const radius = flight.y > 900 ? 4 : flight.y > 230 ? 3 : 2;
+  // High altitude is represented by far-terrain LOD; don't draw hundreds of tiny forest chunks.
+  const radius = 2;
   const sector = cx + ':' + cz + ':' + radius;
   if (sector === lastSector && !force) return;
   lastSector = sector;
@@ -233,15 +257,19 @@ function moveTiles() {
 // Distant simplified land ensures high-altitude views do not end at a square forest edge.
 const farLand = new THREE.Mesh(new THREE.BufferGeometry(), terrainMat);
 scene.add(farLand);
-let farX = NaN, farZ = NaN;
+let farX = NaN, farZ = NaN, farScale = NaN;
 function updateFarLand() {
   const gx = Math.floor(flight.x / (TILE * 2)) * TILE * 2;
   const gz = Math.floor(flight.z / (TILE * 2)) * TILE * 2;
-  if (gx !== farX || gz !== farZ) {
-    farX = gx; farZ = gz;
-    const positions = [], colors = [], indices = [], n = 60, size = 9400;
+  const aboveGround = Math.max(0, flight.y - groundHeight(flight.x, flight.z));
+  const size = Math.max(9400, Math.min(1200000, aboveGround * 6.5));
+  // Regenerate only when the player moves a whole sector or the high-altitude LOD changes.
+  const nextScale = Math.ceil(size / 1200) * 1200;
+  if (gx !== farX || gz !== farZ || nextScale !== farScale) {
+    farX = gx; farZ = gz; farScale = nextScale;
+    const positions = [], colors = [], indices = [], n = 60;
     for (let j = 0; j <= n; j++) for (let i = 0; i <= n; i++) {
-      const x = (i / n - .5) * size, z = (j / n - .5) * size;
+      const x = (i / n - .5) * nextScale, z = (j / n - .5) * nextScale;
       const wx = gx + x, wz = gz + z, h = groundHeight(wx, wz) - 22;
       positions.push(x, h, z);
       const c = terrainColor(wx, h, wz); colors.push(c.r, c.g, c.b);
@@ -369,14 +397,15 @@ function updateCamera(dt) {
   if (view === 'fpv') {
     cameraTarget.set(0, flight.y + .35, 0);
     camera.position.lerp(cameraTarget, 1 - Math.exp(-8 * dt));
+    camera.up.set(Math.sin(flight.bank) * .09, 1, 0).normalize();
     camera.lookAt(dirX * 50, flight.y + 3 + flight.pitch * 27, dirZ * 50);
   } else {
     cameraTarget.set(-dirX * 13, flight.y + 4.1, -dirZ * 13);
     camera.position.lerp(cameraTarget, 1 - Math.exp(-5 * dt));
+    camera.up.set(Math.sin(flight.bank) * .09, 1, 0).normalize();
     camera.lookAt(dirX * 23, flight.y + 1.7 + flight.pitch * 17, dirZ * 23);
   }
-  camera.up.set(Math.sin(flight.bank) * .09, 1, 0).normalize();
-  camera.updateProjectionMatrix();
+  // Camera matrix is updated only when the projection actually changes (resize / view distance).
   drone.position.set(0, flight.y, 0);
   drone.rotation.order = 'YXZ';
   drone.rotation.set(-flight.pitch * .9, flight.heading, flight.bank, 'YXZ');
@@ -396,8 +425,12 @@ function frame(now) {
   }
   const height = Math.max(0, flight.y - groundHeight(flight.x, flight.z));
   scene.fog.density = .00034 / (1 + height / 2100);
-  camera.far = Math.max(6500, height * 2.5 + 4000);
-  sky.scale.setScalar(camera.far * .9);
+  const nextFar = Math.max(6500, Math.min(1600000, height * 3.4 + 4000));
+  if (Math.abs(camera.far - nextFar) > 10) {
+    camera.far = nextFar;
+    camera.updateProjectionMatrix();
+  }
+  sky.scale.setScalar(camera.far * .93);
   updateCamera(dt);
   sky.position.copy(camera.position);
   for (let i = 0; i < rotors.length; i++) rotors[i].rotation.y += dt * (i % 2 ? -43 : 43);
