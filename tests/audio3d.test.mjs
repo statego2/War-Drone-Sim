@@ -75,6 +75,7 @@ test('gesture gating, dynamic updates, SFX, mute and cleanup are browser-safe', 
     audio.cue('start');
     audio.cue('mode');
     audio.cue('view');
+    audio.cue('miss');
     audio.impact(true);
     audio.impact(false);
     audio.cue('respawn');
