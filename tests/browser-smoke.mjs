@@ -37,6 +37,7 @@ try{
   await page.waitForTimeout(1950);
   const reversing=await page.evaluate(()=>window.__openSkySnapshot());
   await page.keyboard.up('ArrowUp');
+  console.log('REVERSE SNAPSHOT',JSON.stringify({before:running,after:reversing}));
   assert.ok(reversing.pullback>.9 && reversing.pitch < -1.05,'full up input raises nose into reverse glide');
   assert.ok(reversing.speed < -8,'held full up input acquires actual rearward speed');
   await page.mouse.move(190,540);await page.mouse.down();
