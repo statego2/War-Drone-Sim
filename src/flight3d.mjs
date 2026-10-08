@@ -29,32 +29,42 @@ export function groundHeight(x, z) {
 export function makeFlight() {
   const x = roadCenter(0), z = 10;
   return { x, y: groundHeight(x, z) + 17, z, heading: 0, bank: 0, pitch: 0,
-           yawRate: 0, climbRate: 0, speed: 24, throttle: 0.54,
+           yawRate: 0, sideRate: 0, climbRate: 0, speed: 24, throttle: 0.54,
            distance: 0, time: 0, groundContact: false };
 }
+// Screen-relative direct controls: right/right, left/left, drag-up/ascend.
 export function stepFlight(f, input, dt) {
   dt = clamp(dt, 0, 0.05);
-  const turn = clamp(input.x || 0, -1, 1), climb = clamp(input.y || 0, -1, 1);
-  const targetYaw = turn * 0.92;
-  const targetClimb = climb * 23;
-  const ease = 1 - Math.exp(-4.8 * dt);
-  f.yawRate = lerp(f.yawRate, targetYaw, ease);
-  f.climbRate = lerp(f.climbRate, targetClimb, ease);
+  const horizontal = clamp(input.x || 0, -1, 1);
+  const vertical = clamp(input.y || 0, -1, 1);
+  const response = 1 - Math.exp(-13 * dt);
+  f.sideRate = lerp(f.sideRate || 0, horizontal * 29, response);
+  f.climbRate = lerp(f.climbRate, vertical * 24, response);
   f.throttle = clamp(f.throttle, 0, 1);
   f.speed = lerp(f.speed, f.throttle * 47, 1 - Math.exp(-2.5 * dt));
-  f.heading += f.yawRate * dt;
-  if (Math.abs(f.heading) > Math.PI * 2) f.heading %= Math.PI * 2;
-  const dx = Math.sin(f.heading) * f.speed * dt;
-  const dz = Math.cos(f.heading) * f.speed * dt;
-  f.x += dx; f.z += dz; f.y += f.climbRate * dt;
-  f.distance += Math.hypot(dx, dz); f.time += dt;
+
+  // Stable chase heading: lateral commands translate the aircraft, not rotate
+  // the horizon or cause confusing delayed turns. This is an arcade model.
+  const sx = Math.cos(f.heading), sz = -Math.sin(f.heading);
+  const dx = (Math.sin(f.heading) * f.speed + sx * f.sideRate) * dt;
+  const dz = (Math.cos(f.heading) * f.speed + sz * f.sideRate) * dt;
+  f.x += dx;
+  f.z += dz;
+  f.y += f.climbRate * dt;
+  f.distance += Math.hypot(dx, dz);
+  f.time += dt;
   const floor = groundHeight(f.x, f.z) + 2.2;
   f.groundContact = f.y < floor;
-  if (f.groundContact) { f.y = floor; f.climbRate = Math.max(0, f.climbRate); }
-  f.bank = lerp(f.bank, -turn * 0.25, ease);
-  f.pitch = lerp(f.pitch, climb * 0.20, ease);
+  if (f.groundContact) {
+    f.y = floor;
+    f.climbRate = Math.max(0, f.climbRate);
+  }
+  f.bank = lerp(f.bank, -horizontal * 0.14, response);
+  f.pitch = lerp(f.pitch, vertical * 0.11, response);
+  f.yawRate = 0;
   return f;
 }
+
 export function advanceFlight(f, input, elapsed) {
   let left = clamp(elapsed, 0, 0.25);
   while (left > 0.000001) {
