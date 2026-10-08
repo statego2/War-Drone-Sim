@@ -2,6 +2,7 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.m
 import { TILE, clamp, hash, roadCenter, groundHeight, makeFlight, advanceFlight } from './flight3d.mjs';
 import { createFlightAudio } from './audio3d.mjs';
 import { createScenery } from './scenery3d.mjs';
+import { createClouds } from './atmosphere3d.mjs';
 
 // A floating-origin, streamed polygonal world. No real-drone targeting or hardware integration.
 const $ = id => document.getElementById(id);
@@ -19,7 +20,8 @@ renderer.toneMappingExposure = 1.27;
 let qualityDpr = Math.min(window.devicePixelRatio || 1, mobile ? 1.45 : 1.85);
 renderer.setPixelRatio(qualityDpr);
 const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0x9eafa8, .00034);
+const clouds = createClouds(THREE,scene,hash);
+scene.fog = new THREE.FogExp2(0xb0beb5, .00032);
 const camera = new THREE.PerspectiveCamera(mobile ? 73 : 70, 1, .15, 6500);
 const hemi = new THREE.HemisphereLight(0xcde6ee, 0x39432d, 2.1);
 scene.add(hemi);
@@ -100,6 +102,17 @@ function pineGeometry() {
 }
 const treeCone = pineGeometry();
 const treeTrunk = new THREE.CylinderGeometry(.28, .41, 1, 5);
+// Diffuse contact shadows ground objects, using one instanced draw call per tile.
+const shadowCanvas=document.createElement('canvas');shadowCanvas.width=shadowCanvas.height=64;
+const shadowCtx=shadowCanvas.getContext('2d');
+const shade=shadowCtx.createRadialGradient(32,32,1,32,32,31);
+shade.addColorStop(0,'rgba(0,0,0,.44)');
+shade.addColorStop(.48,'rgba(0,0,0,.19)');
+shade.addColorStop(1,'rgba(0,0,0,0)');
+shadowCtx.fillStyle=shade;shadowCtx.fillRect(0,0,64,64);
+const shadowTexture=new THREE.CanvasTexture(shadowCanvas);
+const shadowMat=new THREE.MeshBasicMaterial({map:shadowTexture,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-1});
+const shadowGeo=new THREE.PlaneGeometry(1,1);shadowGeo.rotateX(-Math.PI/2);
 const rockGeo = new THREE.DodecahedronGeometry(1, 0);
 const broadGeo = new THREE.IcosahedronGeometry(1, 2);
 const broadPalette = [0x4d6740, 0x688050, 0x7d8c54, 0x496e42, 0x73845d, 0x42644b];
@@ -202,6 +215,12 @@ function addForest(group, cx, cz, near) {
     if (i % 13 === 0) rocks.push({ x, z, h, s: 1 + hash(i + cx, cz) * 2.3 });
     else if (i % 6 === 0) broad.push(tree);
     else trees.push(tree);
+  }
+  if (trees.length || broad.length) {
+    const combined=trees.concat(broad),shadows=instanced(shadowGeo,shadowMat,combined.length);
+    combined.forEach((t,i)=>setInstance(shadows,i,t.x,t.h+.19,t.z,t.r*3.1,1,t.r*3.1));
+    shadows.instanceMatrix.needsUpdate=true;
+    group.add(shadows);
   }
   if (trees.length) {
     const crown = instanced(treeCone, leafMat, trees.length, true);
@@ -360,6 +379,10 @@ const rotorMat = new THREE.MeshBasicMaterial({ color: 0x263c3c, transparent: tru
 const rotors = [];
 addBox(drone, 1.42, .4, 2.15, 0, 0, 0, shellMat);
 addBox(drone, .9, .15, 1.25, 0, .26, -.1, frameMat);
+const upperShell = new THREE.Mesh(new THREE.CapsuleGeometry(.51,1.35,4,12),shellMat);
+upperShell.rotation.x=Math.PI/2;upperShell.position.set(0,.14,.08);drone.add(upperShell);
+const avionics = new THREE.Mesh(new THREE.BoxGeometry(.62,.13,.83),frameMat);
+avionics.position.set(0,.64,-.15);drone.add(avionics);
 for (const x of [-1.55, 1.55]) for (const z of [-1.25, 1.25]) {
   const length = Math.hypot(x, z);
   const arm = new THREE.Mesh(new THREE.CylinderGeometry(.09, .11, length, 7), frameMat);
@@ -376,6 +399,16 @@ for (const x of [-1.55, 1.55]) for (const z of [-1.25, 1.25]) {
 }
 const lens = new THREE.Mesh(new THREE.SphereGeometry(.23, 10, 8), new THREE.MeshStandardMaterial({ color: 0x121a1a, metalness: .5, roughness: .17 }));
 lens.position.set(0, -.15, 1.07); drone.add(lens);
+const cameraGimbal=new THREE.Mesh(new THREE.CylinderGeometry(.27,.33,.3,14),frameMat);
+cameraGimbal.rotation.x=Math.PI/2;cameraGimbal.position.set(0,-.46,1.01);drone.add(cameraGimbal);
+const statusGreen=new THREE.MeshBasicMaterial({color:0x78f6aa}),statusRed=new THREE.MeshBasicMaterial({color:0xff7660});
+for(const side of [-1,1]){
+  const skid=addBox(drone,.075,.075,2.15,side*.63,-.45,0,frameMat);
+  addBox(drone,.08,.52,.08,side*.63,-.26,.62,frameMat);
+  addBox(drone,.08,.52,.08,side*.63,-.26,-.64,frameMat);
+  const led=new THREE.Mesh(new THREE.SphereGeometry(.07,8,6),side<0?statusRed:statusGreen);
+  led.position.set(side*1.55,.18,1.25);drone.add(led);
+}
 drone.scale.setScalar(.74);
 
 // Controls: relative finger drag = turn + climb. No military flight-control mappings.
@@ -498,6 +531,7 @@ function frame(now) {
     sound.update(flight.speed, Math.max(0, flight.y-groundHeight(flight.x,flight.z)),dt);
   }
   const height = Math.max(0, flight.y - groundHeight(flight.x, flight.z));
+  clouds.update(flight.x,flight.y,flight.z,now/1000);
   scene.fog.density = .00034 / (1 + height / 2100);
   const nextFar = Math.max(6500, Math.min(1600000, height * 3.4 + 4000));
   if (Math.abs(camera.far - nextFar) > 10) {
