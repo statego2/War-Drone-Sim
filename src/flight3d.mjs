@@ -61,6 +61,11 @@ export function stepFlight(f,input,dt) {
   const steer=clamp(input.x||0,-1,1);
   const vertical=clamp(input.y||0,-1,1);
   const down=Math.max(0,-vertical),up=Math.max(0,vertical);
+  // Intent comes directly from ONE finger, not from a speed-mode selector.
+  // A gentle up input climbs; further up slows to a near-hover, then
+  // accelerates backward. Speed changes are continuous in world space.
+  const brakeIntent=smooth((up-.40)/.34);
+  const reverseIntent=smooth((up-.70)/.28);
   // Full swipe down creates a steep nose-down attitude. Small downward
   // movements remain controllable; no separate "dive" button.
   const desiredPitch=down>0
@@ -70,7 +75,8 @@ export function stepFlight(f,input,dt) {
   const pullback=smooth((-f.pitch-.49)/.59);
   // Horizontal drag primarily banks and translates; cruise gently turns.
   // HOVER has no commanded yaw so left/right really travels sideways.
-  const turnAuthority=Math.min(1,Math.abs(f.throttle)*1.5);
+  // During near-hover or reverse, horizontal input favors clean side travel.
+  const turnAuthority=Math.min(1,Math.abs(f.throttle)*1.5)*(1-.72*brakeIntent);
   // Preserve camera-right strafing while backing up: do not let full
   // pullback also spin the craft around and invert diagonal controls.
   f.yawRate=lerp(f.yawRate,-steer*TURN_RATE*.72*turnAuthority*(1-.9*pullback),1-Math.exp(-10*dt));
@@ -95,14 +101,18 @@ export function stepFlight(f,input,dt) {
   // Gentle nose-up climbs retain cruise. Committed nose-up gradually points
   // the arcade movement impulse rearward, including in HOVER. Existing
   // velocity must actually bleed off before reversing; there is no snap.
-  const rearward=pullback*38*Math.max(.35,Math.abs(f.throttle));
-  const forwardTarget=f.throttle*78*(1-pullback)+diveDrive-rearward;
-  const forwardAcceleration=clamp((forwardTarget-along)*lerp(2.2,1.15,tilt),-82,65);
+  // The thumb controls desired motion without waiting for the nose animation.
+  // Velocity is accelerated toward the target — never set instantaneously.
+  const rearward=reverseIntent*37;
+  const forwardTarget=f.throttle*78*(1-brakeIntent)+diveDrive-rearward;
+  const response=lerp(2.2,4.0,brakeIntent);
+  const forwardAcceleration=clamp((forwardTarget-along)*lerp(response,1.55,tilt),-128,90);
   // Independent sideways movement works even in HOVER. Chase camera-right
   // is body -X here; combining axes permits all four diagonals.
   // Extra lateral authority at full pullback keeps reversed diagonals fun
   // rather than letting backward momentum cancel the sideways gesture.
-  const lateralAcceleration=-across*lerp(2.7,2.05,tilt)-steer*27*(1+.95*pullback);
+  // Faster sideways corrections, including when braking/reversing.
+  const lateralAcceleration=-across*lerp(3.5,2.4,tilt)-steer*34*(1+.45*reverseIntent);
   f.vx+=(fx*forwardAcceleration+rx*lateralAcceleration)*dt;
   f.vz+=(fz*forwardAcceleration+rz*lateralAcceleration)*dt;
 
@@ -128,6 +138,8 @@ export function stepFlight(f,input,dt) {
   }
   f.sideRate=f.vx*rx+f.vz*rz;
   f.pullback=pullback;
+  f.brakeIntent=brakeIntent;
+  f.reverseIntent=reverseIntent;
   return f;
 }
 
