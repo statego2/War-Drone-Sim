@@ -112,7 +112,7 @@ export function stepFlight(f,input,dt) {
   // Extra lateral authority at full pullback keeps reversed diagonals fun
   // rather than letting backward momentum cancel the sideways gesture.
   // Faster sideways corrections, including when braking/reversing.
-  const lateralAcceleration=-across*lerp(3.5,2.4,tilt)-steer*34*(1+.45*reverseIntent);
+  const lateralAcceleration=-across*lerp(3.5,2.4,tilt)-steer*(34+18*brakeIntent)*(1+.3*reverseIntent);
   f.vx+=(fx*forwardAcceleration+rx*lateralAcceleration)*dt;
   f.vz+=(fz*forwardAcceleration+rz*lateralAcceleration)*dt;
 
