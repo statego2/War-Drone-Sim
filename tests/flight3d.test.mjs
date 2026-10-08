@@ -210,3 +210,14 @@ test('combined steering and dive remains consistent across 30 and 60 FPS steps',
   for(const k of ['x','y','z','vx','vy','vz'])
     assert.ok(Math.abs(slow[k]-fast[k])<1.6,k+' varies too much with frame rate');
 });
+
+test('coarse browser frame ends at the FIRST ground contact rather than sliding along terrain', () => {
+  const f=makeFlight();
+  f.y=groundHeight(f.x,f.z)+1.55;
+  f.vy=-20;
+  advanceFlight(f,{x:0,y:-1},.25);
+  assert.equal(f.groundContact,true);
+  assert.ok(f.time<=.025001,'first substep contact ends the frame early');
+  assert.ok(f.y>=groundHeight(f.x,f.z)+1.4-.001);
+  assert.ok(f.vy<0,'the impact velocity is preserved');
+});
