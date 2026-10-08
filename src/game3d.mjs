@@ -1,12 +1,17 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
-import { TILE, clamp, hash, roadCenter, groundHeight, makeFlight, advanceFlight } from './flight3d.mjs';
+import { TILE, clamp, hash, roadCenter, groundHeight, makeFlight, advanceFlight, LAKE, lakeProximity } from './flight3d.mjs';
+import { createFlightAudio } from './audio3d.mjs';
+import { createScenery } from './scenery3d.mjs';
+import { createClouds } from './atmosphere3d.mjs';
 
 // A floating-origin, streamed polygonal world. No real-drone targeting or hardware integration.
 const $ = id => document.getElementById(id);
 const canvas = $('scene'), overlay = $('overlay'), primary = $('primary');
 const hud = $('hud'), pauseButton = $('pause'), distanceEl = $('distance');
 const altitudeEl = $('altitude'), speedEl = $('speed'), hint = $('hint');
-const viewButton = $('view-mode'), boostButton = $('boost'), warning = $('warning');
+const viewButton = $('view-mode'), boostButton = $('boost'), muteButton = $('sound-toggle'), warning = $('warning');
+const sound = createFlightAudio();
+const scenery = createScenery(THREE, { TILE, hash, groundHeight, roadCenter, lakeProximity });
 const mobile = matchMedia('(pointer: coarse)').matches;
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
 renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -15,7 +20,8 @@ renderer.toneMappingExposure = 1.27;
 let qualityDpr = Math.min(window.devicePixelRatio || 1, mobile ? 1.45 : 1.85);
 renderer.setPixelRatio(qualityDpr);
 const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0x9eafa8, .00034);
+const clouds = createClouds(THREE,scene,hash);
+scene.fog = new THREE.FogExp2(0xb0beb5, .00032);
 const camera = new THREE.PerspectiveCamera(mobile ? 73 : 70, 1, .15, 6500);
 const hemi = new THREE.HemisphereLight(0xcde6ee, 0x39432d, 2.1);
 scene.add(hemi);
@@ -34,8 +40,33 @@ sky.frustumCulled = false;
 sky.renderOrder = -100;
 scene.add(sky);
 
-const terrainMat = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.FrontSide });
-const roadMat = new THREE.MeshLambertMaterial({ color: 0x4b4b42, roughness: 1 });
+// Micro-detail texture prevents the procedural ground from looking like a uniform
+// green plastic surface. Generated locally, no paid/external imagery.
+function surfaceTexture(type) {
+  const c = document.createElement('canvas'); c.width = c.height = 192;
+  const g = c.getContext('2d'), data=g.createImageData(192,192);
+  let seed = type === 'grass' ? 729 : 181;
+  for(let i=0;i<data.data.length;i+=4) {
+    seed = (Math.imul(seed,1664525)+1013904223)>>>0;
+    const grain=(seed>>>16)/65535;
+    const base=type==='grass'? 218:169;
+    const v=Math.floor(base+(grain-.5)*(type==='grass'?32:43));
+    data.data[i]=v;
+    data.data[i+1]=type==='grass'?Math.min(255,v+8):v;
+    data.data[i+2]=type==='grass'?Math.min(255,v+1):v;
+    data.data[i+3]=255;
+  }
+  g.putImageData(data,0,0);
+  const texture=new THREE.CanvasTexture(c);
+  texture.wrapS=texture.wrapT=THREE.RepeatWrapping;
+  texture.repeat.set(type==='grass'?6:1, type==='grass'?6:11);
+  texture.colorSpace=THREE.SRGBColorSpace;
+  texture.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());
+  return texture;
+}
+const terrainTex = surfaceTexture('grass'), roadTex = surfaceTexture('road');
+const terrainMat = new THREE.MeshLambertMaterial({ vertexColors: true, map: terrainTex, side: THREE.FrontSide });
+const roadMat = new THREE.MeshLambertMaterial({ color: 0x5d615e, map: roadTex });
 const shoulderMat = new THREE.MeshLambertMaterial({ color: 0x82785f });
 const stripeMat = new THREE.MeshBasicMaterial({ color: 0xb7aa83 });
 const leafMat = new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true });
@@ -48,10 +79,11 @@ function pineGeometry() {
     { base: -.49, tip: .11, radius: .50 },
     { base: -.21, tip: .31, radius: .40 },
     { base: .08, tip: .48, radius: .30 },
-    { base: .31, tip: .55, radius: .18 }
+    { base: .31, tip: .55, radius: .18 },
+    { base: .44, tip: .65, radius: .10 }
   ];
   for (let tier = 0; tier < layers.length; tier++) {
-    const { base, tip, radius } = layers[tier], start = vertices.length / 3, slices = 9;
+    const { base, tip, radius } = layers[tier], start = vertices.length / 3, slices = 11;
     for (let j = 0; j < slices; j++) {
       const a = j * Math.PI * 2 / slices;
       const uneven = 1 + Math.sin(j * 7.23 + tier * 2.67) * .095;
@@ -70,11 +102,22 @@ function pineGeometry() {
 }
 const treeCone = pineGeometry();
 const treeTrunk = new THREE.CylinderGeometry(.28, .41, 1, 5);
+// Diffuse contact shadows ground objects, using one instanced draw call per tile.
+const shadowCanvas=document.createElement('canvas');shadowCanvas.width=shadowCanvas.height=64;
+const shadowCtx=shadowCanvas.getContext('2d');
+const shade=shadowCtx.createRadialGradient(32,32,1,32,32,31);
+shade.addColorStop(0,'rgba(0,0,0,.44)');
+shade.addColorStop(.48,'rgba(0,0,0,.19)');
+shade.addColorStop(1,'rgba(0,0,0,0)');
+shadowCtx.fillStyle=shade;shadowCtx.fillRect(0,0,64,64);
+const shadowTexture=new THREE.CanvasTexture(shadowCanvas);
+const shadowMat=new THREE.MeshBasicMaterial({map:shadowTexture,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-1});
+const shadowGeo=new THREE.PlaneGeometry(1,1);shadowGeo.rotateX(-Math.PI/2);
 const rockGeo = new THREE.DodecahedronGeometry(1, 0);
-const broadGeo = new THREE.IcosahedronGeometry(1, 1);
-const broadPalette = [0x405d36, 0x566943, 0x6b7848, 0x3b5839, 0x667247];
+const broadGeo = new THREE.IcosahedronGeometry(1, 2);
+const broadPalette = [0x4d6740, 0x688050, 0x7d8c54, 0x496e42, 0x73845d, 0x42644b];
 const temp = new THREE.Object3D();
-const greenPalette = [0x203e33, 0x294938, 0x31503c, 0x3b563e, 0x435b42, 0x365243];
+const greenPalette = [0x213e32, 0x294d36, 0x375740, 0x305238, 0x466344, 0x2c4d3f, 0x4c5e39, 0x335f45];
 const tiles = new Map();
 let flight = makeFlight(), mode = 'home', view = 'chase', boost = false, last = 0, lastSector = '', frameCount = 0, smoothMs = 17;
 let pointer = null;
@@ -82,20 +125,27 @@ const keys = new Set();
 
 function terrainColor(x, y, z) {
   const n = hash(Math.floor(x / 14), Math.floor(z / 14));
-  const forest = y > 105 ? [0x6a705f, 0x7d7967, 0x878474] : [0x354d35, 0x3d5838, 0x465d3b];
+  const slope = Math.abs(groundHeight(x+3,z)-groundHeight(x-3,z)) +
+                Math.abs(groundHeight(x,z+3)-groundHeight(x,z-3));
+  const distanceToLake = lakeProximity(x,z);
+  if (distanceToLake < 1.28) return new THREE.Color(distanceToLake < .9 ? 0x746c53 : 0x8e8065);
+  const forest = y > 115 ? [0x7b806f,0x8d896e,0x868f7f] :
+                 slope>6 ? [0x64705a,0x676c54,0x716f5d] :
+                 [0x4a6540,0x537145,0x62764d,0x516d44,0x6b7445];
   const c = new THREE.Color(forest[Math.floor(n * forest.length)]);
   const tint = (hash(Math.floor(x / 33), Math.floor(z / 33)) - .5) * .14;
   c.offsetHSL(0, 0, tint);
   return c;
 }
 function terrainGeometry(cx, cz, segments = 24, size = TILE) {
-  const positions = [], colors = [], indices = [];
+  const positions = [], colors = [], indices = [], uvs = [];
   const baseX = cx * TILE, baseZ = cz * TILE;
   for (let iz = 0; iz <= segments; iz++) {
     for (let ix = 0; ix <= segments; ix++) {
       const px = ix / segments * size, pz = iz / segments * size;
       const x = baseX + px, z = baseZ + pz, y = groundHeight(x, z);
       positions.push(px, y, pz);
+      uvs.push(ix / segments,iz / segments);
       const col = terrainColor(x, y, z);
       colors.push(col.r, col.g, col.b);
     }
@@ -108,6 +158,7 @@ function terrainGeometry(cx, cz, segments = 24, size = TILE) {
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
   geometry.setIndex(indices); geometry.computeVertexNormals();
   return geometry;
 }
@@ -117,7 +168,7 @@ function ownedMesh(geometry, material) {
   return mesh;
 }
 function makeRoadStrip(cx, cz, halfWidth, offsetY, material, centerOffset = 0, dash = false) {
-  const verts = [], inds = [], z0 = cz * TILE;
+  const verts = [], inds = [], uvs = [], z0 = cz * TILE;
   const steps = dash ? 48 : 44;
   for (let i = 0; i <= steps; i++) {
     const z = z0 + i * TILE / steps;
@@ -127,6 +178,7 @@ function makeRoadStrip(cx, cz, halfWidth, offsetY, material, centerOffset = 0, d
       const x = axis + (centerOffset + side * halfWidth) * ox;
       const zz = z + (centerOffset + side * halfWidth) * oz;
       verts.push(x - cx * TILE, groundHeight(x, zz) + offsetY, zz - cz * TILE);
+      uvs.push((side+1)*.5, i / steps);
     }
     if (i === 0) continue;
     const a = 2 * (i - 1);
@@ -134,6 +186,7 @@ function makeRoadStrip(cx, cz, halfWidth, offsetY, material, centerOffset = 0, d
   }
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+  geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
   geometry.setIndex(inds); geometry.computeVertexNormals();
   return ownedMesh(geometry, material);
 }
@@ -158,12 +211,18 @@ function addForest(group, cx, cz, near) {
     const rz = hash(cx * 2203 + i * 31, cz * 499 + 12);
     const x = rx * TILE, z = rz * TILE, wx = cx * TILE + x, wz = cz * TILE + z;
     const h = groundHeight(wx, wz);
-    if (Math.abs(wx - roadCenter(wz)) < 15) continue;
+    if (Math.abs(wx - roadCenter(wz)) < 15 || lakeProximity(wx,wz) < 1.12) continue;
     const size = (near ? 10 : 7) + 15 * hash(cx * 299 + i, cz * 41 + i * 61);
     const tree = { x, z, h, size, r: 1.7 + size * .19, color: greenPalette[Math.floor(hash(i + cx * 9, cz * 7 + i) * greenPalette.length)], turn: hash(i, cz * 2 + cx) * Math.PI * 2 };
     if (i % 13 === 0) rocks.push({ x, z, h, s: 1 + hash(i + cx, cz) * 2.3 });
     else if (i % 6 === 0) broad.push(tree);
     else trees.push(tree);
+  }
+  if (trees.length || broad.length) {
+    const combined=trees.concat(broad),shadows=instanced(shadowGeo,shadowMat,combined.length);
+    combined.forEach((t,i)=>setInstance(shadows,i,t.x,t.h+.19,t.z,t.r*3.1,1,t.r*3.1));
+    shadows.instanceMatrix.needsUpdate=true;
+    group.add(shadows);
   }
   if (trees.length) {
     const crown = instanced(treeCone, leafMat, trees.length, true);
@@ -228,9 +287,24 @@ function addScenicVehicle(group, cx, cz) {
   car.rotation.y = heading;
   group.add(car);
 }
+const lakeSurfaceMat = new THREE.MeshPhongMaterial({color:0x477f89,emissive:0x132b2c,shininess:95,transparent:true,opacity:.87,depthWrite:false,side:THREE.DoubleSide});
+const lakeShoreMat = new THREE.MeshLambertMaterial({color:0xc1ac81,side:THREE.DoubleSide});
+function addLake(group,cx,cz) {
+  if (cx !== Math.floor(LAKE.x/TILE) || cz !== Math.floor(LAKE.z/TILE)) return;
+  const water = ownedMesh(new THREE.CircleGeometry(1,86),lakeSurfaceMat);
+  water.rotation.x=-Math.PI/2;
+  water.position.set(LAKE.x-cx*TILE,LAKE.level+.045,LAKE.z-cz*TILE);
+  water.scale.set(LAKE.rx*.79,LAKE.rz*.78,1);
+  group.add(water);
+  const perimeter=ownedMesh(new THREE.RingGeometry(1,1.075,86),lakeShoreMat);
+  perimeter.rotation.x=-Math.PI/2;
+  perimeter.position.set(LAKE.x-cx*TILE,LAKE.level-.17,LAKE.z-cz*TILE);
+  perimeter.scale.set(LAKE.rx*.79,LAKE.rz*.78,1);
+  group.add(perimeter);
+}
 function makeTile(cx, cz, near) {
   const group = new THREE.Group();
-  const terrain = ownedMesh(terrainGeometry(cx, cz, near ? 26 : 14), terrainMat);
+  const terrain = ownedMesh(terrainGeometry(cx, cz, near ? 32 : 18), terrainMat);
   group.add(terrain);
   // Asphalt/shoulders follow the hills; each ribbon is genuine triangulated geometry.
   const possible = cx === Math.floor(roadCenter((cz + .5) * TILE) / TILE);
@@ -238,9 +312,13 @@ function makeTile(cx, cz, near) {
     group.add(makeRoadStrip(cx, cz, 6.2, .4, shoulderMat));
     group.add(makeRoadStrip(cx, cz, 4.65, .47, roadMat));
     group.add(makeRoadStrip(cx, cz, .105, .50, stripeMat, 0, true));
+    group.add(makeRoadStrip(cx, cz, .08, .51, stripeMat, 4.17));
+    group.add(makeRoadStrip(cx, cz, .08, .51, stripeMat, -4.17));
     addScenicVehicle(group, cx, cz);
   }
   addForest(group, cx, cz, near);
+  scenery.decorateTile(group, cx, cz, near);
+  addLake(group, cx, cz);
   scene.add(group);
   return { group, cx, cz, near };
 }
@@ -289,11 +367,11 @@ function updateFarLand() {
   const nextScale = Math.ceil(size / 1200) * 1200;
   if (gx !== farX || gz !== farZ || nextScale !== farScale) {
     farX = gx; farZ = gz; farScale = nextScale;
-    const positions = [], colors = [], indices = [], n = 60;
+    const positions = [], colors = [], indices = [], uvs = [], n = 60;
     for (let j = 0; j <= n; j++) for (let i = 0; i <= n; i++) {
       const x = (i / n - .5) * nextScale, z = (j / n - .5) * nextScale;
       const wx = gx + x, wz = gz + z, h = groundHeight(wx, wz) - 22;
-      positions.push(x, h, z);
+      positions.push(x, h, z);uvs.push(i/n,j/n);
       const c = terrainColor(wx, h, wz); colors.push(c.r, c.g, c.b);
     }
     for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
@@ -303,6 +381,7 @@ function updateFarLand() {
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
     geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));
     geometry.setIndex(indices); geometry.computeVertexNormals();
     farLand.geometry.dispose(); farLand.geometry = geometry;
   }
@@ -318,6 +397,10 @@ const rotorMat = new THREE.MeshBasicMaterial({ color: 0x263c3c, transparent: tru
 const rotors = [];
 addBox(drone, 1.42, .4, 2.15, 0, 0, 0, shellMat);
 addBox(drone, .9, .15, 1.25, 0, .26, -.1, frameMat);
+const upperShell = new THREE.Mesh(new THREE.CapsuleGeometry(.51,1.35,4,12),shellMat);
+upperShell.rotation.x=Math.PI/2;upperShell.position.set(0,.14,.08);drone.add(upperShell);
+const avionics = new THREE.Mesh(new THREE.BoxGeometry(.62,.13,.83),frameMat);
+avionics.position.set(0,.64,-.15);drone.add(avionics);
 for (const x of [-1.55, 1.55]) for (const z of [-1.25, 1.25]) {
   const length = Math.hypot(x, z);
   const arm = new THREE.Mesh(new THREE.CylinderGeometry(.09, .11, length, 7), frameMat);
@@ -334,6 +417,16 @@ for (const x of [-1.55, 1.55]) for (const z of [-1.25, 1.25]) {
 }
 const lens = new THREE.Mesh(new THREE.SphereGeometry(.23, 10, 8), new THREE.MeshStandardMaterial({ color: 0x121a1a, metalness: .5, roughness: .17 }));
 lens.position.set(0, -.15, 1.07); drone.add(lens);
+const cameraGimbal=new THREE.Mesh(new THREE.CylinderGeometry(.27,.33,.3,14),frameMat);
+cameraGimbal.rotation.x=Math.PI/2;cameraGimbal.position.set(0,-.46,1.01);drone.add(cameraGimbal);
+const statusGreen=new THREE.MeshBasicMaterial({color:0x78f6aa}),statusRed=new THREE.MeshBasicMaterial({color:0xff7660});
+for(const side of [-1,1]){
+  const skid=addBox(drone,.075,.075,2.15,side*.63,-.45,0,frameMat);
+  addBox(drone,.08,.52,.08,side*.63,-.26,.62,frameMat);
+  addBox(drone,.08,.52,.08,side*.63,-.26,-.64,frameMat);
+  const led=new THREE.Mesh(new THREE.SphereGeometry(.07,8,6),side<0?statusRed:statusGreen);
+  led.position.set(side*1.55,.18,1.25);drone.add(led);
+}
 drone.scale.setScalar(.74);
 
 // Controls: relative finger drag = turn + climb. No military flight-control mappings.
@@ -367,7 +460,7 @@ window.addEventListener('keydown', e => {
   if (k === ' ' && !e.repeat && mode === 'flying') setPause();
 });
 window.addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
-window.addEventListener('blur', () => { pointer = null; keys.clear(); });
+window.addEventListener('blur', () => { pointer = null; keys.clear(); if(mode === 'flying') setPause(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden && mode === 'flying') setPause(); last = 0; });
 function toggleView() {
   view = view === 'chase' ? 'fpv' : 'chase';
@@ -380,19 +473,28 @@ boostButton.addEventListener('click', () => {
   boostButton.textContent = boost ? 'FAST' : 'CRUISE';
   boostButton.setAttribute('aria-pressed', String(boost));
 });
+muteButton.addEventListener('click', () => {
+  const value = !sound.enabled;
+  sound.setEnabled(value);
+  muteButton.textContent = value ? 'SOUND ON' : 'MUTED';
+  muteButton.setAttribute('aria-pressed', String(value));
+  if (value) sound.unlock();
+});
 function startFlight() {
+  sound.unlock(); sound.setActive(true);
   flight = makeFlight(); mode = 'flying'; boost = false; view = 'chase'; pointer = null;
   drone.visible = true; boostButton.textContent = 'CRUISE'; viewButton.textContent = 'FPV';
   overlay.className = 'panel hidden'; hud.classList.remove('hidden');
   pauseButton.classList.remove('hidden'); viewButton.classList.remove('hidden'); boostButton.classList.remove('hidden');
   warning.textContent = '';
+  muteButton.classList.remove('hidden');
   lastSector = ''; rebuildTiles(true); moveTiles(); updateFarLand(); last = performance.now();
 }
 function setPause() {
   if (mode !== 'flying') return;
-  mode = 'paused'; pointer = null; keys.clear();
+  mode = 'paused'; pointer = null; keys.clear(); sound.setActive(false);
   hud.classList.add('hidden'); pauseButton.classList.add('hidden');
-  viewButton.classList.add('hidden'); boostButton.classList.add('hidden');
+  viewButton.classList.add('hidden'); boostButton.classList.add('hidden'); muteButton.classList.add('hidden');
   overlay.className = 'panel paused';
   overlay.querySelector('.kicker').textContent = 'FREE FLIGHT · PAUSED';
   overlay.querySelector('h1').innerHTML = 'ABOVE<br><em>THE TREES</em>';
@@ -402,9 +504,9 @@ function setPause() {
 pauseButton.addEventListener('click', setPause);
 primary.addEventListener('click', () => {
   if (mode === 'paused') {
-    mode = 'flying'; overlay.className = 'panel hidden';
+    mode = 'flying'; overlay.className = 'panel hidden'; sound.unlock(); sound.setActive(true);
     hud.classList.remove('hidden'); pauseButton.classList.remove('hidden');
-    viewButton.classList.remove('hidden'); boostButton.classList.remove('hidden');
+    viewButton.classList.remove('hidden'); boostButton.classList.remove('hidden'); muteButton.classList.remove('hidden');
     last = performance.now();
   } else startFlight();
 });
@@ -444,8 +546,10 @@ function frame(now) {
     flight.throttle = boost || keys.has('shift') ? .98 : .54;
     advanceFlight(flight, inputState(), dt);
     rebuildTiles(); moveTiles(); updateFarLand(); updateHUD();
+    sound.update(flight.speed, Math.max(0, flight.y-groundHeight(flight.x,flight.z)),dt);
   }
   const height = Math.max(0, flight.y - groundHeight(flight.x, flight.z));
+  clouds.update(flight.x,flight.y,flight.z,now/1000);
   scene.fog.density = .00034 / (1 + height / 2100);
   const nextFar = Math.max(6500, Math.min(1600000, height * 3.4 + 4000));
   if (Math.abs(camera.far - nextFar) > 10) {
@@ -476,5 +580,10 @@ rebuildTiles(true);
 moveTiles(); updateFarLand();
 camera.position.set(0, flight.y + 6, -19);
 updateCamera(.016);
+// Diagnostic-only state for automated interaction tests; no browser location or telemetry.
+window.__openSkySnapshot = () => ({
+  x: flight.x, y: flight.y, z: flight.z, heading: flight.heading,
+  ground: groundHeight(flight.x, flight.z), mode, audioEnabled: sound.enabled
+});
 document.documentElement.dataset.openSkyReady = 'true';
 requestAnimationFrame(frame);

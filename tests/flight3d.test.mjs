@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { TILE, hash, noise, roadCenter, groundHeight, makeFlight, stepFlight, advanceFlight } from '../src/flight3d.mjs';
+import { TILE, hash, noise, roadCenter, groundHeight, makeFlight, stepFlight, advanceFlight, lakeProximity, LAKE } from '../src/flight3d.mjs';
 
 test('world terrain is deterministic and finite across sectors', () => {
   for (const [x,z] of [[0,0],[-TILE, TILE],[32790,-8730],[.03,-.02],[-100000,100000]]) {
@@ -34,12 +34,24 @@ test('low altitude prevents tunneling below terrain, without killing flight', ()
   stepFlight(f,{x:0,y:1},.05);
   assert.ok(f.y >= groundHeight(f.x,f.z)+2.2-0.001);
 });
-test('steering turns while auto-forward motion persists', () => {
+test('screen-space right input moves right without yaw rotation', () => {
   const f=makeFlight(); const x0=f.x, z0=f.z;
-  for(let i=0;i<140;i++) advanceFlight(f,{x:1,y:.1},1/60);
-  assert.ok(f.heading>1);
-  assert.ok(f.x>x0+10);
-  assert.ok(f.z>z0);
+  for (let i=0;i<45;i++) advanceFlight(f,{x:1,y:0},1/60);
+  assert.ok(f.x > x0+8);
+  assert.equal(f.heading, 0);
+  assert.ok(f.z > z0);
+});
+test('screen-space left input moves left; up climbs and down descends', () => {
+  const left=makeFlight(),right=makeFlight(),vertical=makeFlight();
+  for (let i=0;i<40;i++) { stepFlight(left,{x:-1,y:0},1/60); stepFlight(right,{x:1,y:0},1/60); }
+  assert.ok(left.x < roadCenter(0)-5);
+  assert.ok(right.x > roadCenter(0)+5);
+  const initialY=vertical.y;
+  for (let i=0;i<70;i++) stepFlight(vertical,{x:0,y:1},1/60);
+  assert.ok(vertical.y > initialY + 15);
+  const peak=vertical.y;
+  for (let i=0;i<70;i++) stepFlight(vertical,{x:0,y:-1},1/60);
+  assert.ok(vertical.y < peak - 10);
 });
 test('batched elapsed time approximates short frame time', () => {
   const slow=makeFlight(), fast=makeFlight();
@@ -48,4 +60,11 @@ test('batched elapsed time approximates short frame time', () => {
   assert.ok(Math.abs(slow.x-fast.x)<1.2);
   assert.ok(Math.abs(slow.z-fast.z)<1.2);
   assert.ok(Math.abs(slow.y-fast.y)<1.2);
+});
+
+test('handcrafted lake basin is deterministic and lies below the water plane', () => {
+  assert.equal(lakeProximity(LAKE.x,LAKE.z), 0);
+  assert.ok(groundHeight(LAKE.x,LAKE.z) < LAKE.level - 3);
+  assert.ok(lakeProximity(roadCenter(LAKE.z),LAKE.z) > 1);
+  assert.equal(groundHeight(LAKE.x,LAKE.z),groundHeight(LAKE.x,LAKE.z));
 });
