@@ -81,7 +81,8 @@ test('deep dive builds momentum, sharp recovery takes time', () => {
   assert.ok(dive.pitch>1.2 && dive.pitch<Math.PI/2,'game supports near-vertical non-inverted dive');
   assert.ok(dive.vy<-5,'rapid dive acquires real downward momentum');
   assert.ok(dive.vy<neutral.vy-4,'tilt produces stronger descent than level flight');
-  assert.ok(Math.hypot(dive.vx,dive.vz)>Math.hypot(neutral.vx,neutral.vz)+1,'forward drive strengthens in dive');
+  assert.ok(Math.hypot(dive.vx,dive.vz)<Math.hypot(neutral.vx,neutral.vz)*.4,
+    'a near-vertical dive brakes horizontal travel instead of flying far forward');
   const atRelease=dive.vy;
   for(let i=0;i<10;i++) stepFlight(dive,{x:0,y:0},1/60);
   assert.ok(dive.vy<0 && atRelease<0,'downward inertia must continue briefly after release');
@@ -122,4 +123,23 @@ test('cruise actually accelerates and a sustained dive reaches ground with downw
   for(let i=0;i<300 && !f.groundContact;i++)stepFlight(f,{x:0,y:-1},1/60);
   assert.equal(f.groundContact,true,'full down eventually hits the terrain');
   assert.ok(f.vy<-6,'falling momentum remains available for terminal impact');
+});
+
+test('steep dive sheds horizontal momentum, but a shallow approach preserves approach speed', () => {
+  const full=makeFlight(), shallow=makeFlight(), cruise=makeFlight();
+  for (const f of [full,shallow,cruise]) f.y=300;
+  for(let i=0;i<90;i++) {
+    stepFlight(full,{x:0,y:-1},1/60);
+    stepFlight(shallow,{x:0,y:-.5},1/60);
+    stepFlight(cruise,{x:0,y:0},1/60);
+  }
+  const horizontal=f=>Math.hypot(f.vx,f.vz);
+  assert.ok(full.pitch>1.2 && full.vy<-5, 'full gesture commits to gravity-led fall');
+  assert.ok(horizontal(full)<20, 'horizontal motion largely arrests in full dive');
+  assert.ok(horizontal(shallow)>horizontal(full)+20, 'shallow pitch still advances toward the target');
+  assert.ok(horizontal(cruise)>48, 'neutral cruise stays fast');
+  // Pulling out should recover forward travel continuously instead of snapping.
+  const before=horizontal(full);
+  stepFlight(full,{x:0,y:1},1/60);
+  assert.ok(horizontal(full)>=before && horizontal(full)<before+3);
 });
