@@ -3,32 +3,46 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
-  <meta name="theme-color" content="#142528">
-  <title>War Drone Sim — Forest Run</title>
-  <link rel="stylesheet" href="./src/style.css">
+  <meta name="theme-color" content="#1b343c">
+  <meta name="description" content="War Drone Sim: fast arcade flight and fictional vehicle encounters in a 3D forest.">
+  <title>War Drone Sim — Forest Encounter</title>
+  <link rel="stylesheet" href="./src/style3d.css">
 </head>
 <body>
-  <main id="game" aria-label="War Drone Sim">
-    <canvas id="scene" aria-label="Τρισδιάστατη προβολή πτήσης στο δάσος"></canvas>
-    <div id="vignette"></div>
-    <div id="hud" class="hidden" aria-live="polite">
-      <div class="hud-left"><span class="eyebrow">FOREST RUN</span><strong id="distance">000 M</strong></div>
-      <div class="hud-right"><span class="eyebrow">BEST</span><strong id="best">0</strong></div>
-      <div id="hint">Σύρε για να στρίψεις και να χαμηλώσεις</div>
+  <main id="game" aria-label="War Drone Sim — Forest Encounter">
+    <canvas id="scene" aria-label="Ζωντανός τρισδιάστατος κόσμος πτήσης"></canvas>
+    <div id="vignette" aria-hidden="true"></div>
+    <div id="hud" class="hidden">
+      <div class="hud-left"><span class="eyebrow">FOREST ENCOUNTER · V0.8</span><strong id="distance">0/3 VEHICLES</strong></div>
+      <div class="hud-right"><span class="eyebrow">ALTITUDE</span><strong id="altitude">0 M AGL</strong><small id="speed">0 KM/H</small><small id="vertical-rate" aria-label="Κατακόρυφη ταχύτητα">↑ 0.0 M/S</small></div>
+      <div id="warning" role="status" aria-live="polite"></div>
+      <div id="hint">Αριστερά/δεξιά: στροφή · πάνω: άνοδος · τέρμα κάτω: απότομη βουτιά</div>
     </div>
     <button id="pause" class="hidden" type="button" aria-label="Παύση">Ⅱ</button>
+    <div id="flight-actions" aria-label="Επιλογές πτήσης">
+      <button id="view-mode" class="flight-tool hidden" type="button" aria-label="Αλλαγή κάμερας">FPV</button>
+      <button id="boost" class="flight-tool hidden" type="button" aria-label="Ταχύτητα πτήσης" aria-pressed="false">CRUISE</button>
+      <button id="sound-toggle" class="flight-tool hidden" type="button" aria-label="Εναλλαγή ήχου" aria-pressed="true">SOUND ON</button>
+    </div>
     <section id="overlay" class="panel home">
       <div class="panel-content">
-        <div class="kicker">A SMALL FLIGHT. ONE DECISIVE MOMENT.</div>
+        <div class="kicker">THREE VEHICLES. ONE CLEARING.</div>
         <h1>WAR<br><em>DRONE</em><br>SIM</h1>
-        <p>Πέτα μέσα στο δάσος. Βρες το όχημα στο ξέφωτο. Κατέβα χαμηλά και άγγιξέ το.</p>
-        <button id="primary" type="button">BEGIN FLIGHT <span>↗</span></button>
-        <div class="controls">Σύρε οπουδήποτε: αριστερά / δεξιά + ύψος<br>Πληκτρολόγιο: WASD ή βελάκια</div>
+        <p>Πέτα γρήγορα μέσα στο δάσος. Βούτα στα τρία οχήματα του ξέφωτου· κάθε πρόσκρουση αφήνει πίσω συντρίμμια. Το επόμενο drone μπαίνει αμέσως στη σκηνή.</p>
+        <button id="primary" type="button">BEGIN ENCOUNTER <span>↗</span></button>
+        <div class="controls">Σύρε: αριστερά/δεξιά για στροφή · πάνω για άνοδο · τέρμα κάτω για βουτιά<br>Πρόσκρουση σε έδαφος: νέο drone · FAST: περισσότερη ταχύτητα</div>
       </div>
-      <div class="footer">PORTRAIT BROWSER PROTOTYPE · V0.1</div>
+      <div class="footer">FOREST ENCOUNTER V0.8 · ARCADE PLAYTEST</div>
     </section>
     <div id="landscape">Γύρισε το κινητό όρθιο για να παίξεις.</div>
   </main>
-  <script type="module" src="./src/game.mjs"></script>
+  <script type="module">
+    try {
+      await import('./src/game3d.mjs');
+    } catch (error) {
+      console.error('3D renderer unavailable; loading legacy Canvas preview.', error);
+      window.location.replace('./legacy-canvas.html');
+    }
+  </script>
 </body>
 </html>
