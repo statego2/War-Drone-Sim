@@ -1,6 +1,6 @@
 # War Drone Sim
 
-**Status:** Playable WebGL Forest Encounter v0.8 on GitHub Pages (2026-10-08); real iPhone playtest pending.  
+**Status:** Playable browser WebGL Forest Encounter with multidirectional arcade flight (2026-10-08); real iPhone playtest pending.  
 **Planning baseline:** 2026-10-08 · **Owner:** repository owner · **Document language:** English (implementation specification), Greek discussion / review welcome.
 
 ## Product
@@ -13,11 +13,11 @@ We are **not** building a real-world training tool, tactical navigation system, 
 
 ## Play the browser prototype
 
-**[Play Forest Encounter v0.8](https://statego2.github.io/War-Drone-Sim/)** in a portrait phone browser. The 3D forest contains three fictional empty vehicles. Steer with one drag; full downward drag builds a steep dive. Vehicle contact leaves persistent wreckage, while ground contact immediately gives another drone. A new round starts after three hits.
+**[Play Forest Encounter](https://statego2.github.io/War-Drone-Sim/)** in a portrait phone browser. The 3D forest contains three fictional empty vehicles. Drag in any direction to bank/strafe, climb and combine diagonal movement; a full downward drag builds a fast momentum-preserving dive. Vehicle contact leaves persistent wreckage, while ground contact immediately gives another drone. A new round starts after three hits.
 
 - `legacy-canvas.html`: preserved original v0.1 preview and fallback if WebGL is unavailable.
 - Run `python3 -m http.server 8765` and visit `http://localhost:8765/` from a checkout; `npm test` checks the deterministic model.
-- [v0.8 implementation and iPhone checklist](docs/25_FOREST_ENCOUNTER_V08.md). Three.js loads from jsDelivr; phone framerate and game feel remain unverified.
+- [Original v0.8 experiment](docs/25_FOREST_ENCOUNTER_V08.md) · [Multidirectional flight and iPhone acceptance](docs/28_OMNIDIRECTIONAL_FLIGHT.md). Three.js loads from jsDelivr; phone framerate and game feel remain unverified.
 
 
 ## Active web-first gameplay plan
