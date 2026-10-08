@@ -1,0 +1,812 @@
+{
+  "version": "1.0",
+  "as_of": "2026-10-08",
+  "rows": [
+    {
+      "id": "T-001",
+      "gate": "G0",
+      "wp": "WP1",
+      "priority": "P0",
+      "estimated_hours": 8,
+      "depends_on": [],
+      "title": "Compare Unity 6 native, Unity web and Godot/web delivery",
+      "deliverable": "Engine and distribution ADR-001 with repeatable acceptance benchmarks",
+      "acceptance": "Document exact engine versions, licensing, web/iOS browser caveats, test artifacts and owner decision request",
+      "status": "backlog"
+    },
+    {
+      "id": "T-002",
+      "gate": "G0",
+      "wp": "WP1",
+      "priority": "P0",
+      "estimated_hours": 8,
+      "depends_on": [
+        "T-001"
+      ],
+      "title": "Build signed portrait hello world on a real iPhone or Android",
+      "deliverable": "Device proof: OS, hardware, steps, screenshot, reproducible build",
+      "acceptance": "Cold start, touch, safe area, background and resume tested; no claim of success without actual device",
+      "status": "backlog"
+    },
+    {
+      "id": "T-003",
+      "gate": "G0",
+      "wp": "WP1",
+      "priority": "P0",
+      "estimated_hours": 6,
+      "depends_on": [
+        "T-001"
+      ],
+      "title": "Initialize clean engine project and ignore generated files",
+      "deliverable": "Version-pinned project, directory conventions, .gitignore, license hygiene",
+      "acceptance": "Fresh checkout imports with specified editor and no third-party paid files",
+      "status": "backlog"
+    },
+    {
+      "id": "T-004",
+      "gate": "G0",
+      "wp": "WP5",
+      "priority": "P0",
+      "estimated_hours": 4,
+      "depends_on": [
+        "T-003"
+      ],
+      "title": "Add CI build smoke and EditMode test skeleton",
+      "deliverable": "CI workflow and documented local commands, separate unsigned build path",
+      "acceptance": "Reported exact supported tests; failure on compile errors; no fake device automation",
+      "status": "backlog"
+    },
+    {
+      "id": "T-005",
+      "gate": "G0",
+      "wp": "WP5",
+      "priority": "P0",
+      "estimated_hours": 5,
+      "depends_on": [
+        "T-002",
+        "T-003"
+      ],
+      "title": "Benchmark baseline forest greybox on reference phone",
+      "deliverable": "Profiler results p50/p95/p99, memory, heat, device identity",
+      "acceptance": "Test fixed seed and reproducible camera path at two quality tiers",
+      "status": "backlog"
+    },
+    {
+      "id": "T-006",
+      "gate": "G0",
+      "wp": "WP2",
+      "priority": "P0",
+      "estimated_hours": 6,
+      "depends_on": [
+        "T-002",
+        "T-003"
+      ],
+      "title": "Prototype portrait drag versus thumbstick controls",
+      "deliverable": "Two switchable input adapters with tester feedback form",
+      "acceptance": "One-tap or one-stick onboarding; mirrored layout; no stale touch after pause",
+      "status": "backlog"
+    },
+    {
+      "id": "T-007",
+      "gate": "G0",
+      "wp": "WP0",
+      "priority": "P0",
+      "estimated_hours": 3,
+      "depends_on": [
+        "T-001"
+      ],
+      "title": "Audit starter assets and source licenses",
+      "deliverable": "Asset manifest with source URL, license, editor compatibility, proof",
+      "acceptance": "CC0/free candidates recorded; paid assets not committed or purchased",
+      "status": "backlog"
+    },
+    {
+      "id": "T-008",
+      "gate": "G0",
+      "wp": "WP0",
+      "priority": "P0",
+      "estimated_hours": 3,
+      "depends_on": [
+        "T-002",
+        "T-005",
+        "T-006"
+      ],
+      "title": "Hold G0 architecture and distribution approval gate",
+      "deliverable": "ADR and signed-off launch channel, target device tier, next critical tasks",
+      "acceptance": "Owner outcome recorded as GO, CONDITIONAL GO or NO GO with evidence",
+      "status": "backlog"
+    },
+    {
+      "id": "T-009",
+      "gate": "G0",
+      "wp": "WP0",
+      "priority": "P1",
+      "estimated_hours": 3,
+      "depends_on": [
+        "T-008"
+      ],
+      "title": "Lock thin vertical slice specification and quality baseline",
+      "deliverable": "Scope/acceptance matrix for single scene and first route",
+      "acceptance": "Prevent features outside charter before G1",
+      "status": "backlog"
+    },
+    {
+      "id": "T-010",
+      "gate": "G1",
+      "wp": "WP2",
+      "priority": "P0",
+      "estimated_hours": 10,
+      "depends_on": [
+        "T-006",
+        "T-008"
+      ],
+      "title": "Implement assisted arcade drone motor",
+      "deliverable": "Tunable motor with fixed-step movement, drift/turn/climb and reset",
+      "acceptance": "Deterministic spawn, bounded acceleration, responsive no input lag or physics jitter",
+      "status": "backlog"
+    },
+    {
+      "id": "T-011",
+      "gate": "G1",
+      "wp": "WP2",
+      "priority": "P0",
+      "estimated_hours": 9,
+      "depends_on": [
+        "T-010"
+      ],
+      "title": "Implement chase camera with occlusion and recovery",
+      "deliverable": "Camera rig with lead look, soft bank, obstacle tests, reset",
+      "acceptance": "Drone and road visible at normal pitch; no clipped view or nausea under test",
+      "status": "backlog"
+    },
+    {
+      "id": "T-012",
+      "gate": "G1",
+      "wp": "WP3",
+      "priority": "P0",
+      "estimated_hours": 5,
+      "depends_on": [
+        "T-010"
+      ],
+      "title": "Create curated greybox forest corridor and road",
+      "deliverable": "Single scene of primitives with obstacle gaps and valid route",
+      "acceptance": "Always viable approach path; colliders match visuals and fit portrait",
+      "status": "backlog"
+    },
+    {
+      "id": "T-013",
+      "gate": "G1",
+      "wp": "WP3",
+      "priority": "P0",
+      "estimated_hours": 6,
+      "depends_on": [
+        "T-012"
+      ],
+      "title": "Implement moving fictional vehicle and replayable route",
+      "deliverable": "Target prefab plus bounded waypoint/spline mover and seeded restart",
+      "acceptance": "Motion deterministic, readable silhouette and no vehicle AI complexity",
+      "status": "backlog"
+    },
+    {
+      "id": "T-014",
+      "gate": "G1",
+      "wp": "WP4",
+      "priority": "P0",
+      "estimated_hours": 8,
+      "depends_on": [
+        "T-010",
+        "T-013"
+      ],
+      "title": "Implement contact resolver and outcome priority",
+      "deliverable": "Vehicle success versus tree/terrain failure event mapping",
+      "acceptance": "Fast contact recognized once; collision shapes predictable; test high frame speed",
+      "status": "backlog"
+    },
+    {
+      "id": "T-015",
+      "gate": "G1",
+      "wp": "WP4",
+      "priority": "P0",
+      "estimated_hours": 8,
+      "depends_on": [
+        "T-014"
+      ],
+      "title": "Build full run lifecycle state machine",
+      "deliverable": "Home, Playing, Paused, Impact, Result, Retry states with event hygiene",
+      "acceptance": "One outcome per run; all services reset correctly; pause/resume never softlocks",
+      "status": "backlog"
+    },
+    {
+      "id": "T-016",
+      "gate": "G1",
+      "wp": "WP4",
+      "priority": "P0",
+      "estimated_hours": 6,
+      "depends_on": [
+        "T-015"
+      ],
+      "title": "Implement score, best, HUD and local save",
+      "deliverable": "Minimal safe-area HUD and persisted best-score schema",
+      "acceptance": "No duplicated point award; reset and corrupt save scenarios pass",
+      "status": "backlog"
+    },
+    {
+      "id": "T-017",
+      "gate": "G1",
+      "wp": "WP4",
+      "priority": "P0",
+      "estimated_hours": 7,
+      "depends_on": [
+        "T-014",
+        "T-015"
+      ],
+      "title": "Build temporary impact VFX, audio and rapid retry",
+      "deliverable": "Pooled feedback, distinct success/failure and restart affordance",
+      "acceptance": "Impact readable on phone, no long deadtime, optional haptics can turn off",
+      "status": "backlog"
+    },
+    {
+      "id": "T-018",
+      "gate": "G1",
+      "wp": "WP0",
+      "priority": "P0",
+      "estimated_hours": 8,
+      "depends_on": [
+        "T-011",
+        "T-016",
+        "T-017"
+      ],
+      "title": "Run 5 first-player mobile usability sessions",
+      "deliverable": "Interview notes, time-to-understand, confusion patterns, improvement recommendation",
+      "acceptance": "All 5 observed on a phone; report clarity and enjoyment, no ungrounded averages",
+      "status": "backlog"
+    },
+    {
+      "id": "T-019",
+      "gate": "G1",
+      "wp": "WP0",
+      "priority": "P0",
+      "estimated_hours": 4,
+      "depends_on": [
+        "T-018"
+      ],
+      "title": "Decide G1 fun go/no-go and design revision",
+      "deliverable": "Decision record and specific prioritized tuning tasks",
+      "acceptance": "Explicit owner feedback; no forest asset purchase without greenlight",
+      "status": "backlog"
+    },
+    {
+      "id": "T-020",
+      "gate": "G2",
+      "wp": "WP0",
+      "priority": "P1",
+      "estimated_hours": 6,
+      "depends_on": [
+        "T-019",
+        "T-007"
+      ],
+      "title": "Select coherent forest and vehicle art source",
+      "deliverable": "Styleboard, integration smoke, license matrix, buy/build decision",
+      "acceptance": "Assets fit budget, URP, batching, palette, can be replaced without rewriting gameplay",
+      "status": "backlog"
+    },
+    {
+      "id": "T-021",
+      "gate": "G2",
+      "wp": "WP3",
+      "priority": "P1",
+      "estimated_hours": 14,
+      "depends_on": [
+        "T-020"
+      ],
+      "title": "Assemble optimized woodland route slice",
+      "deliverable": "One curated route with tree LOD, material consolidation and collider pass",
+      "acceptance": "Clear approach windows, background depth and profile under G2 budgets",
+      "status": "backlog"
+    },
+    {
+      "id": "T-022",
+      "gate": "G2",
+      "wp": "WP3",
+      "priority": "P1",
+      "estimated_hours": 9,
+      "depends_on": [
+        "T-021",
+        "T-013"
+      ],
+      "title": "Finish forest road and moving traffic silhouettes",
+      "deliverable": "Decorated road, 1–2 stylized vehicles, animated predictable routes",
+      "acceptance": "Models/vehicle scale consistent; target visually distinct even on small phone",
+      "status": "backlog"
+    },
+    {
+      "id": "T-023",
+      "gate": "G2",
+      "wp": "WP4",
+      "priority": "P1",
+      "estimated_hours": 6,
+      "depends_on": [
+        "T-021",
+        "T-022"
+      ],
+      "title": "Tune reveal cues and portrait readability",
+      "deliverable": "Contrast, occlusion, game-only hint design for one target",
+      "acceptance": "Users reliably see target without a cluttered UI or real targeting markers",
+      "status": "backlog"
+    },
+    {
+      "id": "T-024",
+      "gate": "G2",
+      "wp": "WP2",
+      "priority": "P1",
+      "estimated_hours": 8,
+      "depends_on": [
+        "T-011",
+        "T-021"
+      ],
+      "title": "Polish chase camera collision and comfort",
+      "deliverable": "Camera occlusion avoidance, predictive aim, reduced-motion mode",
+      "acceptance": "No tree clipping critical, configurable shake and no target hidden by drone/UI",
+      "status": "backlog"
+    },
+    {
+      "id": "T-025",
+      "gate": "G2",
+      "wp": "WP5",
+      "priority": "P1",
+      "estimated_hours": 11,
+      "depends_on": [
+        "T-021",
+        "T-022"
+      ],
+      "title": "Profile forest on low/mid/high target devices",
+      "deliverable": "Capture p95 frame time, thermal, GPU overdraw, memory, build size",
+      "acceptance": "Document 30fps fallback, 60fps viability, quality preset tradeoffs on named devices",
+      "status": "backlog"
+    },
+    {
+      "id": "T-026",
+      "gate": "G2",
+      "wp": "WP4",
+      "priority": "P1",
+      "estimated_hours": 7,
+      "depends_on": [
+        "T-017",
+        "T-021"
+      ],
+      "title": "Create polished stylized impact feedback",
+      "deliverable": "Pool VFX, short time dilation, audio layering, non-graphic world continuation",
+      "acceptance": "Cinematic feel no forced wait beyond goal and minimal allocation on impact",
+      "status": "backlog"
+    },
+    {
+      "id": "T-027",
+      "gate": "G2",
+      "wp": "WP4",
+      "priority": "P1",
+      "estimated_hours": 5,
+      "depends_on": [
+        "T-016",
+        "T-024"
+      ],
+      "title": "Implement transparent result/home UX and options",
+      "deliverable": "One-screen UI, safe area, accessibility/volume, context help",
+      "acceptance": "Menu shows attractive world, tap flows work with touch and no scroll",
+      "status": "backlog"
+    },
+    {
+      "id": "T-028",
+      "gate": "G2",
+      "wp": "WP5",
+      "priority": "P1",
+      "estimated_hours": 8,
+      "depends_on": [
+        "T-023",
+        "T-025",
+        "T-026",
+        "T-027"
+      ],
+      "title": "Run vertical-slice regressions on device matrix",
+      "deliverable": "QA reports, 30-minute thermal session, recorded fairness outcomes",
+      "acceptance": "No known P0 bugs; performance documented; repeatable phone crash/resume tests",
+      "status": "backlog"
+    },
+    {
+      "id": "T-029",
+      "gate": "G2",
+      "wp": "WP0",
+      "priority": "P1",
+      "estimated_hours": 4,
+      "depends_on": [
+        "T-028"
+      ],
+      "title": "Conduct G2 performance and design sign-off",
+      "deliverable": "Accepted one-route vertical-slice evidence and follow-up scope",
+      "acceptance": "Owner go/no-go; scope additions costed",
+      "status": "backlog"
+    },
+    {
+      "id": "T-030",
+      "gate": "G3",
+      "wp": "WP3",
+      "priority": "P2",
+      "estimated_hours": 9,
+      "depends_on": [
+        "T-029"
+      ],
+      "title": "Build 2–4 curated encounter variations",
+      "deliverable": "Compact content progression via route/vehicle timing not complexity",
+      "acceptance": "Each scenario distinguishable by one learnable skill; camera and budgets pass",
+      "status": "backlog"
+    },
+    {
+      "id": "T-031",
+      "gate": "G3",
+      "wp": "WP2",
+      "priority": "P2",
+      "estimated_hours": 6,
+      "depends_on": [
+        "T-029"
+      ],
+      "title": "Balance speed, drift, turn rate and challenge",
+      "deliverable": "Versioned tuning sets and repeatable handling trials",
+      "acceptance": "Clear improvement with practice, no forced full FPV controls",
+      "status": "backlog"
+    },
+    {
+      "id": "T-032",
+      "gate": "G3",
+      "wp": "WP4",
+      "priority": "P2",
+      "estimated_hours": 5,
+      "depends_on": [
+        "T-029"
+      ],
+      "title": "Refine beginner onboarding without menus",
+      "deliverable": "Interactive first 15 second hint and gentle start pacing",
+      "acceptance": "Four of five novices understand with no explanatory wall of text",
+      "status": "backlog"
+    },
+    {
+      "id": "T-033",
+      "gate": "G3",
+      "wp": "WP5",
+      "priority": "P2",
+      "estimated_hours": 7,
+      "depends_on": [
+        "T-030",
+        "T-031"
+      ],
+      "title": "Build matrix regression plan and test cases",
+      "deliverable": "iOS/Android resolutions, OS pause resume, offline and thermal QA",
+      "acceptance": "Manual reproduction steps with pass/fail and issue links, not assumed automation",
+      "status": "backlog"
+    },
+    {
+      "id": "T-034",
+      "gate": "G3",
+      "wp": "WP0",
+      "priority": "P2",
+      "estimated_hours": 8,
+      "depends_on": [
+        "T-030",
+        "T-032"
+      ],
+      "title": "Observe expanded playtest round",
+      "deliverable": "15–30 testers if obtainable, notes on difficulty and retry desire",
+      "acceptance": "Document sample limitations, major confusion and next action; no unsupported retention claims",
+      "status": "backlog"
+    },
+    {
+      "id": "T-035",
+      "gate": "G3",
+      "wp": "WP5",
+      "priority": "P2",
+      "estimated_hours": 8,
+      "depends_on": [
+        "T-025",
+        "T-030"
+      ],
+      "title": "Optimize CPU/GPU spikes, warm-up and memory",
+      "deliverable": "Profiler before-after evidence, pooling/shader/load corrections",
+      "acceptance": "No obvious P0 frame-stall or thermal degradation on reference tiers",
+      "status": "backlog"
+    },
+    {
+      "id": "T-036",
+      "gate": "G3",
+      "wp": "WP4",
+      "priority": "P2",
+      "estimated_hours": 5,
+      "depends_on": [
+        "T-031",
+        "T-034"
+      ],
+      "title": "Tune scoring and progression for flow",
+      "deliverable": "Minimal variants and best score, no feature bloat",
+      "acceptance": "No grind, every outcome understandable, first minute enjoyable",
+      "status": "backlog"
+    },
+    {
+      "id": "T-037",
+      "gate": "G3",
+      "wp": "WP5",
+      "priority": "P2",
+      "estimated_hours": 6,
+      "depends_on": [
+        "T-033",
+        "T-035"
+      ],
+      "title": "Hardening: app lifecycle, corrupt preferences, errors",
+      "deliverable": "Fault-injection report, save migration/reset, exception handling",
+      "acceptance": "Offline 30-min play and multiple resume cycles without lost state",
+      "status": "backlog"
+    },
+    {
+      "id": "T-038",
+      "gate": "G3",
+      "wp": "WP0",
+      "priority": "P2",
+      "estimated_hours": 4,
+      "depends_on": [
+        "T-034",
+        "T-037"
+      ],
+      "title": "Review analytics need and privacy implications",
+      "deliverable": "Opt-in only proposal or explicit no-analytics decision",
+      "acceptance": "No analytics SDK added without separate owner approval",
+      "status": "backlog"
+    },
+    {
+      "id": "T-039",
+      "gate": "G3",
+      "wp": "WP0",
+      "priority": "P2",
+      "estimated_hours": 4,
+      "depends_on": [
+        "T-036",
+        "T-037",
+        "T-038"
+      ],
+      "title": "Approve beta content and release candidate gate",
+      "deliverable": "Beta build identifier, known issues and final scope frozen",
+      "acceptance": "Owner approval documented and no blocking P0/P1",
+      "status": "backlog"
+    },
+    {
+      "id": "T-040",
+      "gate": "G4",
+      "wp": "WP6",
+      "priority": "P2",
+      "estimated_hours": 5,
+      "depends_on": [
+        "T-039"
+      ],
+      "title": "Finalize icons, screenshots, listing copy",
+      "deliverable": "Real captured mobile store media, title, description and age disclosure",
+      "acceptance": "Correct device visuals, no misleading capabilities claims",
+      "status": "backlog"
+    },
+    {
+      "id": "T-041",
+      "gate": "G4",
+      "wp": "WP6",
+      "priority": "P2",
+      "estimated_hours": 6,
+      "depends_on": [
+        "T-039"
+      ],
+      "title": "Configure signing, identifiers and release builds",
+      "deliverable": "Reproducible signed iOS/Android distribution process",
+      "acceptance": "Secret-free repo, owner account access, native installation verified",
+      "status": "backlog"
+    },
+    {
+      "id": "T-042",
+      "gate": "G4",
+      "wp": "WP6",
+      "priority": "P2",
+      "estimated_hours": 4,
+      "depends_on": [
+        "T-007",
+        "T-020",
+        "T-039"
+      ],
+      "title": "Audit third-party asset licenses and attributions",
+      "deliverable": "SPDX-style manifest, restricted license checklist, attribution file",
+      "acceptance": "No paid packs redistributed publicly, legal blockers cleared",
+      "status": "backlog"
+    },
+    {
+      "id": "T-043",
+      "gate": "G4",
+      "wp": "WP6",
+      "priority": "P2",
+      "estimated_hours": 5,
+      "depends_on": [
+        "T-038",
+        "T-039"
+      ],
+      "title": "Complete privacy and store policy review",
+      "deliverable": "Data inventory, privacy policy if needed, app permission and content declarations",
+      "acceptance": "Facts match actual binary and SDK inventory; no unapproved tracking",
+      "status": "backlog"
+    },
+    {
+      "id": "T-044",
+      "gate": "G4",
+      "wp": "WP6",
+      "priority": "P2",
+      "estimated_hours": 5,
+      "depends_on": [
+        "T-041"
+      ],
+      "title": "Run external test distribution and crash triage",
+      "deliverable": "TestFlight/Play internal-testing instructions, beta issue log",
+      "acceptance": "At least one independent test installation; install/update/uninstall tested",
+      "status": "backlog"
+    },
+    {
+      "id": "T-045",
+      "gate": "G4",
+      "wp": "WP5",
+      "priority": "P2",
+      "estimated_hours": 5,
+      "depends_on": [
+        "T-041",
+        "T-044"
+      ],
+      "title": "Perform final stability/performance QA pass",
+      "deliverable": "RC device grid and signed artifact checksum/report",
+      "acceptance": "No P0/P1, framerate and safe-area checks with actual devices",
+      "status": "backlog"
+    },
+    {
+      "id": "T-046",
+      "gate": "G4",
+      "wp": "WP6",
+      "priority": "P2",
+      "estimated_hours": 4,
+      "depends_on": [
+        "T-040",
+        "T-042",
+        "T-043",
+        "T-045"
+      ],
+      "title": "Prepare owner approval release checklist",
+      "deliverable": "Go/no-go memo with evidence, costs and store risks",
+      "acceptance": "No publication without owner's explicit approval",
+      "status": "backlog"
+    },
+    {
+      "id": "T-047",
+      "gate": "G4",
+      "wp": "WP6",
+      "priority": "P2",
+      "estimated_hours": 4,
+      "depends_on": [
+        "T-046"
+      ],
+      "title": "Publish to chosen store after approval",
+      "deliverable": "Store submission evidence and rollback/rejection log",
+      "acceptance": "Submission only when credentialed owner requests; capture version/release ID",
+      "status": "backlog"
+    },
+    {
+      "id": "T-048",
+      "gate": "G4",
+      "wp": "WP6",
+      "priority": "P2",
+      "estimated_hours": 4,
+      "depends_on": [
+        "T-047"
+      ],
+      "title": "Post-release crash, reviews and defect response",
+      "deliverable": "Bug triage window, patch criteria and hotfix workflow",
+      "acceptance": "Severity taxonomy, reproducible feedback collection, no invasive analytics",
+      "status": "backlog"
+    },
+    {
+      "id": "T-049",
+      "gate": "G4",
+      "wp": "WP6",
+      "priority": "P2",
+      "estimated_hours": 3,
+      "depends_on": [
+        "T-048"
+      ],
+      "title": "Archive release baseline and next-version ideas",
+      "deliverable": "Release notes, reproducible tag, documented post-MVP backlog",
+      "acceptance": "Versioned artifact and lessons learned",
+      "status": "backlog"
+    },
+    {
+      "id": "T-050",
+      "gate": "G1",
+      "wp": "WP5",
+      "priority": "P1",
+      "estimated_hours": 4,
+      "depends_on": [
+        "T-003",
+        "T-010"
+      ],
+      "title": "Add flight state and scoring EditMode tests",
+      "deliverable": "Pure logic coverage and fixtures for repeatable simulation rules",
+      "acceptance": "Tests include clamping, invalid input, transitions and reset",
+      "status": "backlog"
+    },
+    {
+      "id": "T-051",
+      "gate": "G1",
+      "wp": "WP5",
+      "priority": "P1",
+      "estimated_hours": 5,
+      "depends_on": [
+        "T-014",
+        "T-015"
+      ],
+      "title": "Add PlayMode contact and retry regression tests",
+      "deliverable": "Scene-bound tests for collider priorities and one-shot state",
+      "acceptance": "No double scoring despite repeated physics callbacks",
+      "status": "backlog"
+    },
+    {
+      "id": "T-052",
+      "gate": "G2",
+      "wp": "WP5",
+      "priority": "P1",
+      "estimated_hours": 4,
+      "depends_on": [
+        "T-020"
+      ],
+      "title": "Set asset import and public-repo third-party policies",
+      "deliverable": "Manifest, attribution, vendor isolation and Git ignore rules",
+      "acceptance": "Paid/unlicensed raw materials never enter public git history",
+      "status": "backlog"
+    },
+    {
+      "id": "T-053",
+      "gate": "G2",
+      "wp": "WP1",
+      "priority": "P1",
+      "estimated_hours": 6,
+      "depends_on": [
+        "T-003",
+        "T-025"
+      ],
+      "title": "Set low/mid/high adaptive graphics presets",
+      "deliverable": "Quality assets and test matrix, control mapping and device fallback",
+      "acceptance": "No target silhouette regressions when density/render scale reduce",
+      "status": "backlog"
+    },
+    {
+      "id": "T-054",
+      "gate": "G3",
+      "wp": "WP4",
+      "priority": "P2",
+      "estimated_hours": 5,
+      "depends_on": [
+        "T-026",
+        "T-033"
+      ],
+      "title": "Finish coherent sonic identity and haptic options",
+      "deliverable": "Original/licensed loops, motion wind sound, distinct impact mix",
+      "acceptance": "Muted/background state clean, volume controls and reduced vibration work",
+      "status": "backlog"
+    },
+    {
+      "id": "T-055",
+      "gate": "G4",
+      "wp": "WP6",
+      "priority": "P2",
+      "estimated_hours": 4,
+      "depends_on": [
+        "T-039"
+      ],
+      "title": "Write build/operator runbook and handoff template",
+      "deliverable": "Documented install/test/release recovery commands and owner workflow",
+      "acceptance": "A fresh AI developer can continue using AGENTS, NEXT_ACTION and issues",
+      "status": "backlog"
+    }
+  ]
+}
