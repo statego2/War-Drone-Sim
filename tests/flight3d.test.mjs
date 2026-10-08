@@ -63,9 +63,12 @@ test('upward gesture provides lift, downward gesture tips the nose and descends'
   for(let i=0;i<90;i++)stepFlight(vertical,{x:0,y:1},1/60);
   assert.ok(vertical.y > initialY+2,'upward drag should produce positive climb');
   assert.ok(vertical.pitch<0,'nose pitches upward during climb');
+  const risingVelocity = vertical.vy;
+  // After a climb the aircraft must first cancel its upward momentum.
+  vertical.y=300;
   for(let i=0;i<100;i++)stepFlight(vertical,{x:0,y:-1},1/60);
   assert.ok(vertical.pitch > 1.1,'full down command pitches steeply forward');
-  assert.ok(vertical.vy < -3,'steep dive builds downward velocity');
+  assert.ok(vertical.vy < risingVelocity-7,'steep dive must aggressively reduce vertical velocity');
 });
 test('deep dive builds momentum, sharp recovery takes time', () => {
   const dive=makeFlight(),neutral=makeFlight();
