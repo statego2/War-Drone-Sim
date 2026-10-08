@@ -54,7 +54,7 @@ try{
   await page.waitForTimeout(900);
   const diving=await page.evaluate(()=>window.__openSkySnapshot());
   await page.mouse.up();
-  assert.ok(diving.pitch>.7 && diving.vy<climbing.vy,'downward gesture pitches and falls');
+  assert.ok(diving.pitch>.7 && diving.vy<diagonal.vy-3,'downward gesture pitches and decelerates the immediate prior climb');
   await page.locator('#sound-toggle').click();
   assert.equal(await page.locator('#sound-toggle').innerText(),'MUTED');
   await page.locator('#pause').click();
