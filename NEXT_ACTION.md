@@ -4,6 +4,14 @@
 
 ## Landed in main
 
+## Pullback reverse flight v2 — 2026-10-08
+
+- **Merged PR #80** as `da5ba76`. Full upward gesture now smoothly tips the craft nose-high, cancels existing forward momentum over time and reverses arcade travel; small upward drags still climb forward. At full pullback it retains assisted climb and recovery from dive, with stronger diagonal left/right control and reduced forced yaw. Camera look-up is restrained; the speed display marks backward travel. Documentation: `docs/30_FLIGHT_PULLBACK_V2.md`.
+- Node flight regression checks and portrait Chromium smoke passed on feature SHA `5d5c861` in GitHub Actions run `37831981695`; the subsequent PR change only clarified documentation. Post-merge main CI / Pages run results should be verified separately. **Actual iPhone Safari playtest, thermal and subjective feel are still unverified**.
+- A separate general engineering issue [#81](https://github.com/statego2/War-Drone-Sim/issues/81) records software-WebGL simulation time dilation seen during browser smoke. This requires low-FPS profiling and bounded fixed-step catch-up work; do not assume Chrome headless timing represents iPhone FPS. Preserve swept-hit and automatic retry fairness.
+- **Next tangible gameplay acceptance:** on iPhone check soft-up vs sustained full-up (forward→reverse), upper diagonals while moving backward, release→forward recovery and FAST. Recheck nose dives, target choice and ~1-second retry; tune only from observed failures.
+
+
 - Browser WebGL Forest Encounter: one-finger steering, three fictional empty vehicles, swept contact, visible wreck states, automatic next drone (~0.98 s), next round once all three have been hit.
 - **Multidirectional inertial flight merged in `4e0e4e8` (#74):** sideways banking/strafe, all four diagonal gestures, HOVER lateral motion, faster forward-moving nose dive without air-braking, and gravity-led recovery. Speed/gesture/collision tests expanded. See `docs/28_OMNIDIRECTIONAL_FLIGHT.md`. This supersedes the earlier automatic steep-dive braking commits.
 - Procedural audio director: merged as `e9ada33`. Dynamic rotor/wind/altitude mix and synthesized distinct ground/vehicle contacts, with unit tests. See `docs/26_AUDIO_DIRECTOR_V1.md`.
