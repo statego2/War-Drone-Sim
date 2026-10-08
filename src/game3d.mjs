@@ -1,12 +1,16 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
 import { TILE, clamp, hash, roadCenter, groundHeight, makeFlight, advanceFlight } from './flight3d.mjs';
+import { createFlightAudio } from './audio3d.mjs';
+import { createScenery } from './scenery3d.mjs';
 
 // A floating-origin, streamed polygonal world. No real-drone targeting or hardware integration.
 const $ = id => document.getElementById(id);
 const canvas = $('scene'), overlay = $('overlay'), primary = $('primary');
 const hud = $('hud'), pauseButton = $('pause'), distanceEl = $('distance');
 const altitudeEl = $('altitude'), speedEl = $('speed'), hint = $('hint');
-const viewButton = $('view-mode'), boostButton = $('boost'), warning = $('warning');
+const viewButton = $('view-mode'), boostButton = $('boost'), muteButton = $('sound-toggle'), warning = $('warning');
+const sound = createFlightAudio();
+const scenery = createScenery(THREE, { TILE, hash, groundHeight, roadCenter });
 const mobile = matchMedia('(pointer: coarse)').matches;
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
 renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -230,7 +234,7 @@ function addScenicVehicle(group, cx, cz) {
 }
 function makeTile(cx, cz, near) {
   const group = new THREE.Group();
-  const terrain = ownedMesh(terrainGeometry(cx, cz, near ? 26 : 14), terrainMat);
+  const terrain = ownedMesh(terrainGeometry(cx, cz, near ? 32 : 18), terrainMat);
   group.add(terrain);
   // Asphalt/shoulders follow the hills; each ribbon is genuine triangulated geometry.
   const possible = cx === Math.floor(roadCenter((cz + .5) * TILE) / TILE);
@@ -238,9 +242,12 @@ function makeTile(cx, cz, near) {
     group.add(makeRoadStrip(cx, cz, 6.2, .4, shoulderMat));
     group.add(makeRoadStrip(cx, cz, 4.65, .47, roadMat));
     group.add(makeRoadStrip(cx, cz, .105, .50, stripeMat, 0, true));
+    group.add(makeRoadStrip(cx, cz, .08, .51, stripeMat, 4.17));
+    group.add(makeRoadStrip(cx, cz, .08, .51, stripeMat, -4.17));
     addScenicVehicle(group, cx, cz);
   }
   addForest(group, cx, cz, near);
+  scenery.decorateTile(group, cx, cz, near);
   scene.add(group);
   return { group, cx, cz, near };
 }
@@ -367,7 +374,7 @@ window.addEventListener('keydown', e => {
   if (k === ' ' && !e.repeat && mode === 'flying') setPause();
 });
 window.addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
-window.addEventListener('blur', () => { pointer = null; keys.clear(); });
+window.addEventListener('blur', () => { pointer = null; keys.clear(); if(mode === 'flying') setPause(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden && mode === 'flying') setPause(); last = 0; });
 function toggleView() {
   view = view === 'chase' ? 'fpv' : 'chase';
@@ -380,19 +387,28 @@ boostButton.addEventListener('click', () => {
   boostButton.textContent = boost ? 'FAST' : 'CRUISE';
   boostButton.setAttribute('aria-pressed', String(boost));
 });
+muteButton.addEventListener('click', () => {
+  const value = !sound.enabled;
+  sound.setEnabled(value);
+  muteButton.textContent = value ? 'SOUND ON' : 'MUTED';
+  muteButton.setAttribute('aria-pressed', String(value));
+  if (value) sound.unlock();
+});
 function startFlight() {
+  sound.unlock(); sound.setActive(true);
   flight = makeFlight(); mode = 'flying'; boost = false; view = 'chase'; pointer = null;
   drone.visible = true; boostButton.textContent = 'CRUISE'; viewButton.textContent = 'FPV';
   overlay.className = 'panel hidden'; hud.classList.remove('hidden');
   pauseButton.classList.remove('hidden'); viewButton.classList.remove('hidden'); boostButton.classList.remove('hidden');
   warning.textContent = '';
+  muteButton.classList.remove('hidden');
   lastSector = ''; rebuildTiles(true); moveTiles(); updateFarLand(); last = performance.now();
 }
 function setPause() {
   if (mode !== 'flying') return;
-  mode = 'paused'; pointer = null; keys.clear();
+  mode = 'paused'; pointer = null; keys.clear(); sound.setActive(false);
   hud.classList.add('hidden'); pauseButton.classList.add('hidden');
-  viewButton.classList.add('hidden'); boostButton.classList.add('hidden');
+  viewButton.classList.add('hidden'); boostButton.classList.add('hidden'); muteButton.classList.add('hidden');
   overlay.className = 'panel paused';
   overlay.querySelector('.kicker').textContent = 'FREE FLIGHT · PAUSED';
   overlay.querySelector('h1').innerHTML = 'ABOVE<br><em>THE TREES</em>';
@@ -402,9 +418,9 @@ function setPause() {
 pauseButton.addEventListener('click', setPause);
 primary.addEventListener('click', () => {
   if (mode === 'paused') {
-    mode = 'flying'; overlay.className = 'panel hidden';
+    mode = 'flying'; overlay.className = 'panel hidden'; sound.unlock(); sound.setActive(true);
     hud.classList.remove('hidden'); pauseButton.classList.remove('hidden');
-    viewButton.classList.remove('hidden'); boostButton.classList.remove('hidden');
+    viewButton.classList.remove('hidden'); boostButton.classList.remove('hidden'); muteButton.classList.remove('hidden');
     last = performance.now();
   } else startFlight();
 });
@@ -444,6 +460,7 @@ function frame(now) {
     flight.throttle = boost || keys.has('shift') ? .98 : .54;
     advanceFlight(flight, inputState(), dt);
     rebuildTiles(); moveTiles(); updateFarLand(); updateHUD();
+    sound.update(flight.speed, Math.max(0, flight.y-groundHeight(flight.x,flight.z)),dt);
   }
   const height = Math.max(0, flight.y - groundHeight(flight.x, flight.z));
   scene.fog.density = .00034 / (1 + height / 2100);
