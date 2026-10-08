@@ -57,8 +57,8 @@ export function stepFlight(f, input, dt) {
   const response = 1 - Math.exp(-13 * dt);
   f.sideRate = lerp(f.sideRate || 0, horizontal * 29, response);
   f.climbRate = lerp(f.climbRate, vertical * 24, response);
-  f.throttle = clamp(f.throttle, 0, 1);
-  f.speed = lerp(f.speed, f.throttle * 47, 1 - Math.exp(-2.5 * dt));
+  f.throttle = clamp(f.throttle, -0.6, 1);
+  f.speed = lerp(f.speed, f.throttle * 47, 1 - Math.exp(-4 * dt));
 
   // The camera looks toward cameraYaw. Move in the same direction as the finger
   // appears to move on screen, even after the player orbits the camera.
