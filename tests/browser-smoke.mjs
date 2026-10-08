@@ -53,6 +53,19 @@ try{
   assert.ok(await page.locator('#hud').isVisible());
   await mkdir(join(root,'artifacts'),{recursive:true});
   await page.screenshot({path:join(root,'artifacts','forest-encounter-webgl.png')});
+  // Legacy Canvas fallback must also provide sound control and basic lifecycle.
+  const fallback=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:1.5,isMobile:true,hasTouch:true});
+  fallback.on('pageerror',e=>errors.push('fallback: '+e.message));
+  await fallback.goto(`http://127.0.0.1:${server.address().port}/legacy-canvas.html`,{waitUntil:'domcontentloaded'});
+  await fallback.locator('#primary').click();
+  await fallback.waitForSelector('#legacy-sound-toggle:not(.hidden)');
+  await fallback.locator('#legacy-sound-toggle').click();
+  assert.equal(await fallback.locator('#legacy-sound-toggle').innerText(),'MUTED');
+  await fallback.locator('#pause').click();
+  assert.ok(await fallback.locator('#overlay').isVisible());
+  await fallback.locator('#primary').click();
+  assert.ok(await fallback.locator('#hud').isVisible());
+  await fallback.close();
   assert.deepEqual(errors,[],'no JavaScript page errors');
   console.log('PASS: portrait WebGL start, three vehicles, real cruise speed, touch climb/dive, mute and pause');
 }finally{
