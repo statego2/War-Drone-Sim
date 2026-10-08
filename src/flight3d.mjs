@@ -43,6 +43,7 @@ export function groundHeight(x, z) {
 export const TURN_RATE = 1.34;
 const GRAVITY = 9.81;
 const MAX_DIVE_PITCH = 1.45; // ~83°, recoverable cinematic nose-down attitude
+const MAX_PULLBACK_PITCH = 1.16; // ~66° nose up, non-inverted arcade reverse
 export const shortestAngle = (from,to) => Math.atan2(Math.sin(to-from),Math.cos(to-from));
 export function makeFlight() {
   const x=roadCenter(0),z=10;
@@ -64,12 +65,15 @@ export function stepFlight(f,input,dt) {
   // movements remain controllable; no separate "dive" button.
   const desiredPitch=down>0
     ? clamp(.11*down+1.34*Math.pow(down,2.35),0,MAX_DIVE_PITCH)
-    : -.44*up;
+    : -Math.min(MAX_PULLBACK_PITCH,.24*up+.92*Math.pow(up,3));
   f.pitch=lerp(f.pitch,desiredPitch,1-Math.exp(-7*dt));
+  const pullback=smooth((-f.pitch-.49)/.59);
   // Horizontal drag primarily banks and translates; cruise gently turns.
   // HOVER has no commanded yaw so left/right really travels sideways.
   const turnAuthority=Math.min(1,Math.abs(f.throttle)*1.5);
-  f.yawRate=lerp(f.yawRate,-steer*TURN_RATE*.72*turnAuthority,1-Math.exp(-10*dt));
+  // Preserve camera-right strafing while backing up: do not let full
+  // pullback also spin the craft around and invert diagonal controls.
+  f.yawRate=lerp(f.yawRate,-steer*TURN_RATE*.72*turnAuthority*(1-.9*pullback),1-Math.exp(-10*dt));
   f.heading=Math.atan2(Math.sin(f.heading+f.yawRate*dt),Math.cos(f.heading+f.yawRate*dt));
   f.bank=lerp(f.bank,-steer*.38,1-Math.exp(-7*dt));
   f.throttle=clamp(f.throttle,-.6,1);
@@ -88,8 +92,12 @@ export function stepFlight(f,input,dt) {
   // while gravity accelerates downward. No magic airborne stop or reversal.
   // Drag and speed targets remain arcade-friendly, not rotor specifications.
   const diveDrive=22*Math.max(0,f.throttle)*Math.sin(Math.max(0,f.pitch));
-  const forwardTarget=f.throttle*78+diveDrive;
-  const forwardAcceleration=clamp((forwardTarget-along)*lerp(2.2,1.15,tilt),-60,65);
+  // Gentle nose-up climbs retain cruise. Committed nose-up gradually points
+  // the arcade movement impulse rearward, including in HOVER. Existing
+  // velocity must actually bleed off before reversing; there is no snap.
+  const rearward=pullback*38*Math.max(.35,Math.abs(f.throttle));
+  const forwardTarget=f.throttle*78*(1-pullback)+diveDrive-rearward;
+  const forwardAcceleration=clamp((forwardTarget-along)*lerp(2.2,1.15,tilt),-82,65);
   // Independent sideways movement works even in HOVER. Chase camera-right
   // is body -X here; combining axes permits all four diagonals.
   const lateralAcceleration=-across*lerp(2.7,2.05,tilt)-steer*27;
@@ -115,6 +123,7 @@ export function stepFlight(f,input,dt) {
     // Preserve downward impact speed for the game director. The run ends here.
   }
   f.sideRate=f.vx*rx+f.vz*rz;
+  f.pullback=pullback;
   return f;
 }
 
