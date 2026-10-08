@@ -35,3 +35,8 @@ Owner feedback: iPhone portrait screenshot of v0.2 shows genuine depth but repet
 - Measure Safari FPS, startup time, heat, memory and tile-seam smoothness over five minutes before accepting this as quality gate evidence.
 
 - Gameplay remains open and must be planned separately before adding new goals, combat or challenges.
+
+
+## Added after initial review
+
+A fictional lake basin centered at the forest's early western valley is now carved in the procedural heightfield and covered with a shallow-water mesh. Surrounding tree and grass generation avoids the water area. First-run cabins are placed close enough to find early in the flight. Water is a decorative 3D landmark, not hydrodynamic simulation; shoreline art may need a manual pass on the phone.
