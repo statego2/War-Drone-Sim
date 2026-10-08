@@ -5,13 +5,14 @@ import { createScenery } from './scenery3d.mjs';
 import { createClouds } from './atmosphere3d.mjs';
 import { makeEncounter, resolveContact, applyContact, nextDrone } from './encounter.mjs';
 import { createImpactFX, impactEnvelope } from './impactfx3d.mjs';
+import { gestureAxes } from './touchflight.mjs';
 
 // A floating-origin, streamed polygonal world. No real-drone targeting or hardware integration.
 const $ = id => document.getElementById(id);
 const canvas = $('scene'), overlay = $('overlay'), primary = $('primary');
 const hud = $('hud'), pauseButton = $('pause'), distanceEl = $('distance');
 const altitudeEl = $('altitude'), speedEl = $('speed'), hint = $('hint');
-const viewButton = $('view-mode'), boostButton = $('boost'), muteButton = $('sound-toggle');
+const viewButton = $('view-mode'), muteButton = $('sound-toggle');
 const warning = $('warning');
 const sound = createFlightAudio();
 const scenery = createScenery(THREE, { TILE, hash, groundHeight, roadCenter, lakeProximity });
@@ -496,9 +497,9 @@ canvas.addEventListener('pointerdown', e => {
 });
 canvas.addEventListener('pointermove', e => {
   if (e.pointerId !== pointer?.id) return;
-  // Drag right/left for lateral bank + assisted turn; combine both axes for diagonal flight.
-  pointer.dx = clamp((e.clientX-pointer.x)/85,-1,1);
-  pointer.dy = clamp((pointer.y-e.clientY)/95,-1,1);
+  // Short-thumb-travel two-axis input: side + climb/brake/reverse/dive.
+  const axes=gestureAxes(pointer.x,pointer.y,e.clientX,e.clientY);
+  pointer.dx=axes.x; pointer.dy=axes.y;
 });
 function release(e) { if (pointer?.id === e.pointerId) pointer = null; }
 canvas.addEventListener('pointerup', release);
@@ -508,7 +509,6 @@ window.addEventListener('keydown', e => {
   if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(k)) e.preventDefault();
   keys.add(k);
   if (k === 'c' && !e.repeat) toggleView();
-   if (k === 'r' && !e.repeat) cycleThrottle();
   if (k === ' ' && !e.repeat && mode === 'flying') setPause();
 });
 window.addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
@@ -527,15 +527,6 @@ function toggleView() {
   sound.cue('view');
 }
 viewButton.addEventListener('click', toggleView);
-const modes = ['hover','cruise','fast','reverse'];
-function cycleThrottle() {
-  if (mode !== 'flying') return;
-  throttleMode = modes[(modes.indexOf(throttleMode)+1)%modes.length];
-  boostButton.textContent = throttleMode.toUpperCase();
-  boostButton.setAttribute('aria-label','Ταχύτητα: '+throttleMode);
-  sound.cue('mode', throttleMode);
-}
- boostButton.addEventListener('click', cycleThrottle);
 muteButton.addEventListener('click', () => {
   const value = !sound.enabled;
   sound.setEnabled(value);
@@ -548,10 +539,10 @@ function startFlight() {
   encounter = makeEncounter(); syncTargets();
   spawnDrone(); mode = 'flying'; view = 'chase'; pointer = null;
   cameraYaw = flight.heading; cameraPitch=.05; throttleMode='cruise';
-  drone.visible = true; boostButton.textContent = 'CRUISE'; viewButton.textContent = 'FPV';
-  hint.textContent = 'Λίγο πάνω: άνοδος · τέρμα πάνω: πίσω · κάτω: βουτιά';
+  drone.visible = true; viewButton.textContent = 'FPV';
+  hint.textContent = 'Πάνω: ανέβα / φρένα / πίσω · κάτω: βουτιά · πλάγια: κατεύθυνση';
   overlay.className = 'panel hidden'; hud.classList.remove('hidden');
-  pauseButton.classList.remove('hidden'); viewButton.classList.remove('hidden'); boostButton.classList.remove('hidden');
+  pauseButton.classList.remove('hidden'); viewButton.classList.remove('hidden');
   warning.textContent = '';
   muteButton.classList.remove('hidden');
    lastSector = ''; rebuildTiles(true); moveTiles(); updateFarLand(); last = performance.now();
@@ -593,7 +584,7 @@ function setPause() {
   if (mode !== 'flying') return;
   mode = 'paused'; pointer = null; keys.clear(); sound.setActive(false);
   hud.classList.add('hidden'); pauseButton.classList.add('hidden');
-  viewButton.classList.add('hidden'); boostButton.classList.add('hidden'); muteButton.classList.add('hidden');
+  viewButton.classList.add('hidden'); muteButton.classList.add('hidden');
    overlay.className = 'panel paused';
   overlay.querySelector('.kicker').textContent = 'ENCOUNTER · PAUSED';
   overlay.querySelector('h1').innerHTML = 'ABOVE<br><em>THE TREES</em>';
@@ -605,7 +596,7 @@ primary.addEventListener('click', () => {
   if (mode === 'paused') {
     mode = 'flying'; overlay.className = 'panel hidden'; sound.unlock().then(() => sound.cue('start')); sound.setActive(true);
     hud.classList.remove('hidden'); pauseButton.classList.remove('hidden');
-    viewButton.classList.remove('hidden'); boostButton.classList.remove('hidden'); muteButton.classList.remove('hidden');
+    viewButton.classList.remove('hidden'); muteButton.classList.remove('hidden');
      last = performance.now();
   } else startFlight();
 });
@@ -663,10 +654,13 @@ function frame(now) {
   const dt = Math.min((now - last) / 1000 || .016, .1); last = now;
   if (mode === 'flying') {
     roundBannerTime=Math.max(0,roundBannerTime-dt);
-    const throttles = {hover:0, cruise:.72, fast:1, reverse:-.38};
-    flight.throttle = keys.has('shift') ? 1 : throttles[throttleMode];
+    // CRUISE/FAST/HOVER/REVERSE no longer require a mode button. The
+    // player's one-finger vertical gesture controls requested motion.
+    const command=inputState();
+    flight.throttle=.72;
+    throttleMode=command.y<-.75?'fast':'gesture';
     const previous={x:flight.x,y:flight.y,z:flight.z};
-    advanceFlight(flight, inputState(), dt);
+    advanceFlight(flight, command, dt);
     const contact=resolveContact(encounter,previous,flight,flight.groundContact);
     if(contact)endFlight(contact);
     rebuildTiles(); moveTiles(); updateFarLand(); updateHUD();
