@@ -1,5 +1,5 @@
 // Self-contained procedural scenic dressing. No military or real-world data.
-export function createScenery(THREE, { TILE, hash, groundHeight, roadCenter }) {
+export function createScenery(THREE, { TILE, hash, groundHeight, roadCenter, lakeProximity }) {
   const foliage = new THREE.MeshLambertMaterial({ color: 0x5b6b39, side: THREE.DoubleSide });
   const straw = new THREE.MeshLambertMaterial({ color: 0x9b8c5e });
   const water = new THREE.MeshPhongMaterial({ color: 0x4a8490, shininess: 70, transparent: true, opacity: .80, side: THREE.DoubleSide });
@@ -51,7 +51,7 @@ export function createScenery(THREE, { TILE, hash, groundHeight, roadCenter }) {
       const z=hash(cz*377+i*31,cx*541+i*113)*TILE;
       const wx=cx*TILE+x,wz=cz*TILE+z;
       const offset=Math.abs(wx-roadCenter(wz));
-      if(offset<8) continue;
+      if(offset<8 || (lakeProximity && lakeProximity(wx,wz) < 1.12)) continue;
       // Broad meadow openings, only scattered foliage around the forest.
       const y=groundHeight(wx,wz);
       const a=hash(cx*73+i,cz*97+i*23);
@@ -123,6 +123,11 @@ export function createScenery(THREE, { TILE, hash, groundHeight, roadCenter }) {
   }
   function addRoadside(group,cx,cz) {
     const z0=cz*TILE;
+    // First discovery point: a tiny hillside lodge visible shortly after takeoff.
+    if (cz===0) {
+      cabin(group,cx,cz,145,1,1);
+      cabin(group,cx,cz,191,1,0);
+    }
     if ((cz+9000)%5===1) {
       cabin(group,cx,cz,z0+TILE*.46,1,(cz+9000)%2);
       cabin(group,cx,cz,z0+TILE*.57,1,0);
