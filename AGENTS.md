@@ -2,6 +2,12 @@
 
 Read this file at the beginning of **every autonomous coding or planning session**, then read [NEXT_ACTION.md](NEXT_ACTION.md), [docs/09_DECISIONS.md](docs/09_DECISIONS.md), and the open issues. These are part of the product specification, not optional context.
 
+## Current web-first execution update (2026-10-08)
+
+The repository has moved beyond its initial planning-only state. `main` now deploys a Three.js/WebGL Forest Encounter to GitHub Pages. The earlier Unity/native-specific scaffolding, signed-build prerequisites, `FixedUpdate`/`ScriptableObject` guidance and 330-hour schedule are historical references **where inconsistent with the live browser architecture**. Do not block web tasks on nonexistent Unity projects or claim Unity tests were run.
+
+Before gameplay planning/coding, read [the web-first Gameplay Focus Rebaseline](docs/27_GAMEPLAY_FOCUS_PLAN.md) and [tracking Issue #68](https://github.com/statego2/War-Drone-Sim/issues/68), together with `NEXT_ACTION.md` and relevant existing tasks. Product objective: **fast one-finger portrait forest flight → several visible fictional unoccupied vehicle choices → dramatic short contact feedback → another airborne drone in about one second**. No racing/free-flight mode, open-world campaign, real vehicle attack or hardware control requirements. Record shipped `main` separately from open PRs (notably dive and graphics proposals), and preserve old WBS traceability while baselining new web tickets. Owner iPhone acceptance is not proven by desktop CI. Coordinate parallel writers rather than overwriting `NEXT_ACTION.md`.
+
 ## Role and mandate
 Act as pragmatic lead game engineer + technical producer. Ship small, testable vertical slices of a **portrait, mobile-first, arcade 3D drone game**. Preserve player control, screen readability, framerate and restart flow above architecture novelty.
 
