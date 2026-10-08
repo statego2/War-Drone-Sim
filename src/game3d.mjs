@@ -549,7 +549,7 @@ function startFlight() {
   spawnDrone(); mode = 'flying'; view = 'chase'; pointer = null;
   cameraYaw = flight.heading; cameraPitch=.05; throttleMode='cruise';
   drone.visible = true; boostButton.textContent = 'CRUISE'; viewButton.textContent = 'FPV';
-  hint.textContent = 'Σύρε διαγώνια για πλάγια πτήση · τέρμα κάτω: γρήγορη βουτιά';
+  hint.textContent = 'Λίγο πάνω: άνοδος · τέρμα πάνω: πίσω · κάτω: βουτιά';
   overlay.className = 'panel hidden'; hud.classList.remove('hidden');
   pauseButton.classList.remove('hidden'); viewButton.classList.remove('hidden'); boostButton.classList.remove('hidden');
   warning.textContent = '';
@@ -624,7 +624,7 @@ function updateCamera(dt) {
   cameraYaw += yawDifference*(1-Math.exp(-4.4*dt));
   // Camera follows the actual nose-down attitude: steep pitch shows terrain
   // rushing up, rather than staying level while the model dives.
-  cameraPitch += (clamp(.035-flight.pitch*.67,-.93,.43)-cameraPitch)*(1-Math.exp(-4.1*dt));
+  cameraPitch += (clamp(.035-flight.pitch*.67-.42*(flight.pullback||0),-.93,.43)-cameraPitch)*(1-Math.exp(-4.1*dt));
   const dirX = Math.sin(cameraYaw), dirZ = Math.cos(cameraYaw);
   const lookX=dirX*Math.cos(cameraPitch), lookZ=dirZ*Math.cos(cameraPitch);
   const lookY=Math.sin(cameraPitch);
@@ -650,7 +650,7 @@ function updateHUD() {
   distanceEl.textContent = `${encounter.hits}/3 VEHICLES · DRONE ${encounter.drones}`;
   altitudeEl.textContent = Math.round(Math.max(0, flight.y - groundHeight(flight.x, flight.z))) + ' M AGL';
   const totalSpeed=Math.hypot(flight.vx,flight.vy,flight.vz);
-  speedEl.textContent = Math.round(totalSpeed*3.6) + ' KM/H';
+  speedEl.textContent = (flight.speed < -5 ? '↶ ' : '') + Math.round(totalSpeed*3.6) + ' KM/H';
   const rate=$('vertical-rate');
   if (rate) {
     const rising=flight.vy>=0;
@@ -733,7 +733,7 @@ updateCamera(.016);
 window.__openSkySnapshot = () => ({
   x: flight.x, y: flight.y, z: flight.z, heading: flight.heading,
   cameraYaw, cameraPitch, throttleMode, speed:flight.speed,
-  vx:flight.vx,vy:flight.vy,vz:flight.vz,pitch:flight.pitch,bank:flight.bank,sideRate:flight.sideRate,
+  vx:flight.vx,vy:flight.vy,vz:flight.vz,pitch:flight.pitch,bank:flight.bank,sideRate:flight.sideRate,pullback:flight.pullback||0,
   ground: groundHeight(flight.x, flight.z), mode, audioEnabled: sound.enabled
   , hits:encounter.hits, drones:encounter.drones, vehicles:encounter.vehicles.map(v=>v.destroyed)
 });
