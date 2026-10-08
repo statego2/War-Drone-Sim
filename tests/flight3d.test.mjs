@@ -49,8 +49,14 @@ test('finger right turns aircraft toward screen right, left turns left', () => {
 });
 test('sustained steering turns naturally beyond ninety degrees', () => {
   const right=makeFlight();
-  for(let i=0;i<155;i++)stepFlight(right,{x:1,y:0},1/60);
-  assert.ok(right.heading < -2.5,'sustained right gesture turns more than 140 degrees');
+  let totalYaw=0, previousHeading=right.heading;
+  for(let i=0;i<155;i++) {
+    stepFlight(right,{x:1,y:0},1/60);
+    totalYaw += Math.atan2(Math.sin(right.heading-previousHeading),Math.cos(right.heading-previousHeading));
+    previousHeading=right.heading;
+  }
+  // Heading itself wraps at +/-PI; accumulate shortest differences to validate full rotation.
+  assert.ok(totalYaw < -2.5,'sustained right gesture turns more than 140 degrees');
 });
 test('up climbs and down descends independently of steering', () => {
   const vertical=makeFlight(),initialY=vertical.y;
