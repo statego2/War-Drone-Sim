@@ -34,12 +34,24 @@ test('low altitude prevents tunneling below terrain, without killing flight', ()
   stepFlight(f,{x:0,y:1},.05);
   assert.ok(f.y >= groundHeight(f.x,f.z)+2.2-0.001);
 });
-test('steering turns while auto-forward motion persists', () => {
+test('screen-space right input moves right without yaw rotation', () => {
   const f=makeFlight(); const x0=f.x, z0=f.z;
-  for(let i=0;i<140;i++) advanceFlight(f,{x:1,y:.1},1/60);
-  assert.ok(f.heading>1);
-  assert.ok(f.x>x0+10);
-  assert.ok(f.z>z0);
+  for (let i=0;i<45;i++) advanceFlight(f,{x:1,y:0},1/60);
+  assert.ok(f.x > x0+8);
+  assert.equal(f.heading, 0);
+  assert.ok(f.z > z0);
+});
+test('screen-space left input moves left; up climbs and down descends', () => {
+  const left=makeFlight(),right=makeFlight(),vertical=makeFlight();
+  for (let i=0;i<40;i++) { stepFlight(left,{x:-1,y:0},1/60); stepFlight(right,{x:1,y:0},1/60); }
+  assert.ok(left.x < roadCenter(0)-5);
+  assert.ok(right.x > roadCenter(0)+5);
+  const initialY=vertical.y;
+  for (let i=0;i<70;i++) stepFlight(vertical,{x:0,y:1},1/60);
+  assert.ok(vertical.y > initialY + 15);
+  const peak=vertical.y;
+  for (let i=0;i<70;i++) stepFlight(vertical,{x:0,y:-1},1/60);
+  assert.ok(vertical.y < peak - 10);
 });
 test('batched elapsed time approximates short frame time', () => {
   const slow=makeFlight(), fast=makeFlight();
