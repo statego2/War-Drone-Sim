@@ -46,6 +46,18 @@ try {
   await page.mouse.up();
   const after = await page.locator('#altitude').innerText();
   assert.ok(parseInt(after,10) > parseInt(before,10), 'drag-up should increase AGL');
+  // Nose-down attitude and gravity-driven acceleration are independent
+  // of steering. The game remains an entertainment flight experience.
+  await page.mouse.move(185,430);
+  await page.mouse.down();
+  await page.mouse.move(185,690,{steps:8});
+  await page.waitForTimeout(1200);
+  const noseDown = await page.evaluate(() => window.__openSkySnapshot());
+  await page.mouse.up();
+  assert.ok(noseDown.pitch > .7,'steep finger-down gesture should tilt nose down');
+  assert.ok(noseDown.vy < -.5,'steep forward pitch must create downward velocity');
+  assert.ok(noseDown.cameraPitch < -.3,'camera should follow the diving attitude');
+  assert.match(await page.locator('#vertical-rate').innerText(),/↓/,'HUD should show descent');
   const initial = await page.evaluate(() => window.__openSkySnapshot());
   assert.equal(await page.locator('#look-mode').count(), 0, 'no LOOK button');
   assert.equal(await page.locator('#align-view').count(), 0, 'no FACE button');
@@ -88,7 +100,7 @@ try {
   await mkdir(join(root, 'artifacts'), { recursive: true });
   await page.screenshot({ path: join(root, 'artifacts', 'open-sky-webgl.png') });
   assert.deepEqual(errors, [], 'JavaScript page errors must be absent');
-  console.log('PASS: WebGL, one-finger right/left heading turns, automatic chase camera, altitude, FPV, throttle, mute, pause/resume');
+  console.log('PASS: WebGL, nose-down/gravity dive, pitch-aware camera, single-finger steering, altitude, FPV, throttle, mute, pause/resume');
 } finally {
   if (browser) await browser.close();
   await new Promise(resolveClose => server.close(resolveClose));
