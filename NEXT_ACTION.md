@@ -6,7 +6,8 @@
 
 - One-screen start → fly → fictional moving vehicle / tree / miss → result → retry.
 - Seeded forest corridor, road, perspective camera, relative touch drag and keyboard, auto-forward arcade flight, local best score and brief synth cue.
-- Five model tests and JS syntax checks passed locally on Node 24.19.0; CI workflow added.
+- Six model tests and JS syntax checks passed locally on Node 24.19.0; GitHub Actions browser checks passed on the merged commit.
+- Desktop Chrome preview rendered the forest and completed a successful contact with score; retry, pause and resume were observed. This is not an iPhone test.
 - See `docs/18_BROWSER_PROTOTYPE.md` for commands, design tradeoffs and precise limitations.
 
 ## Immediate next action
@@ -18,7 +19,7 @@
 
 ## Known validation limits
 
-Browser automation here was blocked because headless Chromium was not installed and its download failed. The cloud browser could not reach localhost. Tests confirm model logic only, not actual Safari render, controls, FPS or fun. No paid assets, backend, real-world control or weapon integration were added.
+Local Playwright Chromium was unavailable and its download failed; the cloud browser could not reach localhost. A public commit preview was instead opened in desktop Chrome and visually exercised through contact/result and pause/resume. Touch on iPhone, Safari rendering, FPS, thermal behavior and fun remain unverified. No paid assets, backend, real-world control or weapon integration were added.
 
 ## Product gates
 
