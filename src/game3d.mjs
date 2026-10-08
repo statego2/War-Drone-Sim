@@ -533,7 +533,7 @@ function cycleThrottle() {
   throttleMode = modes[(modes.indexOf(throttleMode)+1)%modes.length];
   boostButton.textContent = throttleMode.toUpperCase();
   boostButton.setAttribute('aria-label','Ταχύτητα: '+throttleMode);
-  sound.cue('mode');
+  sound.cue('mode', throttleMode);
 }
  boostButton.addEventListener('click', cycleThrottle);
 muteButton.addEventListener('click', () => {
@@ -581,7 +581,11 @@ function endFlight(contact) {
   } else {
     impactFX.start('ground',{ x:flight.x, y:groundHeight(flight.x,flight.z), z:flight.z });
   }
-  sound.setActive(false);sound.impact(contact.type==='vehicle');
+  sound.setActive(false);
+  sound.impact(contact.type==='vehicle', {
+    chain: encounter.hits,
+    finale: contact.type==='vehicle' && encounter.hits===encounter.vehicles.length
+  });
   warning.textContent=contact.type==='vehicle' ? 'DIRECT HIT' : 'GROUND IMPACT';
   drone.visible=false;
 }
