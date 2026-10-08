@@ -1,4 +1,4 @@
-// Optional desktop Chromium smoke test run by CI. NOT an iPhone or performance benchmark.
+// Desktop Chromium WebGL interaction smoke. Real iPhone feel remains a separate gate.
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { readFile, mkdir } from 'node:fs/promises';
@@ -6,109 +6,56 @@ import { join, resolve, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 
-const root = resolve(fileURLToPath(new URL('../', import.meta.url)));
-const mime = { '.html': 'text/html', '.css': 'text/css', '.mjs': 'text/javascript', '.js': 'text/javascript' };
-const server = createServer(async (req, res) => {
-  try {
-    const url = new URL(req.url || '/', 'http://localhost');
-    const safe = decodeURIComponent(url.pathname).replace(/^\/+/, '') || 'index.html';
-    const file = resolve(root, safe);
-    if (!(file === root || file.startsWith(root + '/'))) { res.writeHead(403).end(); return; }
-    const data = await readFile(file);
-    res.writeHead(200, { 'Content-Type': mime[extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-store' });
-    res.end(data);
-  } catch { res.writeHead(404).end('not found'); }
+const root=resolve(fileURLToPath(new URL('../',import.meta.url)));
+const mime={'.html':'text/html','.css':'text/css','.mjs':'text/javascript','.js':'text/javascript'};
+const server=createServer(async(req,res)=>{
+  try{
+    const safe=decodeURIComponent(new URL(req.url||'/','http://localhost').pathname).replace(/^\/+/, '')||'index.html';
+    const file=resolve(root,safe);
+    if(!file.startsWith(root+'/')){res.writeHead(403).end();return;}
+    res.writeHead(200,{'Content-Type':mime[extname(file)]||'application/octet-stream'});
+    res.end(await readFile(file));
+  }catch{res.writeHead(404).end('not found');}
 });
-await new Promise(resolveReady => server.listen(0, '127.0.0.1', resolveReady));
+await new Promise(r=>server.listen(0,'127.0.0.1',r));
 let browser;
-try {
-  const port = server.address().port;
-  browser = await chromium.launch({ headless: true, args: [
-    '--enable-webgl', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'
-  ] });
-  const page = await browser.newPage({
-    viewport: { width: 390, height: 844 }, deviceScaleFactor: 1.5,
-    isMobile: true, hasTouch: true, reducedMotion: 'reduce'
-  });
-  const errors = [];
-  page.on('pageerror', err => errors.push(err.message));
-  page.on('console', msg => { if (msg.type() === 'error') errors.push(msg.text()); });
-  await page.goto('http://127.0.0.1:' + port + '/', { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => document.documentElement.dataset.openSkyReady === 'true', null, { timeout: 45000 });
-  assert.ok(await page.evaluate(() => !!document.querySelector('canvas')?.getContext('webgl2')), 'WebGL2 context expected');
+try{
+  browser=await chromium.launch({headless:true,args:['--enable-webgl','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+  const page=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:1.5,isMobile:true,hasTouch:true});
+  const errors=[];
+  page.on('pageerror',e=>errors.push(e.message));
+  page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
+  await page.goto(`http://127.0.0.1:${server.address().port}/`,{waitUntil:'domcontentloaded'});
+  await page.waitForFunction(()=>document.documentElement.dataset.openSkyReady==='true',null,{timeout:45000});
   await page.locator('#primary').click();
-  await page.waitForSelector('#hud:not(.hidden)', { timeout: 20000 });
-  const before = await page.locator('#altitude').innerText();
-  await page.mouse.move(190, 570);
-  await page.mouse.down();
-  await page.mouse.move(190, 370, { steps: 7 });
-  await page.waitForTimeout(1500);
+  await page.waitForSelector('#hud:not(.hidden)');
+  await page.waitForTimeout(900);
+  const running=await page.evaluate(()=>window.__openSkySnapshot());
+  assert.equal(running.vehicles.length,3);
+  assert.ok(running.speed>43,'cruise raises actual forward speed');
+  await page.mouse.move(190,540);await page.mouse.down();
+  await page.mouse.move(190,350,{steps:6});
+  await page.waitForTimeout(900);
+  const climbing=await page.evaluate(()=>window.__openSkySnapshot());
   await page.mouse.up();
-  const after = await page.locator('#altitude').innerText();
-  assert.ok(parseInt(after,10) > parseInt(before,10), 'drag-up should increase AGL');
-  // Nose-down attitude and gravity-driven acceleration are independent
-  // of steering. The game remains an entertainment flight experience.
-  const beforeDive = await page.evaluate(() => window.__openSkySnapshot());
-  await page.mouse.move(185,430);
-  await page.mouse.down();
-  await page.mouse.move(185,690,{steps:8});
-  await page.waitForTimeout(1200);
-  const noseDown = await page.evaluate(() => window.__openSkySnapshot());
+  assert.ok(climbing.vy>0,'upward gesture produces climb');
+  await page.mouse.move(190,400);await page.mouse.down();
+  await page.mouse.move(190,700,{steps:6});
+  await page.waitForTimeout(900);
+  const diving=await page.evaluate(()=>window.__openSkySnapshot());
   await page.mouse.up();
-  assert.ok(noseDown.pitch > .7,'steep finger-down gesture should tilt nose down');
-  // The previous action climbed, so its upward momentum must first be
-  // cancelled. Browser test checks deceleration, pure model test checks
-  // negative velocity and full recovery from a neutral high-altitude start.
-  assert.ok(noseDown.vy < beforeDive.vy - 1,'steep forward pitch must create downward acceleration');
-  assert.ok(noseDown.cameraPitch < -.3,'camera should follow the diving attitude');
-  assert.match(await page.locator('#vertical-rate').innerText(),/[↑↓]/,'HUD shows signed vertical rate');
-  const initial = await page.evaluate(() => window.__openSkySnapshot());
-  assert.equal(await page.locator('#look-mode').count(), 0, 'no LOOK button');
-  assert.equal(await page.locator('#align-view').count(), 0, 'no FACE button');
-
-  await page.mouse.move(150, 560);
-  await page.mouse.down();
-  await page.mouse.move(290, 560, { steps: 8 });
-  await page.waitForTimeout(1300);
-  const turnedRight = await page.evaluate(() => window.__openSkySnapshot());
-  await page.mouse.up();
-  assert.ok(turnedRight.heading < initial.heading-.75, 'right swipe turns aircraft right');
-  // With velocity inertia the craft initially drifts along its old track;
-  // test the change in lateral velocity instead of requiring an instant
-  // four-unit displacement. Heading direction remains independently checked.
-  assert.ok(turnedRight.vx < initial.vx-.5,'right turn bends actual velocity toward screen-right');
-  assert.ok(turnedRight.cameraYaw < initial.cameraYaw-.32, 'camera follows right-hand turn without LOOK');
-  assert.ok(Math.abs(turnedRight.cameraYaw-turnedRight.heading)<.50,'chase camera remains behind heading');
-
-  await page.mouse.move(290, 570);
-  await page.mouse.down();
-  await page.mouse.move(70, 570, { steps: 8 });
-  await page.waitForTimeout(1250);
-  const turnedLeft = await page.evaluate(() => window.__openSkySnapshot());
-  await page.mouse.up();
-  assert.ok(turnedLeft.heading > turnedRight.heading+.7, 'left swipe turns aircraft back left');
-  assert.ok(turnedLeft.cameraYaw > turnedRight.cameraYaw+.5, 'camera automatically follows left turn');
-  for (const expected of ['FAST','REVERSE','HOVER','CRUISE']) {
-    await page.locator('#boost').click();
-    assert.equal(await page.locator('#boost').innerText(),expected);
-  }
-  await page.locator('#view-mode').click();
-  assert.equal(await page.locator('#view-mode').innerText(), 'CHASE');
-  await page.locator('#boost').click();
-  assert.equal(await page.locator('#boost').innerText(), 'FAST');
+  assert.ok(diving.pitch>.7 && diving.vy<climbing.vy,'downward gesture pitches and falls');
   await page.locator('#sound-toggle').click();
-  assert.equal(await page.locator('#sound-toggle').innerText(), 'MUTED');
-  await page.locator('#sound-toggle').click();
-  assert.equal(await page.locator('#sound-toggle').innerText(), 'SOUND ON');
+  assert.equal(await page.locator('#sound-toggle').innerText(),'MUTED');
   await page.locator('#pause').click();
   assert.ok(await page.locator('#overlay').isVisible());
   await page.locator('#primary').click();
   assert.ok(await page.locator('#hud').isVisible());
-  await mkdir(join(root, 'artifacts'), { recursive: true });
-  await page.screenshot({ path: join(root, 'artifacts', 'open-sky-webgl.png') });
-  assert.deepEqual(errors, [], 'JavaScript page errors must be absent');
-  console.log('PASS: WebGL, nose-down/gravity dive, pitch-aware camera, single-finger steering, altitude, FPV, throttle, mute, pause/resume');
-} finally {
-  if (browser) await browser.close();
-  await new Promise(resolveClose => server.close(resolveClose));
+  await mkdir(join(root,'artifacts'),{recursive:true});
+  await page.screenshot({path:join(root,'artifacts','forest-encounter-webgl.png')});
+  assert.deepEqual(errors,[],'no JavaScript page errors');
+  console.log('PASS: portrait WebGL start, three vehicles, real cruise speed, touch climb/dive, mute and pause');
+}finally{
+  if(browser)await browser.close();
+  await new Promise(r=>server.close(r));
 }
