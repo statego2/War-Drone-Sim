@@ -77,7 +77,7 @@ export function stepFlight(f,input,dt) {
   const rx=Math.cos(f.heading),rz=-Math.sin(f.heading);
   const along=f.vx*fx+f.vz*fz;
   const across=f.vx*rx+f.vz*rz;
-  const forwardAcceleration=clamp((f.throttle*47-along)*1.3+
+  const forwardAcceleration=clamp((f.throttle*47-along)*1.8+
     7.5*Math.sin(f.pitch),-35,35);
   const lateralAcceleration=-across*2.1;
   f.vx+=(fx*forwardAcceleration+rx*lateralAcceleration)*dt;
