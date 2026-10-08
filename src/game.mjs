@@ -1,4 +1,4 @@
-import {TUNE,clamp,roadX,vehicleX,newRun,step} from './model.mjs';
+import {TUNE,clamp,roadX,vehicleX,newRun,advance} from './model.mjs';
 
 const canvas=document.querySelector('#scene'),ctx=canvas.getContext('2d',{alpha:false});
 const overlay=document.querySelector('#overlay'),primary=document.querySelector('#primary');
@@ -64,6 +64,6 @@ pause.addEventListener('click',()=>{if(mode!=='playing')return;mode='paused';ove
 canvas.addEventListener('pointerdown',e=>{if(mode!=='playing'||press)return;press={id:e.pointerId,x:e.clientX,y:e.clientY,dx:0,dy:0};canvas.setPointerCapture(e.pointerId);hint.style.opacity='0';});
 canvas.addEventListener('pointermove',e=>{if(press?.id!==e.pointerId)return;press.dx=clamp((e.clientX-press.x)/75,-1,1);press.dy=clamp((press.y-e.clientY)/80,-1,1);});
 function release(e){if(press?.id===e.pointerId)press=null;}canvas.addEventListener('pointerup',release);canvas.addEventListener('pointercancel',release);
-window.addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',' '].includes(e.key))e.preventDefault();keys.add(e.key.toLowerCase());if(e.key===' '&&mode==='result')begin();});window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
+window.addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',' '].includes(e.key))e.preventDefault();keys.add(e.key.toLowerCase());if(mode==='playing')hint.style.opacity='0';if(e.key===' '&&mode==='result')begin();});window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
 window.addEventListener('blur',()=>{press=null;keys.clear();});document.addEventListener('visibilitychange',()=>{if(document.hidden){press=null;keys.clear();last=0;}});
-function frame(now){const dt=Math.min((now-last)/1000||0,.05);if(mode==='playing'){const input={x:clamp((press?.dx||0)+(keys.has('arrowright')||keys.has('d')?1:0)-(keys.has('arrowleft')||keys.has('a')?1:0),-1,1),y:clamp((press?.dy||0)+(keys.has('arrowup')||keys.has('w')?1:0)-(keys.has('arrowdown')||keys.has('s')?1:0),-1,1)};step(run,input,dt);distance.textContent=`${String(Math.round(run.z)).padStart(3,'0')} M`;if(run.phase==='result')finish();}draw(now);last=now;requestAnimationFrame(frame);}requestAnimationFrame(frame);
+function frame(now){const dt=Math.min((now-last)/1000||0,.5);if(mode==='playing'){const input={x:clamp((press?.dx||0)+(keys.has('arrowright')||keys.has('d')?1:0)-(keys.has('arrowleft')||keys.has('a')?1:0),-1,1),y:clamp((press?.dy||0)+(keys.has('arrowup')||keys.has('w')?1:0)-(keys.has('arrowdown')||keys.has('s')?1:0),-1,1)};advance(run,input,dt);distance.textContent=`${String(Math.round(run.z)).padStart(3,'0')} M`;if(run.phase==='result')finish();}draw(now);last=now;requestAnimationFrame(frame);}requestAnimationFrame(frame);
