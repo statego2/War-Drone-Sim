@@ -1,0 +1,16 @@
+name: Browser prototype checks
+on:
+  push:
+    paths: ["index.html", "src/**", "tests/**", "package.json", ".github/workflows/browser-checks.yml"]
+  pull_request:
+    paths: ["index.html", "src/**", "tests/**", "package.json", ".github/workflows/browser-checks.yml"]
+jobs:
+  logic:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm test
+      - run: node --check src/game.mjs

@@ -1,6 +1,6 @@
 # Current Project Status — War Drone Sim
 
-**Snapshot:** 2026-10-08. **Project phase:** Planning baseline completed; **G0 engineering NOT STARTED**. **Playable build:** none. **Target mobile build:** none. **Chosen engine:** proposed only; ADR-001 not accepted. **Owner approval for asset purchases:** not given. **Actual test outcomes:** none.
+**Snapshot:** 2026-10-08. **Project phase:** experimental browser prototype implemented; G0/G1 phone evidence pending. **Playable source:** root `index.html`. **Target mobile build:** browser, no native package. **Runtime:** Canvas perspective, subject to device validation. **Owner approval for asset purchases:** not given. **Actual test outcomes:** 5 model tests and JS syntax checks passed locally; browser/device verification pending.
 
 ## Verified repository state at handoff
 - Repo initialized with project charter, experience design, candidate Unity/mobile architecture, stage-gate schedule, risk and asset/license research, testing/release policy, AI-agent instructions, task JSON and roadmap.
@@ -33,3 +33,6 @@
 
 ## Useful starting files
 [AGENTS.md](../AGENTS.md) · [NEXT_ACTION.md](../NEXT_ACTION.md) · [Project Charter](00_PROJECT_CHARTER.md) · [Technical Architecture](02_TECHNICAL_ARCHITECTURE.md) · [Resource Schedule](16_RESOURCE_SCHEDULE.md) · [Task index](planning/github_issue_map.json).
+
+## Update — browser prototype v0.1 (2026-10-08)
+The owner explicitly chose browser play. Root `index.html`, `src/`, tests and CI now implement a perspective Canvas fly/contact/retry loop. The original Unity-native task sequence and 330h estimate are no longer the execution baseline. See `docs/18_BROWSER_PROTOTYPE.md` and `NEXT_ACTION.md`. G0 real-device validation and G1 fun gate remain open; earlier planning snapshot above is historical, not an implementation claim.

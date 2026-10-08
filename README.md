@@ -1,6 +1,6 @@
 # War Drone Sim
 
-**Status:** Planning / pre-production — no playable build exists yet.  
+**Status:** Browser prototype v0.1 implemented on 2026-10-08; real phone playtest pending.  
 **Planning baseline:** 2026-10-08 · **Owner:** repository owner · **Document language:** English (implementation specification), Greek discussion / review welcome.
 
 ## Product
@@ -11,11 +11,15 @@ A **portrait-first, mobile 3D arcade drone game**. Fly through a fictional fores
 
 We are **not** building a real-world training tool, tactical navigation system, weapon controller, or realistic targeting software. All targets are fictional game objects; simulation mechanics should be designed for entertainment, not physical-world applicability.
 
+## Play the browser prototype
+
+Open `index.html` through a static web server or the GitHub Pages URL once configured. In the repo root, run `python3 -m http.server 8765`, then open `http://localhost:8765/`. Drag to steer and change altitude; tap BEGIN FLIGHT, find the moving fictional vehicle, and make contact. Keyboard WASD / arrows also work. Run `npm test` for pure model checks. See [browser prototype implementation and evidence](docs/18_BROWSER_PROTOTYPE.md).
+
 ## Work status
 
-- Repository was empty at planning start. All files in this initial commit are **specifications**, not shipped features.
-- **Proposed engine:** Unity 6 LTS (exact version to be pinned during T-001), C#, Universal Render Pipeline, Unity Input System, Cinemachine. **PROVISIONAL until ADR-001 technical feasibility gate.**
-- **Mobile target:** iOS + Android native builds; GitHub Pages/browser distribution is a separate feasibility experiment, **not guaranteed**.
+- Initial repository was planning-only; the current root `index.html` and `src/` now contain an experimental browser game. Phone feel and performance have not been verified.
+- **Prototype runtime:** dependency-free Canvas perspective renderer + JavaScript model. Browser delivery was selected by the owner. A full mesh engine remains a later evaluation if this renderer proves insufficient.
+- **Primary target:** portrait phone browser. Native packages are no longer the first delivery path.
 - **First gate:** greyscale phone-playable flight + vehicle impact loop. Do not spend on premium assets or monetization until that gate passes.
 
 ## Documentation
@@ -52,4 +56,4 @@ We are **not** building a real-world training tool, tactical navigation system, 
 4. No premium assets / external licenses / ads SDK / production release without an explicit go/no-go gate.
 5. Keep gameplay accessible in portrait. Fun-first, simplest implementation that can be tested on a real phone.
 
-**Planning baseline is now assembled: 55 live GitHub Issues, 330h nominal work and an evidence-gated roadmap.** See [current status](docs/17_PROJECT_STATUS.md). Production is complete only when real build, playtest and QA evidence proves the gates.
+**Planning baseline is assembled and a browser prototype has been added. The original 55-task/330h schedule assumed native Unity and must be rebaselined for web; real iPhone validation remains open.** See [current status](docs/17_PROJECT_STATUS.md). Production is complete only when real build, playtest and QA evidence proves the gates.

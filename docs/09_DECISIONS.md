@@ -3,7 +3,7 @@
 An ADR is **ACCEPTED** only with owner decision or delegated architectural authority *and* gate evidence. Candidate defaults are not claims of implementation.
 
 ## ADR-001 — Engine and primary player access channel
-**Status:** PROPOSED. **Owner:** product owner. **Deadline:** end of G0.  
+**Status:** ACCEPTED for primary browser channel on 2026-10-08 by explicit owner instruction; runtime implementation remains experimental. **Owner:** product owner.  
 **Question:** Is War Drone Sim primarily a **native iOS/Android 3D game** or **URL-playable mobile web** experience?
 - A **Unity 6 LTS + URP native first**: best ecosystem/visual tooling; requires installed app to test properly; Unity Web could be optional if phone Safari spike passes.
 - B **Godot 4.x Mobile/Compatibility**: open source, leaner, compatibility web path; fewer mature paid game templates and renderer differences between native/web.
@@ -70,3 +70,7 @@ Decision owner + date:
 Status: PROPOSED / ACCEPTED / SUPERSEDED / REJECTED
 Links to issue / PR / test:
 ```
+
+## ADR-011 — Fast browser prototype renderer
+**Status:** EXPERIMENTAL, pending visual and phone test. **Date:** 2026-10-08.  
+With browser play explicitly required, implement a zero-dependency Canvas perspective projection of 3D coordinates first. This provides a link-playable portrait slice and avoids native signing or a large WebGL engine download. It is not a claim of full mesh 3D, measured mobile performance, or G1 acceptance. Compare actual iPhone visual feel with a lightweight WebGL mesh alternative only after testing the playable loop. See `docs/18_BROWSER_PROTOTYPE.md`.
