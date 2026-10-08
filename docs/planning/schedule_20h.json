@@ -1,0 +1,832 @@
+{
+  "baseline": "2026-10-08",
+  "illustrative_start": "2026-10-12",
+  "team_capacity": "one developer, 20 focused engineering h/week, single-worker resource-constrained topological task order",
+  "base_hours": 330,
+  "reserve_low_hours": 429,
+  "reserve_high_hours": 495,
+  "critical_path_ideal_parallel_hours": 204,
+  "critical_path": [
+    "T-001",
+    "T-002",
+    "T-006",
+    "T-008",
+    "T-009",
+    "T-010",
+    "T-012",
+    "T-013",
+    "T-014",
+    "T-015",
+    "T-017",
+    "T-018",
+    "T-019",
+    "T-020",
+    "T-021",
+    "T-022",
+    "T-025",
+    "T-053",
+    "T-028",
+    "T-029",
+    "T-030",
+    "T-035",
+    "T-037",
+    "T-038",
+    "T-039",
+    "T-041",
+    "T-044",
+    "T-045",
+    "T-046",
+    "T-047",
+    "T-048",
+    "T-049"
+  ],
+  "gate_rollups": {
+    "G0": {
+      "hours": 46,
+      "start_hour": 0,
+      "end_hour": 46
+    },
+    "G1": {
+      "hours": 80,
+      "start_hour": 46,
+      "end_hour": 126
+    },
+    "G2": {
+      "hours": 88,
+      "start_hour": 126,
+      "end_hour": 214
+    },
+    "G3": {
+      "hours": 67,
+      "start_hour": 214,
+      "end_hour": 281
+    },
+    "G4": {
+      "hours": 49,
+      "start_hour": 281,
+      "end_hour": 330
+    }
+  },
+  "items": [
+    {
+      "id": "T-001",
+      "gate": "G0",
+      "title": "Compare Unity 6 native, Unity web and Godot/web delivery",
+      "depends_on": [],
+      "planned_start_hour": 0,
+      "planned_finish_hour": 8,
+      "week_start": 1,
+      "week_finish": 1,
+      "effort_hours": 8
+    },
+    {
+      "id": "T-002",
+      "gate": "G0",
+      "title": "Build signed portrait hello world on a real iPhone or Android",
+      "depends_on": [
+        "T-001"
+      ],
+      "planned_start_hour": 8,
+      "planned_finish_hour": 16,
+      "week_start": 1,
+      "week_finish": 1,
+      "effort_hours": 8
+    },
+    {
+      "id": "T-003",
+      "gate": "G0",
+      "title": "Initialize clean engine project and ignore generated files",
+      "depends_on": [
+        "T-001"
+      ],
+      "planned_start_hour": 16,
+      "planned_finish_hour": 22,
+      "week_start": 1,
+      "week_finish": 2,
+      "effort_hours": 6
+    },
+    {
+      "id": "T-004",
+      "gate": "G0",
+      "title": "Add CI build smoke and EditMode test skeleton",
+      "depends_on": [
+        "T-003"
+      ],
+      "planned_start_hour": 22,
+      "planned_finish_hour": 26,
+      "week_start": 2,
+      "week_finish": 2,
+      "effort_hours": 4
+    },
+    {
+      "id": "T-005",
+      "gate": "G0",
+      "title": "Benchmark baseline forest greybox on reference phone",
+      "depends_on": [
+        "T-002",
+        "T-003"
+      ],
+      "planned_start_hour": 26,
+      "planned_finish_hour": 31,
+      "week_start": 2,
+      "week_finish": 2,
+      "effort_hours": 5
+    },
+    {
+      "id": "T-006",
+      "gate": "G0",
+      "title": "Prototype portrait drag versus thumbstick controls",
+      "depends_on": [
+        "T-002",
+        "T-003"
+      ],
+      "planned_start_hour": 31,
+      "planned_finish_hour": 37,
+      "week_start": 2,
+      "week_finish": 2,
+      "effort_hours": 6
+    },
+    {
+      "id": "T-007",
+      "gate": "G0",
+      "title": "Audit starter assets and source licenses",
+      "depends_on": [
+        "T-001"
+      ],
+      "planned_start_hour": 37,
+      "planned_finish_hour": 40,
+      "week_start": 2,
+      "week_finish": 2,
+      "effort_hours": 3
+    },
+    {
+      "id": "T-008",
+      "gate": "G0",
+      "title": "Hold G0 architecture and distribution approval gate",
+      "depends_on": [
+        "T-002",
+        "T-004",
+        "T-005",
+        "T-006",
+        "T-007"
+      ],
+      "planned_start_hour": 40,
+      "planned_finish_hour": 43,
+      "week_start": 3,
+      "week_finish": 3,
+      "effort_hours": 3
+    },
+    {
+      "id": "T-009",
+      "gate": "G0",
+      "title": "Lock thin vertical slice specification and quality baseline",
+      "depends_on": [
+        "T-008"
+      ],
+      "planned_start_hour": 43,
+      "planned_finish_hour": 46,
+      "week_start": 3,
+      "week_finish": 3,
+      "effort_hours": 3
+    },
+    {
+      "id": "T-010",
+      "gate": "G1",
+      "title": "Implement assisted arcade drone motor",
+      "depends_on": [
+        "T-006",
+        "T-008",
+        "T-009"
+      ],
+      "planned_start_hour": 46,
+      "planned_finish_hour": 56,
+      "week_start": 3,
+      "week_finish": 3,
+      "effort_hours": 10
+    },
+    {
+      "id": "T-011",
+      "gate": "G1",
+      "title": "Implement chase camera with occlusion and recovery",
+      "depends_on": [
+        "T-010"
+      ],
+      "planned_start_hour": 56,
+      "planned_finish_hour": 65,
+      "week_start": 3,
+      "week_finish": 4,
+      "effort_hours": 9
+    },
+    {
+      "id": "T-012",
+      "gate": "G1",
+      "title": "Create curated greybox forest corridor and road",
+      "depends_on": [
+        "T-010"
+      ],
+      "planned_start_hour": 65,
+      "planned_finish_hour": 70,
+      "week_start": 4,
+      "week_finish": 4,
+      "effort_hours": 5
+    },
+    {
+      "id": "T-013",
+      "gate": "G1",
+      "title": "Implement moving fictional vehicle and replayable route",
+      "depends_on": [
+        "T-012"
+      ],
+      "planned_start_hour": 70,
+      "planned_finish_hour": 76,
+      "week_start": 4,
+      "week_finish": 4,
+      "effort_hours": 6
+    },
+    {
+      "id": "T-014",
+      "gate": "G1",
+      "title": "Implement contact resolver and outcome priority",
+      "depends_on": [
+        "T-010",
+        "T-013"
+      ],
+      "planned_start_hour": 76,
+      "planned_finish_hour": 84,
+      "week_start": 4,
+      "week_finish": 5,
+      "effort_hours": 8
+    },
+    {
+      "id": "T-015",
+      "gate": "G1",
+      "title": "Build full run lifecycle state machine",
+      "depends_on": [
+        "T-014"
+      ],
+      "planned_start_hour": 84,
+      "planned_finish_hour": 92,
+      "week_start": 5,
+      "week_finish": 5,
+      "effort_hours": 8
+    },
+    {
+      "id": "T-016",
+      "gate": "G1",
+      "title": "Implement score, best, HUD and local save",
+      "depends_on": [
+        "T-015"
+      ],
+      "planned_start_hour": 92,
+      "planned_finish_hour": 98,
+      "week_start": 5,
+      "week_finish": 5,
+      "effort_hours": 6
+    },
+    {
+      "id": "T-017",
+      "gate": "G1",
+      "title": "Build temporary impact VFX, audio and rapid retry",
+      "depends_on": [
+        "T-014",
+        "T-015"
+      ],
+      "planned_start_hour": 98,
+      "planned_finish_hour": 105,
+      "week_start": 5,
+      "week_finish": 6,
+      "effort_hours": 7
+    },
+    {
+      "id": "T-050",
+      "gate": "G1",
+      "title": "Add flight state and scoring EditMode tests",
+      "depends_on": [
+        "T-003",
+        "T-010"
+      ],
+      "planned_start_hour": 105,
+      "planned_finish_hour": 109,
+      "week_start": 6,
+      "week_finish": 6,
+      "effort_hours": 4
+    },
+    {
+      "id": "T-051",
+      "gate": "G1",
+      "title": "Add PlayMode contact and retry regression tests",
+      "depends_on": [
+        "T-014",
+        "T-015"
+      ],
+      "planned_start_hour": 109,
+      "planned_finish_hour": 114,
+      "week_start": 6,
+      "week_finish": 6,
+      "effort_hours": 5
+    },
+    {
+      "id": "T-018",
+      "gate": "G1",
+      "title": "Run 5 first-player mobile usability sessions",
+      "depends_on": [
+        "T-011",
+        "T-016",
+        "T-017",
+        "T-050",
+        "T-051"
+      ],
+      "planned_start_hour": 114,
+      "planned_finish_hour": 122,
+      "week_start": 6,
+      "week_finish": 7,
+      "effort_hours": 8
+    },
+    {
+      "id": "T-019",
+      "gate": "G1",
+      "title": "Decide G1 fun go/no-go and design revision",
+      "depends_on": [
+        "T-018"
+      ],
+      "planned_start_hour": 122,
+      "planned_finish_hour": 126,
+      "week_start": 7,
+      "week_finish": 7,
+      "effort_hours": 4
+    },
+    {
+      "id": "T-020",
+      "gate": "G2",
+      "title": "Select coherent forest and vehicle art source",
+      "depends_on": [
+        "T-019",
+        "T-007"
+      ],
+      "planned_start_hour": 126,
+      "planned_finish_hour": 132,
+      "week_start": 7,
+      "week_finish": 7,
+      "effort_hours": 6
+    },
+    {
+      "id": "T-021",
+      "gate": "G2",
+      "title": "Assemble optimized woodland route slice",
+      "depends_on": [
+        "T-020"
+      ],
+      "planned_start_hour": 132,
+      "planned_finish_hour": 146,
+      "week_start": 7,
+      "week_finish": 8,
+      "effort_hours": 14
+    },
+    {
+      "id": "T-022",
+      "gate": "G2",
+      "title": "Finish forest road and moving traffic silhouettes",
+      "depends_on": [
+        "T-021",
+        "T-013"
+      ],
+      "planned_start_hour": 146,
+      "planned_finish_hour": 155,
+      "week_start": 8,
+      "week_finish": 8,
+      "effort_hours": 9
+    },
+    {
+      "id": "T-023",
+      "gate": "G2",
+      "title": "Tune reveal cues and portrait readability",
+      "depends_on": [
+        "T-021",
+        "T-022"
+      ],
+      "planned_start_hour": 155,
+      "planned_finish_hour": 161,
+      "week_start": 8,
+      "week_finish": 9,
+      "effort_hours": 6
+    },
+    {
+      "id": "T-024",
+      "gate": "G2",
+      "title": "Polish chase camera collision and comfort",
+      "depends_on": [
+        "T-011",
+        "T-021"
+      ],
+      "planned_start_hour": 161,
+      "planned_finish_hour": 169,
+      "week_start": 9,
+      "week_finish": 9,
+      "effort_hours": 8
+    },
+    {
+      "id": "T-025",
+      "gate": "G2",
+      "title": "Profile forest on low/mid/high target devices",
+      "depends_on": [
+        "T-021",
+        "T-022"
+      ],
+      "planned_start_hour": 169,
+      "planned_finish_hour": 180,
+      "week_start": 9,
+      "week_finish": 9,
+      "effort_hours": 11
+    },
+    {
+      "id": "T-026",
+      "gate": "G2",
+      "title": "Create polished stylized impact feedback",
+      "depends_on": [
+        "T-017",
+        "T-021"
+      ],
+      "planned_start_hour": 180,
+      "planned_finish_hour": 187,
+      "week_start": 10,
+      "week_finish": 10,
+      "effort_hours": 7
+    },
+    {
+      "id": "T-027",
+      "gate": "G2",
+      "title": "Implement transparent result/home UX and options",
+      "depends_on": [
+        "T-016",
+        "T-024"
+      ],
+      "planned_start_hour": 187,
+      "planned_finish_hour": 192,
+      "week_start": 10,
+      "week_finish": 10,
+      "effort_hours": 5
+    },
+    {
+      "id": "T-052",
+      "gate": "G2",
+      "title": "Set asset import and public-repo third-party policies",
+      "depends_on": [
+        "T-020"
+      ],
+      "planned_start_hour": 192,
+      "planned_finish_hour": 196,
+      "week_start": 10,
+      "week_finish": 10,
+      "effort_hours": 4
+    },
+    {
+      "id": "T-053",
+      "gate": "G2",
+      "title": "Set low/mid/high adaptive graphics presets",
+      "depends_on": [
+        "T-003",
+        "T-025"
+      ],
+      "planned_start_hour": 196,
+      "planned_finish_hour": 202,
+      "week_start": 10,
+      "week_finish": 11,
+      "effort_hours": 6
+    },
+    {
+      "id": "T-028",
+      "gate": "G2",
+      "title": "Run vertical-slice regressions on device matrix",
+      "depends_on": [
+        "T-023",
+        "T-025",
+        "T-026",
+        "T-027",
+        "T-052",
+        "T-053"
+      ],
+      "planned_start_hour": 202,
+      "planned_finish_hour": 210,
+      "week_start": 11,
+      "week_finish": 11,
+      "effort_hours": 8
+    },
+    {
+      "id": "T-029",
+      "gate": "G2",
+      "title": "Conduct G2 performance and design sign-off",
+      "depends_on": [
+        "T-028"
+      ],
+      "planned_start_hour": 210,
+      "planned_finish_hour": 214,
+      "week_start": 11,
+      "week_finish": 11,
+      "effort_hours": 4
+    },
+    {
+      "id": "T-030",
+      "gate": "G3",
+      "title": "Build 2–4 curated encounter variations",
+      "depends_on": [
+        "T-029"
+      ],
+      "planned_start_hour": 214,
+      "planned_finish_hour": 223,
+      "week_start": 11,
+      "week_finish": 12,
+      "effort_hours": 9
+    },
+    {
+      "id": "T-031",
+      "gate": "G3",
+      "title": "Balance speed, drift, turn rate and challenge",
+      "depends_on": [
+        "T-029"
+      ],
+      "planned_start_hour": 223,
+      "planned_finish_hour": 229,
+      "week_start": 12,
+      "week_finish": 12,
+      "effort_hours": 6
+    },
+    {
+      "id": "T-032",
+      "gate": "G3",
+      "title": "Refine beginner onboarding without menus",
+      "depends_on": [
+        "T-029"
+      ],
+      "planned_start_hour": 229,
+      "planned_finish_hour": 234,
+      "week_start": 12,
+      "week_finish": 12,
+      "effort_hours": 5
+    },
+    {
+      "id": "T-033",
+      "gate": "G3",
+      "title": "Build matrix regression plan and test cases",
+      "depends_on": [
+        "T-030",
+        "T-031"
+      ],
+      "planned_start_hour": 234,
+      "planned_finish_hour": 241,
+      "week_start": 12,
+      "week_finish": 13,
+      "effort_hours": 7
+    },
+    {
+      "id": "T-034",
+      "gate": "G3",
+      "title": "Observe expanded playtest round",
+      "depends_on": [
+        "T-030",
+        "T-032"
+      ],
+      "planned_start_hour": 241,
+      "planned_finish_hour": 249,
+      "week_start": 13,
+      "week_finish": 13,
+      "effort_hours": 8
+    },
+    {
+      "id": "T-035",
+      "gate": "G3",
+      "title": "Optimize CPU/GPU spikes, warm-up and memory",
+      "depends_on": [
+        "T-025",
+        "T-030"
+      ],
+      "planned_start_hour": 249,
+      "planned_finish_hour": 257,
+      "week_start": 13,
+      "week_finish": 13,
+      "effort_hours": 8
+    },
+    {
+      "id": "T-036",
+      "gate": "G3",
+      "title": "Tune scoring and progression for flow",
+      "depends_on": [
+        "T-031",
+        "T-034"
+      ],
+      "planned_start_hour": 257,
+      "planned_finish_hour": 262,
+      "week_start": 13,
+      "week_finish": 14,
+      "effort_hours": 5
+    },
+    {
+      "id": "T-037",
+      "gate": "G3",
+      "title": "Hardening: app lifecycle, corrupt preferences, errors",
+      "depends_on": [
+        "T-033",
+        "T-035"
+      ],
+      "planned_start_hour": 262,
+      "planned_finish_hour": 268,
+      "week_start": 14,
+      "week_finish": 14,
+      "effort_hours": 6
+    },
+    {
+      "id": "T-038",
+      "gate": "G3",
+      "title": "Review analytics need and privacy implications",
+      "depends_on": [
+        "T-034",
+        "T-037"
+      ],
+      "planned_start_hour": 268,
+      "planned_finish_hour": 272,
+      "week_start": 14,
+      "week_finish": 14,
+      "effort_hours": 4
+    },
+    {
+      "id": "T-054",
+      "gate": "G3",
+      "title": "Finish coherent sonic identity and haptic options",
+      "depends_on": [
+        "T-026",
+        "T-033"
+      ],
+      "planned_start_hour": 272,
+      "planned_finish_hour": 277,
+      "week_start": 14,
+      "week_finish": 14,
+      "effort_hours": 5
+    },
+    {
+      "id": "T-039",
+      "gate": "G3",
+      "title": "Approve beta content and release candidate gate",
+      "depends_on": [
+        "T-036",
+        "T-037",
+        "T-038",
+        "T-054"
+      ],
+      "planned_start_hour": 277,
+      "planned_finish_hour": 281,
+      "week_start": 14,
+      "week_finish": 15,
+      "effort_hours": 4
+    },
+    {
+      "id": "T-040",
+      "gate": "G4",
+      "title": "Finalize icons, screenshots, listing copy",
+      "depends_on": [
+        "T-039"
+      ],
+      "planned_start_hour": 281,
+      "planned_finish_hour": 286,
+      "week_start": 15,
+      "week_finish": 15,
+      "effort_hours": 5
+    },
+    {
+      "id": "T-041",
+      "gate": "G4",
+      "title": "Configure signing, identifiers and release builds",
+      "depends_on": [
+        "T-039"
+      ],
+      "planned_start_hour": 286,
+      "planned_finish_hour": 292,
+      "week_start": 15,
+      "week_finish": 15,
+      "effort_hours": 6
+    },
+    {
+      "id": "T-042",
+      "gate": "G4",
+      "title": "Audit third-party asset licenses and attributions",
+      "depends_on": [
+        "T-007",
+        "T-020",
+        "T-039"
+      ],
+      "planned_start_hour": 292,
+      "planned_finish_hour": 296,
+      "week_start": 15,
+      "week_finish": 15,
+      "effort_hours": 4
+    },
+    {
+      "id": "T-043",
+      "gate": "G4",
+      "title": "Complete privacy and store policy review",
+      "depends_on": [
+        "T-038",
+        "T-039"
+      ],
+      "planned_start_hour": 296,
+      "planned_finish_hour": 301,
+      "week_start": 15,
+      "week_finish": 16,
+      "effort_hours": 5
+    },
+    {
+      "id": "T-044",
+      "gate": "G4",
+      "title": "Run external test distribution and crash triage",
+      "depends_on": [
+        "T-041"
+      ],
+      "planned_start_hour": 301,
+      "planned_finish_hour": 306,
+      "week_start": 16,
+      "week_finish": 16,
+      "effort_hours": 5
+    },
+    {
+      "id": "T-045",
+      "gate": "G4",
+      "title": "Perform final stability/performance QA pass",
+      "depends_on": [
+        "T-041",
+        "T-044"
+      ],
+      "planned_start_hour": 306,
+      "planned_finish_hour": 311,
+      "week_start": 16,
+      "week_finish": 16,
+      "effort_hours": 5
+    },
+    {
+      "id": "T-055",
+      "gate": "G4",
+      "title": "Write build/operator runbook and handoff template",
+      "depends_on": [
+        "T-039"
+      ],
+      "planned_start_hour": 311,
+      "planned_finish_hour": 315,
+      "week_start": 16,
+      "week_finish": 16,
+      "effort_hours": 4
+    },
+    {
+      "id": "T-046",
+      "gate": "G4",
+      "title": "Prepare owner approval release checklist",
+      "depends_on": [
+        "T-040",
+        "T-042",
+        "T-043",
+        "T-045",
+        "T-055"
+      ],
+      "planned_start_hour": 315,
+      "planned_finish_hour": 319,
+      "week_start": 16,
+      "week_finish": 16,
+      "effort_hours": 4
+    },
+    {
+      "id": "T-047",
+      "gate": "G4",
+      "title": "Publish to chosen store after approval",
+      "depends_on": [
+        "T-046"
+      ],
+      "planned_start_hour": 319,
+      "planned_finish_hour": 323,
+      "week_start": 16,
+      "week_finish": 17,
+      "effort_hours": 4
+    },
+    {
+      "id": "T-048",
+      "gate": "G4",
+      "title": "Post-release crash, reviews and defect response",
+      "depends_on": [
+        "T-047"
+      ],
+      "planned_start_hour": 323,
+      "planned_finish_hour": 327,
+      "week_start": 17,
+      "week_finish": 17,
+      "effort_hours": 4
+    },
+    {
+      "id": "T-049",
+      "gate": "G4",
+      "title": "Archive release baseline and next-version ideas",
+      "depends_on": [
+        "T-048"
+      ],
+      "planned_start_hour": 327,
+      "planned_finish_hour": 330,
+      "week_start": 17,
+      "week_finish": 17,
+      "effort_hours": 3
+    }
+  ]
+}
