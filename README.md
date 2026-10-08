@@ -40,6 +40,9 @@ We are **not** building a real-world training tool, tactical navigation system, 
 | [docs/13_TELEMETRY_PRIVACY.md](docs/13_TELEMETRY_PRIVACY.md) | Optional, consent-based measurement schema |
 | [docs/14_BUDGET_AND_RESOURCING.md](docs/14_BUDGET_AND_RESOURCING.md) | Commercial choices, effort model, staffing |
 | [docs/15_TASK_ISSUES_INDEX.md](docs/15_TASK_ISSUES_INDEX.md) | GitHub issue tracking conventions |
+| [docs/16_RESOURCE_SCHEDULE.md](docs/16_RESOURCE_SCHEDULE.md) | Dependency-validated 20h/week schedule & phase rollups |
+| [docs/17_PROJECT_STATUS.md](docs/17_PROJECT_STATUS.md) | Current true project state, phase evidence and first issues |
+| [docs/planning/github_issue_map.json](docs/planning/github_issue_map.json) | All 55 GitHub issue links indexed by work ID |
 
 ## Execution rules
 
@@ -49,4 +52,4 @@ We are **not** building a real-world training tool, tactical navigation system, 
 4. No premium assets / external licenses / ads SDK / production release without an explicit go/no-go gate.
 5. Keep gameplay accessible in portrait. Fun-first, simplest implementation that can be tested on a real phone.
 
-**Planning is complete when the documents and backlog exist; production is complete only when evidence proves the gates.**
+**Planning baseline is now assembled: 55 live GitHub Issues, 330h nominal work and an evidence-gated roadmap.** See [current status](docs/17_PROJECT_STATUS.md). Production is complete only when real build, playtest and QA evidence proves the gates.
