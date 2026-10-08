@@ -71,7 +71,7 @@ test('upward gesture provides lift, downward gesture tips the nose and descends'
   assert.ok(vertical.pitch > 1.1,'full down command pitches steeply forward');
   assert.ok(vertical.vy < risingVelocity-7,'steep dive must aggressively reduce vertical velocity');
 });
-test('deep dive builds momentum, sharp recovery takes time', () => {
+test('deep dive trades forward speed for downward speed, then recovers', () => {
   const dive=makeFlight(),neutral=makeFlight();
   dive.y=300;neutral.y=300;
   for(let i=0;i<85;i++) {
@@ -81,7 +81,8 @@ test('deep dive builds momentum, sharp recovery takes time', () => {
   assert.ok(dive.pitch>1.2 && dive.pitch<Math.PI/2,'game supports near-vertical non-inverted dive');
   assert.ok(dive.vy<-5,'rapid dive acquires real downward momentum');
   assert.ok(dive.vy<neutral.vy-4,'tilt produces stronger descent than level flight');
-  assert.ok(Math.hypot(dive.vx,dive.vz)>Math.hypot(neutral.vx,neutral.vz)+1,'forward drive strengthens in dive');
+  assert.ok(Math.hypot(dive.vx,dive.vz)<Math.hypot(neutral.vx,neutral.vz)*.35,
+    'deep dive must strongly reduce horizontal travel');
   const atRelease=dive.vy;
   for(let i=0;i<10;i++) stepFlight(dive,{x:0,y:0},1/60);
   assert.ok(dive.vy<0 && atRelease<0,'downward inertia must continue briefly after release');
@@ -122,4 +123,21 @@ test('cruise actually accelerates and a sustained dive reaches ground with downw
   for(let i=0;i<300 && !f.groundContact;i++)stepFlight(f,{x:0,y:-1},1/60);
   assert.equal(f.groundContact,true,'full down eventually hits the terrain');
   assert.ok(f.vy<-6,'falling momentum remains available for terminal impact');
+});
+
+test('a full dive from FAST brakes horizontal drift; a shallow descent keeps moving', () => {
+  const steep=makeFlight(),shallow=makeFlight();
+  steep.y=shallow.y=300;
+  steep.throttle=shallow.throttle=1;
+  const startZ=steep.z;
+  for(let i=0;i<75;i++){
+    stepFlight(steep,{x:0,y:-1},1/60);
+    stepFlight(shallow,{x:0,y:-.35},1/60);
+  }
+  assert.ok(Math.hypot(steep.vx,steep.vz)<2,'deep dive must nearly stop forward drift even in FAST');
+  assert.ok(steep.z-startZ<20,'full dive should fall near its entry point');
+  assert.ok(shallow.z-steep.z>45,'partial down input must still permit forward travel');
+  assert.ok(steep.vy<shallow.vy-4,'deep dive builds stronger vertical descent');
+  for(let i=0;i<90;i++)stepFlight(steep,{x:0,y:0},1/60);
+  assert.ok(steep.speed>35,'releasing dive restores forward flight');
 });

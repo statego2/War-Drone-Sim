@@ -71,15 +71,18 @@ export function stepFlight(f,input,dt) {
   f.bank=lerp(f.bank,-steer*.2,1-Math.exp(-8*dt));
   f.throttle=clamp(f.throttle,-.6,1);
 
-  // Velocity follows the aircraft's heading with inertia rather than
-  // teleporting to a speed/direction every animation frame.
+  // Normal flight keeps momentum. In a committed steep dive, the arcade
+  // controller sheds horizontal speed instead of driving through the target.
+  // This is a player-feel rule, not a multirotor thrust or autopilot model.
   const fx=Math.sin(f.heading),fz=Math.cos(f.heading);
   const rx=Math.cos(f.heading),rz=-Math.sin(f.heading);
   const along=f.vx*fx+f.vz*fz;
   const across=f.vx*rx+f.vz*rz;
-  const forwardAcceleration=clamp((f.throttle*78-along)*2.1+
-    11*Math.sin(f.pitch),-55,55);
-  const lateralAcceleration=-across*2.7;
+  const diveBrake=smooth((f.pitch-.72)/.52);
+  const cruiseTarget=f.throttle*78*(1-diveBrake);
+  const forwardAcceleration=clamp((cruiseTarget-along)*(2.1+6*diveBrake)+
+    11*Math.sin(f.pitch)*(1-diveBrake),-210,55);
+  const lateralAcceleration=-across*(2.7+5*diveBrake);
   f.vx+=(fx*forwardAcceleration+rx*lateralAcceleration)*dt;
   f.vz+=(fz*forwardAcceleration+rz*lateralAcceleration)*dt;
 
