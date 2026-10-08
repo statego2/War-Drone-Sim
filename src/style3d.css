@@ -41,11 +41,21 @@
   font-size: 10px; line-height: 1.1; letter-spacing: .55px;
 }
 #sound-toggle { min-width: 76px!important; }
-#look-mode[aria-pressed="true"] { background:#cde4b7;color:#153027; }
 #hint { bottom: calc(env(safe-area-inset-bottom) + 115px); }
 #pause { bottom: calc(env(safe-area-inset-bottom) + 16px); }
 @media(max-width:380px) {
   #flight-actions { right: 62px; left: 9px; gap: 5px; }
   #flight-actions .flight-tool { min-width: 51px; padding: 8px; font-size: 9px; }
   #sound-toggle { min-width: 70px!important; }
+}
+
+/* v0.5: streamlined single-gesture cockpit — no camera-orbit buttons. */
+#flight-actions { right: 84px; max-width: 310px; flex-wrap: nowrap; }
+#flight-actions .flight-tool { min-width: 66px; min-height: 43px; }
+#sound-toggle { min-width: 81px!important; }
+#hint { bottom: calc(env(safe-area-inset-bottom) + 92px); }
+@media(max-width:380px) {
+  #flight-actions {right: 72px;left: 12px;gap: 5px;}
+  #flight-actions .flight-tool {min-width: 60px;font-size: 9px;padding: 9px;}
+  #sound-toggle {min-width: 75px!important;}
 }

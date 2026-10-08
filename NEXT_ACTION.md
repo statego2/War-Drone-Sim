@@ -1,35 +1,22 @@
 # NEXT_ACTION — War Drone Sim
 
-Updated: 2026-10-08. Current branch: fix/camera-relative-controls-navigation-v0-4. PR v0.2 #59 / v0.3 #60 remain open. GitHub Pages main still hosts the prior baseline, not this branch. Review before merge.
+Updated: 2026-10-08. Current branch: `fix/single-stick-turn-follow-camera-v0-5`, based on unmerged v0.4 (PR #61), which is based on v0.3 (PR #60) and v0.2 (PR #59).
 
-## Latest real user feedback
+## Latest owner acceptance feedback
+On iPhone v0.4, the player rejected LOOK/FACE as poor UX: steering left or right should turn the drone and make the camera follow automatically. One intuitive drag input, no manual camera controls.
 
-The physical iPhone screen shows that v0.3 still moves LEFT when the user commands RIGHT. They also cannot freely change direction/camera, and there is no gameplay. This is real user feedback, higher priority than green checks based on incorrect coordinate sign.
+## Implementation delivered in review branch
+- flight3d.mjs: steering now controls turn rate/aircraft heading instead of strafing; horizontal gestures follow the phone-screen turn convention; up/down altitude retained.
+- game3d.mjs: removed LOOK/FACE state, events and camera controls; camera yaw follows heading smoothly; FPV and chase stay supported.
+- index.html + style3d.css: removed LOOK/FACE, simplified single-row buttons and onscreen instructions.
+- tests/flight3d.test.mjs and tests/browser-smoke.mjs: verify left/right sustained turns and automatic chase follow, with obsolete strafe/orbit tests removed.
+- docs/22_SINGLE_FINGER_CHASE_V05.md: design and owner phone acceptance plan.
 
-## v0.4 changes
+## Immediate next action
+1. Check new PR and latest GitHub Actions both logic and WebGL smoke. Fix failures if observed.
+2. Owner tests preview on physical iPhone: hold left/right through long curves and verify camera rotates automatically and smoothly (no inverted movement), plus up/down/FPV.
+3. Preserve all unmerged prior PRs. When owner approves actual handling, merge in branch dependency order or rebase.
+4. Separate gameplay design session: no racing/free-flight-only loop or extra buttons. Product fantasy is rapid forest drone skill challenge with cinematic fictional-object contact, but precise rewarding gameplay still requires design and owner signoff.
 
-- Correct screen-to-world mapping using negative X as camera-right when camera looks toward +Z. Rotate this vector when camera orbits.
-
-- LOOK orbit/tilt toggle for the portrait swipe area; FACE action aligns forward drone direction with camera view.
-
-- Speed button now cycles cruise, fast, reverse, hover. No gameplay modifications, scoring missions or weapon features.
-
-- Unit tests and browser smoke tests verify camera-relative direction and orbit controls.
-
-- docs/21_CAMERA_SPACE_NAVIGATION_V04.md contains full rationale and manual phone acceptance.
-
-## Next unblocked actions
-
-1. Run GitHub Actions tests for this PR head and inspect both logic and WebGL visual outcomes. Fix regressions.
-
-2. Ask owner to open the commit-pinned v0.4 preview in iPhone portrait and personally verify left/right motion and camera/orientation semantics.
-
-3. Continue portrait HUD tuning if buttons obstruct the game. Test HOVER, REVERSE, LOOK, FACE, pause/audio and hardware performance.
-
-4. Gameplay remains unbuilt by intent: design a short, highly repeatable fictional-vehicle cinematic-impact skill loop as a separate owner's design decision before implementing it; no generic racing or aimless free-flight-only goal.
-
-5. Merge only after visual sign-off; previously approved WebGL art v0.2 and v0.3 PRs are still separate. Use correct base order.
-
-## Validation honesty
-
-Do not equate world-coordinate unit assertions to visual screen movement. CI browser smoke is simulated Chromium with software WebGL, not Safari or device thermals. No military training equivalence or real drone controls.
+## Honest status
+This is stylized browser WebGL, not a military training simulator. CI runs on headless Chromium, not Safari on a device. Work is on a review branch rather than published on main GitHub Pages.

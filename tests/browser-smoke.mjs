@@ -46,37 +46,29 @@ try {
   await page.mouse.up();
   const after = await page.locator('#altitude').innerText();
   assert.ok(parseInt(after,10) > parseInt(before,10), 'drag-up should increase AGL');
-  const state0=await page.evaluate(() => window.__openSkySnapshot());
-  await page.mouse.move(155, 560);
+  const initial = await page.evaluate(() => window.__openSkySnapshot());
+  assert.equal(await page.locator('#look-mode').count(), 0, 'no LOOK button');
+  assert.equal(await page.locator('#align-view').count(), 0, 'no FACE button');
+
+  await page.mouse.move(150, 560);
   await page.mouse.down();
   await page.mouse.move(290, 560, { steps: 8 });
-  await page.waitForTimeout(900);
+  await page.waitForTimeout(1300);
+  const turnedRight = await page.evaluate(() => window.__openSkySnapshot());
   await page.mouse.up();
-  const stateRight=await page.evaluate(() => window.__openSkySnapshot());
-  assert.ok(stateRight.x < state0.x-2, 'drag right must travel toward screen-right (world -X in this view)');
-  assert.ok(Math.abs(stateRight.heading - state0.heading)<.001, 'direct movement must not yaw');
-  await page.mouse.move(275, 570);
+  assert.ok(turnedRight.heading < initial.heading-.75, 'right swipe turns aircraft right');
+  assert.ok(turnedRight.x < initial.x-4, 'aircraft curves into screen-right world space');
+  assert.ok(turnedRight.cameraYaw < initial.cameraYaw-.32, 'camera follows right-hand turn without LOOK');
+  assert.ok(Math.abs(turnedRight.cameraYaw-turnedRight.heading)<.50,'chase camera remains behind heading');
+
+  await page.mouse.move(290, 570);
   await page.mouse.down();
-  await page.mouse.move(60, 570, { steps: 8 });
-  await page.waitForTimeout(900);
+  await page.mouse.move(70, 570, { steps: 8 });
+  await page.waitForTimeout(1250);
+  const turnedLeft = await page.evaluate(() => window.__openSkySnapshot());
   await page.mouse.up();
-  const stateLeft=await page.evaluate(() => window.__openSkySnapshot());
-  assert.ok(stateLeft.x > stateRight.x+2, 'drag left must travel toward screen-left');
-  // Explicit camera orbit is separate from steering. FACE then changes the travel bearing.
-  await page.locator('#look-mode').click();
-  const priorView=await page.evaluate(() => window.__openSkySnapshot());
-  await page.mouse.move(150,520);
-  await page.mouse.down();
-  await page.mouse.move(270,580,{steps:10});
-  await page.mouse.up();
-  const orbited=await page.evaluate(() => window.__openSkySnapshot());
-  assert.ok(orbited.cameraYaw>priorView.cameraYaw+.2,'LOOK should rotate camera horizontally');
-  assert.ok(orbited.cameraPitch>priorView.cameraPitch+.1,'LOOK should tilt camera vertically');
-  assert.ok(Math.abs(orbited.heading-priorView.heading)<.01,'Orbit alone must not change heading');
-  await page.locator('#align-view').click();
-  const aligned=await page.evaluate(() => window.__openSkySnapshot());
-  assert.ok(Math.abs(aligned.heading-aligned.cameraYaw)<.001,'FACE must align route to current viewpoint');
-  await page.locator('#look-mode').click();
+  assert.ok(turnedLeft.heading > turnedRight.heading+.7, 'left swipe turns aircraft back left');
+  assert.ok(turnedLeft.cameraYaw > turnedRight.cameraYaw+.5, 'camera automatically follows left turn');
   for (const expected of ['FAST','REVERSE','HOVER','CRUISE']) {
     await page.locator('#boost').click();
     assert.equal(await page.locator('#boost').innerText(),expected);
@@ -96,7 +88,7 @@ try {
   await mkdir(join(root, 'artifacts'), { recursive: true });
   await page.screenshot({ path: join(root, 'artifacts', 'open-sky-webgl.png') });
   assert.deepEqual(errors, [], 'JavaScript page errors must be absent');
-  console.log('PASS: WebGL renders; camera-relative lateral, camera orbit/tilt, face bearing, throttle modes, mute, pause and resume');
+  console.log('PASS: WebGL, one-finger right/left heading turns, automatic chase camera, altitude, FPV, throttle, mute, pause/resume');
 } finally {
   if (browser) await browser.close();
   await new Promise(resolveClose => server.close(resolveClose));

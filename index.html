@@ -13,17 +13,15 @@
     <canvas id="scene" aria-label="Ζωντανός τρισδιάστατος κόσμος πτήσης"></canvas>
     <div id="vignette" aria-hidden="true"></div>
     <div id="hud" class="hidden">
-      <div class="hud-left"><span class="eyebrow">OPEN SKY · V0.4</span><strong id="distance">0 M</strong></div>
+      <div class="hud-left"><span class="eyebrow">OPEN SKY · V0.5</span><strong id="distance">0 M</strong></div>
       <div class="hud-right"><span class="eyebrow">ALTITUDE</span><strong id="altitude">0 M AGL</strong><small id="speed">0 KM/H</small></div>
       <div id="warning" role="status" aria-live="polite"></div>
-      <div id="hint">Σύρε αριστερά/δεξιά για μετακίνηση · πάνω/κάτω για ύψος</div>
+      <div id="hint">Σύρε αριστερά/δεξιά για στροφή · πάνω/κάτω για ύψος</div>
     </div>
     <button id="pause" class="hidden" type="button" aria-label="Παύση">Ⅱ</button>
     <div id="flight-actions" aria-label="Επιλογές πτήσης">
       <button id="view-mode" class="flight-tool hidden" type="button" aria-label="Αλλαγή κάμερας">FPV</button>
       <button id="boost" class="flight-tool hidden" type="button" aria-label="Ταχύτητα πτήσης" aria-pressed="false">CRUISE</button>
-      <button id="look-mode" class="flight-tool hidden" type="button" aria-label="Περιστροφή κάμερας" aria-pressed="false">LOOK</button>
-      <button id="align-view" class="flight-tool hidden" type="button" aria-label="Κατεύθυνση πτήσης προς την κάμερα">FACE ↗</button>
       <button id="sound-toggle" class="flight-tool hidden" type="button" aria-label="Εναλλαγή ήχου" aria-pressed="true">SOUND ON</button>
     </div>
     <section id="overlay" class="panel home">
@@ -32,9 +30,9 @@
         <h1>WAR<br><em>DRONE</em><br>SIM</h1>
         <p>Εξερεύνησε ένα τρισδιάστατο δάσος με βουνά, ορεινούς δρόμους, ρυάκια και οικισμούς. Πέτα ελεύθερα και ανακάλυψε το τοπίο.</p>
         <button id="primary" type="button">BEGIN FREE FLIGHT <span>↗</span></button>
-        <div class="controls">Σύρε: αριστερά/δεξιά, πάνω/κάτω · LOOK: ελεύθερη κάμερα<br>FACE ↗: αλλαγή πορείας · CRUISE: hover/fast/reverse</div>
+        <div class="controls">Σύρε: αριστερά/δεξιά για στροφή · πάνω/κάτω για ύψος<br>Η κάμερα σε ακολουθεί αυτόματα · CRUISE: ταχύτητα</div>
       </div>
-      <div class="footer">OPEN SKY V0.4 · DIRECT TOUCH + CAMERA ORBIT</div>
+      <div class="footer">OPEN SKY V0.5 · ONE-FINGER FLIGHT</div>
     </section>
     <div id="landscape">Γύρισε το κινητό όρθιο για να παίξεις.</div>
   </main>
