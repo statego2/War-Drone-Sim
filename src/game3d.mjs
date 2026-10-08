@@ -726,7 +726,7 @@ updateCamera(.016);
 // Diagnostic-only state for automated interaction tests; no browser location or telemetry.
 window.__openSkySnapshot = () => ({
   x: flight.x, y: flight.y, z: flight.z, heading: flight.heading,
-  cameraYaw, cameraPitch, throttleMode, speed:flight.speed,
+  cameraYaw, cameraPitch, throttleMode, gesture: inputState(), speed:flight.speed,
   vx:flight.vx,vy:flight.vy,vz:flight.vz,pitch:flight.pitch,bank:flight.bank,sideRate:flight.sideRate,pullback:flight.pullback||0,brakeIntent:flight.brakeIntent||0,reverseIntent:flight.reverseIntent||0,
   ground: groundHeight(flight.x, flight.z), mode, audioEnabled: sound.enabled
   , hits:encounter.hits, drones:encounter.drones, vehicles:encounter.vehicles.map(v=>v.destroyed)
