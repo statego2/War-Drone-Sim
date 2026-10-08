@@ -25,3 +25,10 @@
 4. Tune spawn, speed and feedback from phone evidence *before* adding more persistent systems. G1 fun and G2 phone performance remain unverified.
 
 No real-world targeting, vehicle damage calculations, live drone protocols or physical combat simulation belongs in this prototype.
+
+## Sonic UX follow-up (2026-10-08, Feel-Good v2)
+
+- New branch `feat/feel-good-sound-design-v2` replaces unpleasant machine-like and brittle high-frequency audio with a softer original arcade palette and a deliberately restrained master mix. See `docs/28_FEEL_GOOD_AUDIO_V2.md`.
+- Gameplay rewards sound progression across 3 empty fictional vehicle contacts: short confirmation, richer confirmation, special completion cadence. FAST and dive develop audio energy without harsh perpetual whistles.
+- Unit tests include bounded timbre, dive-vs-level contrast, and unique chord-length reward design; CI will be tracked on the review PR. A passing browser test **does not prove acoustic enjoyment**.
+- **Next acceptance step:** owner listens on real iPhone speaker and headphones and compares 20 consecutive flight/impact cycles; tune rotor/wind/explosion response based on the actual listening feedback.
