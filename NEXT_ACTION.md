@@ -32,3 +32,9 @@ No real-world targeting, vehicle damage calculations, live drone protocols or ph
 - Gameplay rewards sound progression across 3 empty fictional vehicle contacts: short confirmation, richer confirmation, special completion cadence. FAST and dive develop audio energy without harsh perpetual whistles.
 - Unit tests include bounded timbre, dive-vs-level contrast, and unique chord-length reward design; CI will be tracked on the review PR. A passing browser test **does not prove acoustic enjoyment**.
 - **Next acceptance step:** owner listens on real iPhone speaker and headphones and compares 20 consecutive flight/impact cycles; tune rotor/wind/explosion response based on the actual listening feedback.
+
+## Quiet Air-Glide v3 — owner listening complaint (2026-10-08)
+
+- The owner still finds the constant drone sound irritating. `feat/quiet-air-glide-audio-v3` eliminates the permanently running rotor oscillators instead of merely lowering their volume. See `docs/29_QUIET_AIR_GLIDE_V3.md`.
+- Flight now communicates speed, banking and dives primarily with subtle moving-air layers. Impact/score and brief event sounds remain, with the environment comparatively quiet.
+- Regression checks assert no constant motor oscillator and functioning mix controls. Real iPhone listening remains the final sound comfort gate; no claim of verified sound quality.
