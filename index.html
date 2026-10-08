@@ -40,11 +40,7 @@
       await import('./src/game3d.mjs');
     } catch (error) {
       console.error('3D renderer unavailable; loading legacy Canvas preview.', error);
-      document.querySelector('.kicker').textContent = '2D FALLBACK · WEBGL UNAVAILABLE';
-      document.querySelector('.panel p').textContent = 'Η τρισδιάστατη σκηνή δεν φορτώθηκε. Άνοιξε την προηγούμενη δοκιμαστική έκδοση.';
-      document.querySelector('#flight-actions').remove();
-      document.querySelector('#warning').remove();
-      await import('./src/game.mjs');
+      window.location.replace('./legacy-canvas.html');
     }
   </script>
 </body>
