@@ -1,6 +1,6 @@
 # War Drone Sim
 
-**Status:** Browser prototype v0.1 implemented on 2026-10-08; real phone playtest pending.  
+**Status:** Browser v0.1 on main; experimental polygonal WebGL Open Sky v0.2 on a review branch (2026-10-08); real iPhone playtest pending.  
 **Planning baseline:** 2026-10-08 · **Owner:** repository owner · **Document language:** English (implementation specification), Greek discussion / review welcome.
 
 ## Product
@@ -13,14 +13,22 @@ We are **not** building a real-world training tool, tactical navigation system, 
 
 ## Play the browser prototype
 
-[Open the current browser preview](https://raw.githack.com/statego2/War-Drone-Sim/main/index.html) (external preview service; the first visit shows a source notice). Open `index.html` through a static web server or the GitHub Pages URL once configured. In the repo root, run `python3 -m http.server 8765`, then open `http://localhost:8765/`. Drag to steer and change altitude; tap BEGIN FLIGHT, find the moving fictional vehicle, and make contact. Keyboard WASD / arrows also work. Run `npm test` for pure model checks. See [browser prototype implementation and evidence](docs/18_BROWSER_PROTOTYPE.md).
+**Open Sky v0.2 is under review on a separate branch:** experimental *real polygonal WebGL 3D* browser world with streaming hilly terrain, 3D pine and broadleaf trees, winding road, freely ascending drone, FPV/chase camera, touch steering and speed toggles. This version is **not yet device-tested** and requires Three.js from jsDelivr.
+
+- Root `index.html` on the **feature branch**: Open Sky WebGL free flight. Once reviewed/merged, this becomes the default root experience.
+- `legacy-canvas.html` on that branch: preserved original v0.1 arcade contact/retry game and fallback if WebGL is unavailable.
+- Run `python3 -m http.server 8765` and visit `http://localhost:8765/` from that checkout; run `npm test` for deterministic game model checks.
+- Review implementation constraints and manual iPhone checklist in [Open Sky v0.2 report](docs/19_WEBGL_3D_OPEN_SKY.md).
+
+The [original v0.1 browser preview](https://raw.githack.com/statego2/War-Drone-Sim/main/index.html) remains on main until the branch is reviewed. *Neither 3D visuals nor stable iPhone framerates have been verified on the target phone yet.*
+
 
 ## Work status
 
 - Initial repository was planning-only; the current root `index.html` and `src/` now contain an experimental browser game. Phone feel and performance have not been verified.
-- **Prototype runtime:** dependency-free Canvas perspective renderer + JavaScript model. Browser delivery was selected by the owner. A full mesh engine remains a later evaluation if this renderer proves insufficient.
+- **Prototype runtime:** main has a dependency-free Canvas preview. The Open Sky branch introduces a real WebGL polygonal world powered by Three.js (CDN dependency), with an isolated free-flight model and legacy Canvas fallback.
 - **Primary target:** portrait phone browser. Native packages are no longer the first delivery path.
-- **First gate:** greyscale phone-playable flight + vehicle impact loop. Do not spend on premium assets or monetization until that gate passes.
+- **First gate:** owner has explicitly rejected Canvas road/forest visuals; now validate WebGL forest/flight visually on a real phone before deciding how to reintroduce arcade challenges. No premium assets or monetization before testing.
 
 ## Documentation
 
@@ -46,6 +54,7 @@ We are **not** building a real-world training tool, tactical navigation system, 
 | [docs/15_TASK_ISSUES_INDEX.md](docs/15_TASK_ISSUES_INDEX.md) | GitHub issue tracking conventions |
 | [docs/16_RESOURCE_SCHEDULE.md](docs/16_RESOURCE_SCHEDULE.md) | Dependency-validated 20h/week schedule & phase rollups |
 | [docs/17_PROJECT_STATUS.md](docs/17_PROJECT_STATUS.md) | Current true project state, phase evidence and first issues |
+| [docs/19_WEBGL_3D_OPEN_SKY.md](docs/19_WEBGL_3D_OPEN_SKY.md) | Open Sky WebGL implementation, validation and device-risk notes (feature branch) |
 | [docs/planning/github_issue_map.json](docs/planning/github_issue_map.json) | All 55 GitHub issue links indexed by work ID |
 
 ## Execution rules
