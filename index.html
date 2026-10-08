@@ -13,15 +13,14 @@
     <canvas id="scene" aria-label="Ζωντανός τρισδιάστατος κόσμος πτήσης"></canvas>
     <div id="vignette" aria-hidden="true"></div>
     <div id="hud" class="hidden">
-      <div class="hud-left"><span class="eyebrow">FOREST ENCOUNTER · FLIGHT V2</span><strong id="distance">0/3 VEHICLES</strong></div>
+      <div class="hud-left"><span class="eyebrow">FOREST ENCOUNTER · FLIGHT V3</span><strong id="distance">0/3 VEHICLES</strong></div>
       <div class="hud-right"><span class="eyebrow">ALTITUDE</span><strong id="altitude">0 M AGL</strong><small id="speed">0 KM/H</small><small id="vertical-rate" aria-label="Κατακόρυφη ταχύτητα">↑ 0.0 M/S</small></div>
       <div id="warning" role="status" aria-live="polite"></div>
-      <div id="hint">Λίγο πάνω: άνοδος · τέρμα πάνω: πίσω · κάτω: βουτιά</div>
+      <div id="hint">Πάνω: ανέβα / φρένα / πίσω · κάτω: βουτιά · πλάγια: κατεύθυνση</div>
     </div>
     <button id="pause" class="hidden" type="button" aria-label="Παύση">Ⅱ</button>
     <div id="flight-actions" aria-label="Επιλογές πτήσης">
       <button id="view-mode" class="flight-tool hidden" type="button" aria-label="Αλλαγή κάμερας">FPV</button>
-      <button id="boost" class="flight-tool hidden" type="button" aria-label="Ταχύτητα πτήσης" aria-pressed="false">CRUISE</button>
       <button id="sound-toggle" class="flight-tool hidden" type="button" aria-label="Εναλλαγή ήχου" aria-pressed="true">SOUND ON</button>
     </div>
     <section id="overlay" class="panel home">
@@ -30,9 +29,9 @@
         <h1>WAR<br><em>DRONE</em><br>SIM</h1>
         <p>Πέτα γρήγορα μέσα στο δάσος. Βούτα στα τρία οχήματα του ξέφωτου· κάθε πρόσκρουση αφήνει πίσω συντρίμμια. Το επόμενο drone μπαίνει αμέσως στη σκηνή.</p>
         <button id="primary" type="button">BEGIN ENCOUNTER <span>↗</span></button>
-        <div class="controls">Σύρε προς κάθε κατεύθυνση · λίγο πάνω: άνοδος · τέρμα πάνω: πτήση πίσω<br>Πρόσκρουση σε έδαφος: νέο drone · FAST: περισσότερη ταχύτητα</div>
+        <div class="controls">Ένα δάχτυλο: πάνω για άνοδο / φρένο / πίσω · κάτω για γρήγορη βουτιά · αριστερά / δεξιά για πλευρικό έλεγχο<br>Όλα χωρίς αλλαγές ταχύτητας ή επιπλέον κουμπιά</div>
       </div>
-      <div class="footer">FOREST ENCOUNTER · PULLBACK FLIGHT V2</div>
+      <div class="footer">FOREST ENCOUNTER · ONE-FINGER FLIGHT V3</div>
     </section>
     <div id="landscape">Γύρισε το κινητό όρθιο για να παίξεις.</div>
   </main>

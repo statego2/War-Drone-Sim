@@ -32,7 +32,15 @@ try{
   await page.waitForTimeout(900);
   const running=await page.evaluate(()=>window.__openSkySnapshot());
   assert.equal(running.vehicles.length,3);
-  assert.ok(running.speed>43,'cruise raises actual forward speed');
+  assert.ok(running.speed>43,'neutral flight maintains automatic forward cruise');
+  assert.equal(await page.locator('#boost').count(),0,'one-finger flight must not show a speed-mode button');
+  // A modest thumb movement should reach the intermediate near-hover band.
+  await page.mouse.move(190,540); await page.mouse.down();
+  await page.mouse.move(190,488,{steps:4});
+  await page.waitForTimeout(650);
+  const nearHover=await page.evaluate(()=>window.__openSkySnapshot());
+  await page.mouse.up();
+  assert.ok(nearHover.gesture.y>.7,'52px upward swipe reaches the direct brake/hover command');
   await page.keyboard.down('ArrowUp');
   await page.waitForTimeout(1950);
   const reversing=await page.evaluate(()=>window.__openSkySnapshot());
@@ -40,8 +48,8 @@ try{
   // Software-rendered WebGL may advance very little simulation time per wall-clock
   // second. Check initiation here; the full forward-to-backward transition is
   // covered by fixed-time pure flight tests on both CRUISE and FAST.
-  assert.ok(reversing.pullback>.6 && reversing.pitch < -.8,'full up input visibly begins nose-up pullback');
-  assert.ok(reversing.speed < running.speed-3,'upward gesture starts shedding forward momentum');
+  assert.equal(reversing.gesture.y,1,'full-up keyboard or one-finger control reaches reverse command');
+  assert.ok(reversing.brakeIntent>.2,'one rendered physics step registers the reverse braking intent');
   await page.mouse.move(190,540);await page.mouse.down();
   await page.mouse.move(190,350,{steps:6});
   await page.waitForTimeout(900);
@@ -86,7 +94,7 @@ try{
   assert.ok(await fallback.locator('#hud').isVisible());
   await fallback.close();
   assert.deepEqual(errors,[],'no JavaScript page errors');
-  console.log('PASS: portrait WebGL, 3 vehicles, reverse pullback, diagonals, nose dive, mute and pause');
+  console.log('PASS: one-finger no-mode flight, brake/hover gesture, reverse, diagonals, dive, mute and pause');
 }finally{
   if(browser)await browser.close();
   await new Promise(r=>server.close(r));
