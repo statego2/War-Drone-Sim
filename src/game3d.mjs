@@ -151,7 +151,7 @@ function setInstance(mesh, i, x, y, z, sx, sy, sz, rotation = 0, color = null) {
   if (color !== null) mesh.setColorAt(i, new THREE.Color(color));
 }
 function addForest(group, cx, cz, near) {
-  const attempts = near ? (mobile ? 96 : 130) : 44, trees = [], broad = [], rocks = [];
+  const attempts = near ? (mobile ? 300 : 420) : 85, trees = [], broad = [], rocks = [];
   for (let i = 0; i < attempts; i++) {
     const rx = hash(cx * 739 + i * 17, cz * 1909 + 81);
     const rz = hash(cx * 2203 + i * 31, cz * 499 + 12);
@@ -214,7 +214,6 @@ const lampMat = new THREE.MeshBasicMaterial({ color: 0xdfd4a8 });
 function addScenicVehicle(group, cx, cz) {
   if ((cz + 3000) % 3 !== 1) return;
   const z = cz * TILE + TILE * .58, x = roadCenter(z);
-  if (Math.floor(x / TILE) !== cx) return;
   const car = new THREE.Group();
   addBox(car, 3.5, .95, 6.6, 0, .6, 0, carPaint);
   addBox(car, 3.0, 1.15, 3.5, 0, 1.55, -.4, carGlass);
@@ -263,7 +262,7 @@ function rebuildTiles(force = false) {
   const keep = new Set();
   for (let dz = -radius; dz <= radius; dz++) for (let dx = -radius; dx <= radius; dx++) {
     const tx = cx + dx, tz = cz + dz, id = tx + ':' + tz;
-    const near = Math.abs(dx) <= 2 && Math.abs(dz) <= 2;
+    const near = Math.abs(dx) <= 1 && Math.abs(dz) <= 1;
     keep.add(id);
     let tile = tiles.get(id);
     if (tile && tile.near !== near) { disposeTile(tile); tiles.delete(id); tile = null; }
