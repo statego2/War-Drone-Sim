@@ -40,3 +40,9 @@ No real-world targeting, vehicle damage calculations, live drone protocols or ph
 - Order: CD-00 actual portrait baseline (coordinates with GP-00) → CD-01 CSS tokens → CD-02 single-CTA live forest launch → CD-03 minimal HUD; CD-04 authored clearing → CD-05 lighting → CD-06 drone/vehicle silhouettes → CD-07 reward polish → CD-08 pause/micro-UX → CD-09 live iPhone acceptance.
 - Preserve high-priority flight/dive, impact audio and performance work from above. Do not merge PR #66 as-is without reconciling graphics-overhaul concepts against approved CD direction and current shipped VFX/audio.
 - **Next safe art action:** capture current 390×844 home/flight/impact screenshot baselines; record which are desktop-only versus actually tested on iPhone, then implement a reversible launch-only PR. Do not modify game physics or hitboxes to achieve visual polish.
+
+## Owner art clarification — military-style vehicle targets (2026-10-08, planning only)
+
+- Owner confirmed the 3 encounter targets should look like **fictional military vehicles**, not generic civilian cars: **tank silhouette, APC/armored carrier silhouette, military transport truck silhouette**. Matte olive/military green, khaki/dust materials; recognizable from above at flight speed and distinct settled wrecks.
+- Authoritative scope: [Creative Direction 2.0](docs/29_APPROVED_CREATIVE_DIRECTION_V2.md) CD-06 + [ADR-006](docs/09_DECISIONS.md), tracked under [Issue #76](https://github.com/statego2/War-Drone-Sim/issues/76). This is **plan approval only**, not imported meshes or deployed gameplay visuals.
+- Preserve fixed 3-target encounter, fictional unoccupied objects, and existing hitbox/flight/instant-respawn contracts. No real vehicle replicas, military targeting UI or weapons simulation. Reconcile existing graphics PR #66 before implementing CD-06.

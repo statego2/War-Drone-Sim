@@ -32,7 +32,7 @@ Parallel work checked at authoring:
 
 ## 2A. Approved art and UI direction — coordinated with gameplay (2026-10-08)
 
-Owner approved [**Premium Cinematic Arcade / Creative Direction 2.0**](29_APPROVED_CREATIVE_DIRECTION_V2.md): cinematic golden-hour forest, one-action live-scene FLY launch, minimalist HUD, three distinguishable original fictional vehicle silhouettes, hero drone, choreographed short impact, elegant pause, continuous respawn. This is **design approval, not implementation completion**.
+Owner approved [**Premium Cinematic Arcade / Creative Direction 2.0**](29_APPROVED_CREATIVE_DIRECTION_V2.md): cinematic golden-hour forest, one-action live-scene FLY launch, minimalist HUD, three distinguishable **fictional military-style** targets (tank/APC/transport truck, matte olive/khaki), hero drone, choreographed short impact, elegant pause, continuous respawn. This is **design approval, not implementation completion**.
 
 **Single-source rule:** this file remains the official **GP implementation sequence**. The art plan owns CD-00…CD-09 and visual acceptance. Existing [graphics-overhaul PR #66](https://github.com/statego2/War-Drone-Sim/pull/66) is an **unmerged technical proposal**; reconcile with CD and current main before merge, not an independent art direction. Do not let a new UI or art branch overwrite flight/encounter, sound, impact, or NEXT_ACTION work.
 

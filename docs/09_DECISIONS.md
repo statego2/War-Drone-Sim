@@ -35,7 +35,7 @@ One event per run, with prioritized fictional vehicle vs tree/terrain contacts r
 
 ## ADR-006 — Art direction
 **Status:** ACCEPTED (creative direction only), explicitly approved by the product owner 2026-10-08; **runtime implementation and iPhone validation are NOT complete.**  
-**Decision:** Premium Cinematic Arcade — golden-hour cinematic forest, tactical-minimalist presentation, restrained stylized arcade feedback. Strong launch with one FLY CTA, minimal in-flight HUD, distinct drone/3 fictional vehicle silhouettes, art-directed clearing, cinematic short non-graphic impact, consistent pause/respawn. No gameplay expansion or real-world targeting.  
+**Decision:** Premium Cinematic Arcade — golden-hour cinematic forest, tactical-minimalist presentation, restrained stylized arcade feedback. Strong launch with one FLY CTA, minimal in-flight HUD, distinct drone and 3 **fictional unoccupied military-style vehicle silhouettes** (tank/APC/transport truck in matte olive/khaki), art-directed clearing, cinematic short non-graphic impact, consistent pause/respawn. No gameplay expansion or real-world targeting.  
 **Canonical art specification:** [Creative Direction 2.0](29_APPROVED_CREATIVE_DIRECTION_V2.md). Technical graphics overhaul [PR #66](https://github.com/statego2/War-Drone-Sim/pull/66) requires reconciliation before any merge; it is a design-only proposal.  
 **Reopen if:** owner rejects an actual implemented portrait visual slice, accessibility/readability regresses, or phone FPS/thermal limits require simplified execution.  
 **Evidence requirement:** before/after captures, real iPhone evaluation and GP/G1 fun gate; direction approval is not production sign-off.

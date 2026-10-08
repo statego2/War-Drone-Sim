@@ -8,7 +8,8 @@
 - Palette: Deep Forest #172B27, Moss #526D57, Soft Ivory #F1EEE3, Golden Hour #E4BB82, Ember #FA874E.
 - **Home:** full-screen live forest, custom typographic hierarchy, one **FLY** CTA, one-line optional flavor; move long explanation/version into About/debug; seamless transition to input-ready flight.
 - **Flight:** 3 discrete progress marks, optional subtle speed, telemetry secondary, no clutter or fake targeting reticle; do not bury FAST if needed for controls.
-- **World:** one designed forest reveal and clearing before broad foliage work; cohesive graphite drone and 3 distinct fictional vehicle silhouettes.
+- **World:** one designed forest reveal and clearing before broad foliage work; cohesive graphite drone and **three fictional military-style targets: tank, APC/armored carrier, military transport truck**. Silhouettes remain distinct when seen from above in fast portrait flight.
+- **Vehicle look:** no civilian car paint. Use matte olive green, dark military green, khaki and dusty brown, with restrained stylized wear, coherent readable wreck variants. All targets are unoccupied fictional game objects; avoid exact real models, insignia, functional armament, or tactical-detail simulation.
 - **Impact/flow:** reuse and choreograph existing sound/VFX, success vs ground miss, no forced pause beyond approx. one-second next drone.
 - **Pause/finish:** calm translucent live-scene overlay, one dominant RESUME, non-modal completion reward, consistent transitions and accessibility.
 - Implementation order, owners, gate/evidence, rollback and exclusivity are defined in **CD-00…CD-09** in the approved spec. The open graphics PR #66 is a technical annex, **not** another direction.
