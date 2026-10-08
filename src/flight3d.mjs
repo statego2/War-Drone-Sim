@@ -49,7 +49,7 @@ export function makeFlight() {
   return {
     x, y:groundHeight(x,z)+17, z, heading:0, bank:0, pitch:0,
     yawRate:0, sideRate:0, climbRate:0,
-    vx:0, vy:0, vz:24, speed:24, throttle:.54,
+    vx:0, vy:0, vz:43, speed:43, throttle:.72,
     distance:0, time:0, groundContact:false
   };
 }
@@ -77,29 +77,28 @@ export function stepFlight(f,input,dt) {
   const rx=Math.cos(f.heading),rz=-Math.sin(f.heading);
   const along=f.vx*fx+f.vz*fz;
   const across=f.vx*rx+f.vz*rz;
-  const forwardAcceleration=clamp((f.throttle*47-along)*1.8+
-    7.5*Math.sin(f.pitch),-35,35);
-  const lateralAcceleration=-across*2.1;
+  const forwardAcceleration=clamp((f.throttle*78-along)*2.1+
+    11*Math.sin(f.pitch),-55,55);
+  const lateralAcceleration=-across*2.7;
   f.vx+=(fx*forwardAcceleration+rx*lateralAcceleration)*dt;
   f.vz+=(fz*forwardAcceleration+rz*lateralAcceleration)*dt;
 
   // A tilted craft has less upward support. In an aggressive nose-down
   // dive gravity exceeds vertical lift, so falling speed ACCUMULATES.
   // Small/positive vertical gestures get forgiving assisted lift.
-  const supportedLift=(GRAVITY+up*14.5-down*1.6)*Math.cos(f.pitch);
-  const verticalAcceleration=supportedLift-GRAVITY-.22*f.vy-.015*f.vy*Math.abs(f.vy);
+  const supportedLift=(GRAVITY+up*19-down*2.8)*Math.cos(f.pitch);
+  const verticalAcceleration=supportedLift-GRAVITY-.13*f.vy-.008*f.vy*Math.abs(f.vy);
   f.vy+=verticalAcceleration*dt;
   const dx=f.vx*dt,dz=f.vz*dt;
   f.x+=dx;f.z+=dz;f.y+=f.vy*dt;
   f.distance+=Math.hypot(dx,dz);f.time+=dt;
   f.speed=f.vx*fx+f.vz*fz;
   f.climbRate=f.vy;
-  const floor=groundHeight(f.x,f.z)+2.2;
+  const floor=groundHeight(f.x,f.z)+1.4;
   f.groundContact=f.y<=floor;
   if(f.groundContact){
     f.y=floor;
-    f.vy=Math.max(0,f.vy);
-    f.climbRate=f.vy;
+    // Preserve downward impact speed for the game director. The run ends here.
   }
   f.sideRate=0;
   return f;

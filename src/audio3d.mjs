@@ -99,5 +99,25 @@ export function createFlightAudio() {
     setActive(false);
     if (context?.state==='running') context.suspend().catch(()=>{});
   }
-  return { unlock, setEnabled, setActive, update, suspendOnHidden, get enabled(){return enabled;} };
+  function impact(vehicle) {
+    if (!context || context.state !== 'running' || !enabled) return;
+    const t=context.currentTime;
+    const pulse=context.createOscillator(), gain=context.createGain();
+    pulse.type=vehicle?'sawtooth':'triangle';
+    pulse.frequency.setValueAtTime(vehicle?150:92,t);
+    pulse.frequency.exponentialRampToValueAtTime(vehicle?39:47,t+.36);
+    gain.gain.setValueAtTime(.0001,t);
+    gain.gain.exponentialRampToValueAtTime(vehicle?.35:.18,t+.016);
+    gain.gain.exponentialRampToValueAtTime(.0001,t+(vehicle?.62:.28));
+    pulse.connect(gain).connect(output);pulse.start(t);pulse.stop(t+(vehicle?.65:.31));
+    pulse.onended=()=>{pulse.disconnect();gain.disconnect();};
+    const n=context.createBuffer(1,Math.floor(context.sampleRate*.45),context.sampleRate);
+    const data=n.getChannelData(0);
+    for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*Math.exp(-i/(context.sampleRate*(vehicle?.12:.055)));
+    const src=context.createBufferSource(), filter=context.createBiquadFilter(), g=context.createGain();
+    src.buffer=n;filter.type='lowpass';filter.frequency.value=vehicle?1250:620;
+    g.gain.value=vehicle?.22:.12;
+    src.connect(filter).connect(g).connect(output);src.start(t);src.onended=()=>{src.disconnect();filter.disconnect();g.disconnect();};
+  }
+  return { unlock, setEnabled, setActive, update, impact, suspendOnHidden, get enabled(){return enabled;} };
 }

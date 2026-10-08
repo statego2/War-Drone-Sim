@@ -4,16 +4,16 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
   <meta name="theme-color" content="#1b343c">
-  <meta name="description" content="War Drone Sim: browser-based, free-flight 3D forest exploration game.">
-  <title>War Drone Sim — Open Sky 3D</title>
+  <meta name="description" content="War Drone Sim: fast arcade flight and fictional vehicle encounters in a 3D forest.">
+  <title>War Drone Sim — Forest Encounter</title>
   <link rel="stylesheet" href="./src/style3d.css">
 </head>
 <body>
-  <main id="game" aria-label="War Drone Sim — Open Sky 3D">
+  <main id="game" aria-label="War Drone Sim — Forest Encounter">
     <canvas id="scene" aria-label="Ζωντανός τρισδιάστατος κόσμος πτήσης"></canvas>
     <div id="vignette" aria-hidden="true"></div>
     <div id="hud" class="hidden">
-      <div class="hud-left"><span class="eyebrow">OPEN SKY · V0.7</span><strong id="distance">0 M</strong></div>
+      <div class="hud-left"><span class="eyebrow">FOREST ENCOUNTER · V0.8</span><strong id="distance">0/3 VEHICLES</strong></div>
       <div class="hud-right"><span class="eyebrow">ALTITUDE</span><strong id="altitude">0 M AGL</strong><small id="speed">0 KM/H</small><small id="vertical-rate" aria-label="Κατακόρυφη ταχύτητα">↑ 0.0 M/S</small></div>
       <div id="warning" role="status" aria-live="polite"></div>
       <div id="hint">Αριστερά/δεξιά: στροφή · πάνω: άνοδος · τέρμα κάτω: απότομη βουτιά</div>
@@ -26,13 +26,13 @@
     </div>
     <section id="overlay" class="panel home">
       <div class="panel-content">
-        <div class="kicker">A BIGGER WORLD. AN OPEN SKY.</div>
+        <div class="kicker">THREE VEHICLES. ONE CLEARING.</div>
         <h1>WAR<br><em>DRONE</em><br>SIM</h1>
-        <p>Εξερεύνησε ένα τρισδιάστατο δάσος με βουνά, ορεινούς δρόμους, ρυάκια και οικισμούς. Πέτα ελεύθερα και ανακάλυψε το τοπίο.</p>
-        <button id="primary" type="button">BEGIN FREE FLIGHT <span>↗</span></button>
-        <div class="controls">Σύρε: αριστερά/δεξιά για στροφή · πάνω για άνοδο · τέρμα κάτω για βουτιά<br>Κράτα και επανάφερε για να ανακτήσεις ύψος · CRUISE: ταχύτητα</div>
+        <p>Πέτα γρήγορα μέσα στο δάσος. Βούτα στα τρία οχήματα του ξέφωτου· κάθε πρόσκρουση αφήνει πίσω συντρίμμια. Το επόμενο drone μπαίνει αμέσως στη σκηνή.</p>
+        <button id="primary" type="button">BEGIN ENCOUNTER <span>↗</span></button>
+        <div class="controls">Σύρε: αριστερά/δεξιά για στροφή · πάνω για άνοδο · τέρμα κάτω για βουτιά<br>Πρόσκρουση σε έδαφος: νέο drone · FAST: περισσότερη ταχύτητα</div>
       </div>
-      <div class="footer">OPEN SKY V0.7 · CINEMATIC CAMERA POLISH</div>
+      <div class="footer">FOREST ENCOUNTER V0.8 · ARCADE PLAYTEST</div>
     </section>
     <div id="landscape">Γύρισε το κινητό όρθιο για να παίξεις.</div>
   </main>

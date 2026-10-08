@@ -25,14 +25,15 @@ test('free flight has no arbitrary altitude limit or forced mission timer', () =
   assert.ok(f.time > 100);
   assert.ok(Number.isFinite(f.distance));
 });
-test('low altitude prevents tunneling below terrain, without killing flight', () => {
+test('ground contact clamps terrain penetration and exposes impact velocity', () => {
   const f=makeFlight();
   f.y = -10000;
   stepFlight(f,{x:0,y:-1},.05);
   assert.equal(f.groundContact,true);
-  assert.ok(f.y >= groundHeight(f.x,f.z)+2.2-0.001);
+  assert.ok(f.y >= groundHeight(f.x,f.z)+1.4-0.001);
+  assert.ok(f.vy<0);
   stepFlight(f,{x:0,y:1},.05);
-  assert.ok(f.y >= groundHeight(f.x,f.z)+2.2-0.001);
+  assert.ok(f.y >= groundHeight(f.x,f.z)+1.4-0.001);
 });
 test('finger right turns aircraft toward screen right, left turns left', () => {
   // When the camera faces world +Z, screen right is world -X.
@@ -110,4 +111,15 @@ test('hover converges to stopped flight and reverse moves backward', () => {
   f.throttle=-.38;
   for(let i=0;i<180;i++)stepFlight(f,{x:0,y:0},1/60);
   assert.ok(f.speed < -10);
+});
+
+test('cruise actually accelerates and a sustained dive reaches ground with downward speed', () => {
+  const f=makeFlight();f.throttle=.72;
+  const initialSpeed=f.speed;
+  for(let i=0;i<90;i++)stepFlight(f,{x:0,y:0},1/60);
+  assert.ok(f.speed>initialSpeed+6,'cruise must increase world speed, not just camera FOV');
+  f.y=groundHeight(f.x,f.z)+36;
+  for(let i=0;i<300 && !f.groundContact;i++)stepFlight(f,{x:0,y:-1},1/60);
+  assert.equal(f.groundContact,true,'full down eventually hits the terrain');
+  assert.ok(f.vy<-6,'falling momentum remains available for terminal impact');
 });

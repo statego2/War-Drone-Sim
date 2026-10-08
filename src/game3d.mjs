@@ -3,6 +3,7 @@ import { TILE, clamp, hash, roadCenter, groundHeight, makeFlight, advanceFlight,
 import { createFlightAudio } from './audio3d.mjs';
 import { createScenery } from './scenery3d.mjs';
 import { createClouds } from './atmosphere3d.mjs';
+import { makeEncounter, resolveContact, applyContact, nextDrone } from './encounter.mjs';
 
 // A floating-origin, streamed polygonal world. No real-drone targeting or hardware integration.
 const $ = id => document.getElementById(id);
@@ -123,6 +124,7 @@ const greenPalette = [0x213e32, 0x294d36, 0x375740, 0x305238, 0x466344, 0x2c4d3f
 const tiles = new Map();
 let flight = makeFlight(), mode = 'home', view = 'chase', cameraYaw = 0, cameraPitch = .05;
 let throttleMode = 'cruise', last = 0, lastSector = '', frameCount = 0, smoothMs = 17;
+let encounter = makeEncounter(), impactAge = 0, impactType = '', impactId = -1, roundBannerTime=0;
 let pointer = null;
 const keys = new Set();
 
@@ -214,7 +216,7 @@ function addForest(group, cx, cz, near) {
     const rz = hash(cx * 2203 + i * 31, cz * 499 + 12);
     const x = rx * TILE, z = rz * TILE, wx = cx * TILE + x, wz = cz * TILE + z;
     const h = groundHeight(wx, wz);
-    if (Math.abs(wx - roadCenter(wz)) < 15 || lakeProximity(wx,wz) < 1.12) continue;
+    if (Math.abs(wx - roadCenter(wz)) < (wz > 185 && wz < 365 ? 31 : 15) || lakeProximity(wx,wz) < 1.12) continue;
     const size = (near ? 10 : 7) + 15 * hash(cx * 299 + i, cz * 41 + i * 61);
     const tree = { x, z, h, size, r: 1.7 + size * .19, color: greenPalette[Math.floor(hash(i + cx * 9, cz * 7 + i) * greenPalette.length)], turn: hash(i, cz * 2 + cx) * Math.PI * 2 };
     if (i % 13 === 0) rocks.push({ x, z, h, s: 1 + hash(i + cx, cz) * 2.3 });
@@ -274,6 +276,60 @@ const carPaint = new THREE.MeshStandardMaterial({ color: 0x58676a, roughness: .4
 const carGlass = new THREE.MeshStandardMaterial({ color: 0x19343b, roughness: .17, metalness: .3 });
 const wheelMat = new THREE.MeshStandardMaterial({ color: 0x17191a, roughness: .94 });
 const lampMat = new THREE.MeshBasicMaterial({ color: 0xdfd4a8 });
+// Persistent encounter meshes sit in world coordinates; tile streaming never
+// disposes a wreck when the player flies out and returns.
+const encounterView = new THREE.Group(); scene.add(encounterView);
+const targetColors = [0x9b7856, 0x607d76, 0x767e99];
+const intactViews = [], wreckViews = [], smokeViews = [];
+const smokeGeo = new THREE.IcosahedronGeometry(1, 1);
+const flashMat = new THREE.MeshBasicMaterial({color:0xffda8a,transparent:true,opacity:0,depthWrite:false});
+const flash = new THREE.Mesh(new THREE.IcosahedronGeometry(1,1),flashMat);
+encounterView.add(flash); flash.visible = false;
+const burst = new THREE.Group();encounterView.add(burst);
+const sparks=[];
+const sparkGeo=new THREE.IcosahedronGeometry(.45,0);
+const sparkMat=new THREE.MeshBasicMaterial({color:0xffb961});
+for(let i=0;i<14;i++){
+  const spark=new THREE.Mesh(sparkGeo,sparkMat);
+  spark.visible=false;burst.add(spark);sparks.push(spark);
+}
+function buildTargets() {
+  for (const target of encounter.vehicles) {
+    const root = new THREE.Group();
+    root.position.set(target.x,target.y-1.8,target.z);
+    root.rotation.y = .22 * (target.id-1);
+    const paint = new THREE.MeshStandardMaterial({color:targetColors[target.id],roughness:.68,metalness:.15});
+    addBox(root,5.8,1.6,10.4,0,1.05,0,paint);
+    addBox(root,4.5,1.55,4.1,0,2.45,-.85,carGlass);
+    for (const x of [-2.7,2.7]) for (const z of [-3.1,3.1]) {
+      const wheel=new THREE.Mesh(new THREE.CylinderGeometry(.95,.95,.6,10),wheelMat);
+      wheel.rotation.z=Math.PI/2;wheel.position.set(x,.85,z);root.add(wheel);
+    }
+    encounterView.add(root);intactViews.push(root);
+    const wreck=new THREE.Group();wreck.position.copy(root.position);
+    const dark = new THREE.MeshStandardMaterial({color:0x242a29,roughness:.96});
+    addBox(wreck,6.1,.85,10.3,0,.55,0,dark);
+    const twisted=addBox(wreck,4.9,.58,4.7,.6,1.3,-.6,dark);twisted.rotation.z=.22;
+    for(let k=0;k<4;k++){
+      const part=addBox(wreck,1.3,.35,1.8,(k%2?1:-1)*(3+k*.8),.3,(k-1.5)*2.7,dark);
+      part.rotation.y=k*1.1;
+    }
+    encounterView.add(wreck);wreckViews.push(wreck);
+    const smoke=new THREE.Mesh(smokeGeo,new THREE.MeshBasicMaterial({color:0x444949,transparent:true,opacity:.27,depthWrite:false}));
+    smoke.position.set(target.x,target.y+5,target.z);smoke.scale.set(2.8,5,2.8);
+    encounterView.add(smoke);smokeViews.push(smoke);
+  }
+  syncTargets();
+}
+function syncTargets() {
+  encounter.vehicles.forEach((vehicle,i)=>{
+    intactViews[i].visible=!vehicle.destroyed;
+    wreckViews[i].visible=vehicle.destroyed;
+    smokeViews[i].visible=vehicle.destroyed;
+  });
+}
+buildTargets();
+function moveEncounter() { encounterView.position.set(-flight.x,0,-flight.z); }
 function addScenicVehicle(group, cx, cz) {
   if ((cz + 3000) % 3 !== 1) return;
   const z = cz * TILE + TILE * .58, x = roadCenter(z);
@@ -490,15 +546,43 @@ muteButton.addEventListener('click', () => {
 });
 function startFlight() {
   sound.unlock(); sound.setActive(true);
-  flight = makeFlight(); mode = 'flying'; view = 'chase'; pointer = null;
+  encounter = makeEncounter(); syncTargets();
+  spawnDrone(); mode = 'flying'; view = 'chase'; pointer = null;
   cameraYaw = flight.heading; cameraPitch=.05; throttleMode='cruise';
   drone.visible = true; boostButton.textContent = 'CRUISE'; viewButton.textContent = 'FPV';
-  hint.textContent = 'Σύρε αριστερά/δεξιά για στροφή · πάνω/κάτω για ύψος';
+  hint.textContent = 'Στρίψε με το δάχτυλο · τέρμα κάτω: βουτιά στα οχήματα';
   overlay.className = 'panel hidden'; hud.classList.remove('hidden');
   pauseButton.classList.remove('hidden'); viewButton.classList.remove('hidden'); boostButton.classList.remove('hidden');
   warning.textContent = '';
   muteButton.classList.remove('hidden');
    lastSector = ''; rebuildTiles(true); moveTiles(); updateFarLand(); last = performance.now();
+}
+function spawnDrone() {
+  flight = makeFlight();
+  flight.z = 55 + ((encounter.drones-1)%3)*17;
+  flight.x = roadCenter(flight.z);
+  flight.y = groundHeight(flight.x,flight.z) + 32 + ((encounter.drones-1)%2)*5;
+  flight.vx = 0;flight.vz = 43;flight.vy = 0;flight.throttle = .72;
+  pointer = null;keys.clear();cameraYaw = flight.heading;cameraPitch = .05;
+  camera.position.set(0,flight.y+5,-16);
+  impactAge=0;impactType='';flash.visible=false;drone.visible=view==='chase';
+  sound.setActive(true);
+}
+function endFlight(contact) {
+  if(mode!=='flying')return;
+  mode='impact';pointer=null;keys.clear();impactAge=0;
+  impactType=contact.type;impactId=contact.id??-1;
+  if(contact.type==='vehicle') {applyContact(encounter,contact);syncTargets();}
+  if(contact.type==='vehicle') {
+    const target=encounter.vehicles[contact.id];
+    flash.position.set(target.x,target.y,target.z);flash.visible=true;
+    flashMat.opacity=1;
+    burst.position.copy(flash.position);
+    sparks.forEach((spark,i)=>{spark.visible=true;spark.position.set(0,0,0);});
+  }
+  sound.setActive(false);sound.impact(contact.type==='vehicle');
+  warning.textContent=contact.type==='vehicle' ? 'DIRECT HIT' : 'GROUND IMPACT';
+  drone.visible=false;
 }
 function setPause() {
   if (mode !== 'flying') return;
@@ -506,9 +590,9 @@ function setPause() {
   hud.classList.add('hidden'); pauseButton.classList.add('hidden');
   viewButton.classList.add('hidden'); boostButton.classList.add('hidden'); muteButton.classList.add('hidden');
    overlay.className = 'panel paused';
-  overlay.querySelector('.kicker').textContent = 'FREE FLIGHT · PAUSED';
+  overlay.querySelector('.kicker').textContent = 'ENCOUNTER · PAUSED';
   overlay.querySelector('h1').innerHTML = 'ABOVE<br><em>THE TREES</em>';
-  overlay.querySelector('p').textContent = 'Η πτήση σου αποθηκεύεται όσο παραμένει ανοιχτή η σελίδα.';
+  overlay.querySelector('p').textContent = `${encounter.hits}/3 οχήματα · drone ${encounter.drones}.`;
   primary.innerHTML = 'RESUME FLIGHT <span>↗</span>';
 }
 pauseButton.addEventListener('click', setPause);
@@ -558,7 +642,7 @@ function updateCamera(dt) {
 }
 
 function updateHUD() {
-  distanceEl.textContent = Math.round(flight.distance).toLocaleString('en-US') + ' M';
+  distanceEl.textContent = `${encounter.hits}/3 VEHICLES · DRONE ${encounter.drones}`;
   altitudeEl.textContent = Math.round(Math.max(0, flight.y - groundHeight(flight.x, flight.z))) + ' M AGL';
   const totalSpeed=Math.hypot(flight.vx,flight.vy,flight.vz);
   speedEl.textContent = Math.round(totalSpeed*3.6) + ' KM/H';
@@ -567,17 +651,43 @@ function updateHUD() {
     const rising=flight.vy>=0;
     rate.textContent=(rising?'↑ ':'↓ ')+Math.abs(flight.vy).toFixed(1)+' M/S';
   }
-  warning.textContent=flight.groundContact ? 'LOW ALTITUDE' :
+  if(mode==='flying') warning.textContent=roundBannerTime>0 ? `ENCOUNTER ${encounter.round} · AGAIN` :
     flight.pitch>.95 && flight.vy<-4 ? 'STEEP DIVE' : '';
 }
 function frame(now) {
   const dt = Math.min((now - last) / 1000 || .016, .1); last = now;
   if (mode === 'flying') {
-    const throttles = {hover:0, cruise:.54, fast:.98, reverse:-.38};
-    flight.throttle = keys.has('shift') ? .98 : throttles[throttleMode];
+    roundBannerTime=Math.max(0,roundBannerTime-dt);
+    const throttles = {hover:0, cruise:.72, fast:1, reverse:-.38};
+    flight.throttle = keys.has('shift') ? 1 : throttles[throttleMode];
+    const previous={x:flight.x,y:flight.y,z:flight.z};
     advanceFlight(flight, inputState(), dt);
+    const contact=resolveContact(encounter,previous,flight,flight.groundContact);
+    if(contact)endFlight(contact);
     rebuildTiles(); moveTiles(); updateFarLand(); updateHUD();
     sound.update(Math.hypot(flight.vx,flight.vy,flight.vz),Math.max(0,flight.y-groundHeight(flight.x,flight.z)),dt);
+  } else if (mode === 'impact') {
+    impactAge+=dt;
+    if(flash.visible){
+      flash.scale.setScalar(2+impactAge*24);
+      flashMat.opacity=Math.max(0,1-impactAge*4.5);
+      if(impactAge>.34)flash.visible=false;
+    }
+    if(impactType==='vehicle')sparks.forEach((spark,i)=>{
+      spark.visible=impactAge<.75;
+      const angle=i*2.39996, radius=impactAge*(14+i%4*3);
+      spark.position.set(Math.cos(angle)*radius,impactAge*(7+i%5*3)-impactAge*impactAge*24,Math.sin(angle)*radius);
+      spark.scale.setScalar(Math.max(.01,1-impactAge*1.2));
+    });
+    if(impactAge>.98){
+      const completed=encounter.hits===3;
+      encounter=nextDrone(encounter);syncTargets();
+      spawnDrone();mode='flying';
+      sparks.forEach(spark=>spark.visible=false);
+      roundBannerTime=completed?1.7:0;
+      warning.textContent=completed?`ENCOUNTER ${encounter.round} · AGAIN` : '';
+      lastSector='';rebuildTiles(true);moveTiles();updateFarLand();updateHUD();
+    }
   }
   const height = Math.max(0, flight.y - groundHeight(flight.x, flight.z));
   clouds.update(flight.x,flight.y,flight.z,now/1000);
@@ -598,6 +708,8 @@ function frame(now) {
     camera.updateProjectionMatrix();
   }
   sky.position.copy(camera.position);
+  moveEncounter();
+  smokeViews.forEach((smoke,i)=>{ if(smoke.visible){smoke.position.y=encounter.vehicles[i].y+5+Math.sin(now*.0006+i)*1.2;smoke.rotation.y+=dt*.17;} });
   for (let i = 0; i < rotors.length; i++) rotors[i].rotation.y += dt * (i % 2 ? -43 : 43);
   renderer.render(scene, camera);
   smoothMs = smoothMs * .98 + Math.min(dt * 1000, 50) * .02;
@@ -616,7 +728,7 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 rebuildTiles(true);
-moveTiles(); updateFarLand();
+moveTiles(); moveEncounter(); updateFarLand();
 camera.position.set(0, flight.y + 6, -19);
 updateCamera(.016);
 // Diagnostic-only state for automated interaction tests; no browser location or telemetry.
@@ -625,6 +737,7 @@ window.__openSkySnapshot = () => ({
   cameraYaw, cameraPitch, throttleMode, speed:flight.speed,
   vx:flight.vx,vy:flight.vy,vz:flight.vz,pitch:flight.pitch,
   ground: groundHeight(flight.x, flight.z), mode, audioEnabled: sound.enabled
+  , hits:encounter.hits, drones:encounter.drones, vehicles:encounter.vehicles.map(v=>v.destroyed)
 });
 document.documentElement.dataset.openSkyReady = 'true';
 requestAnimationFrame(frame);
