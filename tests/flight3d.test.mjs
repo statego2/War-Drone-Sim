@@ -57,7 +57,7 @@ test('sustained steering turns naturally beyond ninety degrees', () => {
     previousHeading=right.heading;
   }
   // Heading itself wraps at +/-PI; accumulate shortest differences to validate full rotation.
-  assert.ok(totalYaw < -2.5,'sustained right gesture turns more than 140 degrees');
+  assert.ok(totalYaw < -2.2,'sustained right gesture turns more than 125 degrees while banking and strafing');
 });
 test('upward gesture provides lift, downward gesture tips the nose and descends', () => {
   const vertical=makeFlight(),initialY=vertical.y;
@@ -71,7 +71,7 @@ test('upward gesture provides lift, downward gesture tips the nose and descends'
   assert.ok(vertical.pitch > 1.1,'full down command pitches steeply forward');
   assert.ok(vertical.vy < risingVelocity-7,'steep dive must aggressively reduce vertical velocity');
 });
-test('deep dive builds momentum, sharp recovery takes time', () => {
+test('deep dive carries forward momentum while gaining descent speed, then recovers', () => {
   const dive=makeFlight(),neutral=makeFlight();
   dive.y=300;neutral.y=300;
   for(let i=0;i<85;i++) {
@@ -81,8 +81,8 @@ test('deep dive builds momentum, sharp recovery takes time', () => {
   assert.ok(dive.pitch>1.2 && dive.pitch<Math.PI/2,'game supports near-vertical non-inverted dive');
   assert.ok(dive.vy<-5,'rapid dive acquires real downward momentum');
   assert.ok(dive.vy<neutral.vy-4,'tilt produces stronger descent than level flight');
-  assert.ok(Math.hypot(dive.vx,dive.vz)<Math.hypot(neutral.vx,neutral.vz)*.4,
-    'a near-vertical dive brakes horizontal travel instead of flying far forward');
+  assert.ok(Math.hypot(dive.vx,dive.vz)>Math.hypot(neutral.vx,neutral.vz)*1.08,
+    'full nose-down dive should retain and build forward travel instead of braking to zero');
   const atRelease=dive.vy;
   for(let i=0;i<10;i++) stepFlight(dive,{x:0,y:0},1/60);
   assert.ok(dive.vy<0 && atRelease<0,'downward inertia must continue briefly after release');
@@ -125,7 +125,7 @@ test('cruise actually accelerates and a sustained dive reaches ground with downw
   assert.ok(f.vy<-6,'falling momentum remains available for terminal impact');
 });
 
-test('steep dive sheds horizontal momentum, but a shallow approach preserves approach speed', () => {
+test('committed dive retains forward velocity; shallow pitch yields milder downward acceleration', () => {
   const full=makeFlight(), shallow=makeFlight(), cruise=makeFlight();
   for (const f of [full,shallow,cruise]) f.y=300;
   for(let i=0;i<90;i++) {
@@ -135,11 +135,89 @@ test('steep dive sheds horizontal momentum, but a shallow approach preserves app
   }
   const horizontal=f=>Math.hypot(f.vx,f.vz);
   assert.ok(full.pitch>1.2 && full.vy<-5, 'full gesture commits to gravity-led fall');
-  assert.ok(horizontal(full)<20, 'horizontal motion largely arrests in full dive');
-  assert.ok(horizontal(shallow)>horizontal(full)+20, 'shallow pitch still advances toward the target');
+  assert.ok(horizontal(full)>horizontal(cruise)+5, 'the nose-down dive does not trigger a hidden air brake');
+  assert.ok(horizontal(shallow)>45 && horizontal(shallow)<horizontal(full), 'shallow input still advances, but with a gentler dive');
   assert.ok(horizontal(cruise)>48, 'neutral cruise stays fast');
   // Pulling out should recover forward travel continuously instead of snapping.
   const before=horizontal(full);
   stepFlight(full,{x:0,y:1},1/60);
   assert.ok(horizontal(full)>=before && horizontal(full)<before+3);
+});
+
+test('true lateral HOVER strafing does not force yaw and diagonal gestures combine axes', () => {
+  const start=makeFlight(), right=makeFlight(), left=makeFlight();
+  for(const f of [right,left]) {f.y=300;f.throttle=0;}
+  for(let i=0;i<120;i++){
+    stepFlight(right,{x:1,y:0},1/60);
+    stepFlight(left,{x:-1,y:0},1/60);
+  }
+  assert.ok(right.x<start.x-12 && left.x>start.x+12,'hover supports real opposite lateral translations');
+  assert.ok(Math.abs(right.heading)<.02 && Math.abs(left.heading)<.02,'hover strafing must not turn the aircraft');
+  assert.ok(right.sideRate< -6 && left.sideRate>6,'side velocity is exposed to the renderer');
+
+  const diagonals=[
+    {input:{x:1,y:1},side:-1,vertical:1},
+    {input:{x:-1,y:1},side:1,vertical:1},
+    {input:{x:1,y:-1},side:-1,vertical:-1},
+    {input:{x:-1,y:-1},side:1,vertical:-1}
+  ];
+  for(const {input,side,vertical} of diagonals){
+    const f=makeFlight();f.y=300;
+    const x=f.x,y=f.y;
+    for(let i=0;i<120;i++)stepFlight(f,input,1/60);
+    assert.ok(side*(f.x-x)>18,'diagonal drag must translate laterally');
+    assert.ok(vertical*(f.y-y)>8,'diagonal drag must also translate vertically');
+    assert.ok(Math.abs(f.bank)>.3,'lateral travel must have visible bank');
+  }
+});
+
+test('rapid full dive keeps forward momentum and gains speed on both CRUISE and FAST', () => {
+  for (const throttle of [.72,1]) {
+    const dive=makeFlight(),level=makeFlight();
+    for(const f of [dive,level]) {f.y=300;f.throttle=throttle;}
+    const startZ=dive.z, startSpeed=dive.vz;
+    // A steep initial pitch must NOT annihilate horizontal velocity within 0.5s.
+    for(let i=0;i<30;i++){
+      stepFlight(dive,{x:0,y:-1},1/60);
+      stepFlight(level,{x:0,y:0},1/60);
+    }
+    assert.ok(dive.vz>startSpeed*1.05,'early nose-down speed does not collapse');
+    for(let i=0;i<90;i++){
+      stepFlight(dive,{x:0,y:-1},1/60);
+      stepFlight(level,{x:0,y:0},1/60);
+    }
+    assert.ok(dive.z-startZ>110,'full dive continues traveling through the playable forest');
+    assert.ok(dive.vy< -18,'steep input strongly builds downward velocity');
+    assert.ok(dive.vz>level.vz+8,'nose-down dive builds forward drive');
+  }
+});
+
+test('releasing diagonal drag preserves world velocity without instantly switching directions', () => {
+  const f=makeFlight(); f.y=300;
+  for(let i=0;i<75;i++)stepFlight(f,{x:1,y:1},1/60);
+  const initial={vx:f.vx,vy:f.vy,vz:f.vz};
+  stepFlight(f,{x:-1,y:-1},1/60);
+  assert.ok(Math.abs(f.vx-initial.vx)<2,'opposite gesture cannot instantly reverse sideways momentum');
+  assert.ok(Math.abs(f.vy-initial.vy)<2,'vertical momentum is continuous at reversal');
+  assert.ok(Math.abs(f.vz-initial.vz)<2,'forward momentum is continuous');
+});
+
+test('combined steering and dive remains consistent across 30 and 60 FPS steps', () => {
+  const slow=makeFlight(),fast=makeFlight();
+  for(const f of [slow,fast]) f.y=300;
+  for(let i=0;i<42;i++)advanceFlight(slow,{x:.8,y:-.75},1/30);
+  for(let i=0;i<84;i++)advanceFlight(fast,{x:.8,y:-.75},1/60);
+  for(const k of ['x','y','z','vx','vy','vz'])
+    assert.ok(Math.abs(slow[k]-fast[k])<1.6,k+' varies too much with frame rate');
+});
+
+test('coarse browser frame ends at the FIRST ground contact rather than sliding along terrain', () => {
+  const f=makeFlight();
+  f.y=groundHeight(f.x,f.z)+1.55;
+  f.vy=-20;
+  advanceFlight(f,{x:0,y:-1},.25);
+  assert.equal(f.groundContact,true);
+  assert.ok(f.time<=.025001,'first substep contact ends the frame early');
+  assert.ok(f.y>=groundHeight(f.x,f.z)+1.4-.001);
+  assert.ok(f.vy<0,'the impact velocity is preserved');
 });

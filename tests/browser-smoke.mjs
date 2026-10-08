@@ -39,6 +39,16 @@ try{
   const climbing=await page.evaluate(()=>window.__openSkySnapshot());
   await page.mouse.up();
   assert.ok(climbing.vy>0,'upward gesture produces climb');
+  const beforeDiagonal=await page.evaluate(()=>window.__openSkySnapshot());
+  await page.mouse.move(190,520);await page.mouse.down();
+  await page.mouse.move(275,355,{steps:6});
+  await page.waitForTimeout(1200);
+  const diagonal=await page.evaluate(()=>window.__openSkySnapshot());
+  await page.mouse.up();
+  console.log('DIAGONAL SNAPSHOT',JSON.stringify({before:beforeDiagonal,after:diagonal}));
+  assert.ok(diagonal.vx < beforeDiagonal.vx-9,'diagonal right drag must accelerate sideways despite existing forward inertia');
+  assert.ok(diagonal.y > beforeDiagonal.y+2,'diagonal up drag must continue climbing');
+  assert.ok(diagonal.bank<-.2,'lateral swipe banks the drone');
   await page.mouse.move(190,400);await page.mouse.down();
   await page.mouse.move(190,700,{steps:6});
   await page.waitForTimeout(900);
@@ -67,7 +77,7 @@ try{
   assert.ok(await fallback.locator('#hud').isVisible());
   await fallback.close();
   assert.deepEqual(errors,[],'no JavaScript page errors');
-  console.log('PASS: portrait WebGL start, three vehicles, real cruise speed, touch climb/dive, mute and pause');
+  console.log('PASS: portrait WebGL, vehicle encounter, cruise, diagonal lateral/climb, nose-dive, mute and pause');
 }finally{
   if(browser)await browser.close();
   await new Promise(r=>server.close(r));
