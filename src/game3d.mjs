@@ -10,7 +10,7 @@ const canvas = $('scene'), overlay = $('overlay'), primary = $('primary');
 const hud = $('hud'), pauseButton = $('pause'), distanceEl = $('distance');
 const altitudeEl = $('altitude'), speedEl = $('speed'), hint = $('hint');
 const viewButton = $('view-mode'), boostButton = $('boost'), muteButton = $('sound-toggle');
-const lookButton = $('look-mode'), alignButton = $('align-view'), warning = $('warning');
+const warning = $('warning');
 const sound = createFlightAudio();
 const scenery = createScenery(THREE, { TILE, hash, groundHeight, roadCenter, lakeProximity });
 const mobile = matchMedia('(pointer: coarse)').matches;
@@ -120,7 +120,7 @@ const broadPalette = [0x4d6740, 0x688050, 0x7d8c54, 0x496e42, 0x73845d, 0x42644b
 const temp = new THREE.Object3D();
 const greenPalette = [0x213e32, 0x294d36, 0x375740, 0x305238, 0x466344, 0x2c4d3f, 0x4c5e39, 0x335f45];
 const tiles = new Map();
-let flight = makeFlight(), mode = 'home', view = 'chase', lookMode = false, cameraYaw = 0, cameraPitch = .05;
+let flight = makeFlight(), mode = 'home', view = 'chase', cameraYaw = 0, cameraPitch = .05;
 let throttleMode = 'cruise', last = 0, lastSector = '', frameCount = 0, smoothMs = 17;
 let pointer = null;
 const keys = new Set();
@@ -442,23 +442,15 @@ window.addEventListener('resize', resize);
 resize();
 canvas.addEventListener('pointerdown', e => {
   if (mode !== 'flying' || pointer) return;
-  pointer = { id: e.pointerId, x: e.clientX, y: e.clientY, dx: 0, dy: 0, lastX: e.clientX, lastY: e.clientY };
+  pointer = { id: e.pointerId, x: e.clientX, y: e.clientY, dx: 0, dy: 0 };
   canvas.setPointerCapture(e.pointerId);
   hint.style.opacity = '0';
 });
 canvas.addEventListener('pointermove', e => {
   if (e.pointerId !== pointer?.id) return;
-  if (lookMode) {
-    const deltaX = clamp(e.clientX-pointer.lastX,-70,70);
-    const deltaY = clamp(e.clientY-pointer.lastY,-70,70);
-    cameraYaw += deltaX * .0048;
-    cameraPitch = clamp(cameraPitch + deltaY*.0038,-.82,.88);
-    pointer.dx = 0; pointer.dy = 0;
-  } else {
-    pointer.dx = clamp((e.clientX - pointer.x) / 85, -1, 1);
-    pointer.dy = clamp((pointer.y - e.clientY) / 95, -1, 1);
-  }
-  pointer.lastX=e.clientX;pointer.lastY=e.clientY;
+  // Right swipe turns right on screen, left swipe turns left, upward swipe climbs.
+  pointer.dx = clamp((e.clientX-pointer.x)/85,-1,1);
+  pointer.dy = clamp((pointer.y-e.clientY)/95,-1,1);
 });
 function release(e) { if (pointer?.id === e.pointerId) pointer = null; }
 canvas.addEventListener('pointerup', release);
@@ -468,9 +460,7 @@ window.addEventListener('keydown', e => {
   if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(k)) e.preventDefault();
   keys.add(k);
   if (k === 'c' && !e.repeat) toggleView();
-  if (k === 'l' && !e.repeat) toggleLook();
-  if (k === 'f' && !e.repeat) faceCamera();
-  if (k === 'r' && !e.repeat) cycleThrottle();
+   if (k === 'r' && !e.repeat) cycleThrottle();
   if (k === ' ' && !e.repeat && mode === 'flying') setPause();
 });
 window.addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
@@ -482,20 +472,6 @@ function toggleView() {
   drone.visible = view === 'chase';
 }
 viewButton.addEventListener('click', toggleView);
-function toggleLook() {
-  if (mode !== 'flying') return;
-  lookMode = !lookMode; pointer = null;
-  lookButton.textContent = lookMode ? 'LOOK ✓' : 'LOOK';
-  lookButton.setAttribute('aria-pressed', String(lookMode));
-  hint.textContent = lookMode ? 'Σύρε για να περιστρέψεις την κάμερα · FACE για νέα πορεία' :
-    'Σύρε αριστερά / δεξιά για μετακίνηση · πάνω / κάτω για ύψος';
-  hint.style.opacity='1';
-}
-function faceCamera() {
-  if (mode !== 'flying') return;
-  // Preserve the camera bearing as the new forward flight direction.
-  flight.heading = cameraYaw;
-}
 const modes = ['hover','cruise','fast','reverse'];
 function cycleThrottle() {
   if (mode !== 'flying') return;
@@ -503,9 +479,7 @@ function cycleThrottle() {
   boostButton.textContent = throttleMode.toUpperCase();
   boostButton.setAttribute('aria-label','Ταχύτητα: '+throttleMode);
 }
-lookButton.addEventListener('click',toggleLook);
-alignButton.addEventListener('click',faceCamera);
-boostButton.addEventListener('click', cycleThrottle);
+ boostButton.addEventListener('click', cycleThrottle);
 muteButton.addEventListener('click', () => {
   const value = !sound.enabled;
   sound.setEnabled(value);
@@ -516,24 +490,21 @@ muteButton.addEventListener('click', () => {
 function startFlight() {
   sound.unlock(); sound.setActive(true);
   flight = makeFlight(); mode = 'flying'; view = 'chase'; pointer = null;
-  cameraYaw = flight.heading; cameraPitch=.05; lookMode=false; throttleMode='cruise';
+  cameraYaw = flight.heading; cameraPitch=.05; throttleMode='cruise';
   drone.visible = true; boostButton.textContent = 'CRUISE'; viewButton.textContent = 'FPV';
-  lookButton.textContent = 'LOOK';lookButton.setAttribute('aria-pressed','false');
-  hint.textContent = 'Σύρε αριστερά / δεξιά για μετακίνηση · πάνω / κάτω για ύψος';
+  hint.textContent = 'Σύρε αριστερά/δεξιά για στροφή · πάνω/κάτω για ύψος';
   overlay.className = 'panel hidden'; hud.classList.remove('hidden');
   pauseButton.classList.remove('hidden'); viewButton.classList.remove('hidden'); boostButton.classList.remove('hidden');
   warning.textContent = '';
   muteButton.classList.remove('hidden');
-  lookButton.classList.remove('hidden');alignButton.classList.remove('hidden');
-  lastSector = ''; rebuildTiles(true); moveTiles(); updateFarLand(); last = performance.now();
+   lastSector = ''; rebuildTiles(true); moveTiles(); updateFarLand(); last = performance.now();
 }
 function setPause() {
   if (mode !== 'flying') return;
   mode = 'paused'; pointer = null; keys.clear(); sound.setActive(false);
   hud.classList.add('hidden'); pauseButton.classList.add('hidden');
   viewButton.classList.add('hidden'); boostButton.classList.add('hidden'); muteButton.classList.add('hidden');
-  lookButton.classList.add('hidden');alignButton.classList.add('hidden');
-  overlay.className = 'panel paused';
+   overlay.className = 'panel paused';
   overlay.querySelector('.kicker').textContent = 'FREE FLIGHT · PAUSED';
   overlay.querySelector('h1').innerHTML = 'ABOVE<br><em>THE TREES</em>';
   overlay.querySelector('p').textContent = 'Η πτήση σου αποθηκεύεται όσο παραμένει ανοιχτή η σελίδα.';
@@ -545,18 +516,22 @@ primary.addEventListener('click', () => {
     mode = 'flying'; overlay.className = 'panel hidden'; sound.unlock(); sound.setActive(true);
     hud.classList.remove('hidden'); pauseButton.classList.remove('hidden');
     viewButton.classList.remove('hidden'); boostButton.classList.remove('hidden'); muteButton.classList.remove('hidden');
-    lookButton.classList.remove('hidden');alignButton.classList.remove('hidden');
-    last = performance.now();
+     last = performance.now();
   } else startFlight();
 });
 function inputState() {
   const x = (pointer?.dx || 0) + (keys.has('d') || keys.has('arrowright') ? 1 : 0) - (keys.has('a') || keys.has('arrowleft') ? 1 : 0);
   const y = (pointer?.dy || 0) + (keys.has('w') || keys.has('arrowup') ? 1 : 0) - (keys.has('s') || keys.has('arrowdown') ? 1 : 0);
-  return { x: clamp(lookMode?0:x, -1, 1), y: clamp(lookMode?0:y, -1, 1), cameraYaw };
+  return { x: clamp(x,-1,1), y: clamp(y,-1,1) };
 }
 const cameraTarget = new THREE.Vector3();
 function updateCamera(dt) {
-  // Position is ALWAYS relative to the drone's current heading-independent view.
+  // A single chase camera follows aircraft heading automatically, with a
+  // small smoothing lag so turns feel physical instead of snapping.
+  // Avoid linear interpolation across the -PI/+PI angle discontinuity.
+  const yawDifference = Math.atan2(Math.sin(flight.heading-cameraYaw),Math.cos(flight.heading-cameraYaw));
+  cameraYaw += yawDifference*(1-Math.exp(-5.5*dt));
+  cameraPitch += ((.04+flight.pitch*.15)-cameraPitch)*(1-Math.exp(-4*dt));
   const dirX = Math.sin(cameraYaw), dirZ = Math.cos(cameraYaw);
   const lookX=dirX*Math.cos(cameraPitch), lookZ=dirZ*Math.cos(cameraPitch);
   const lookY=Math.sin(cameraPitch);
@@ -627,7 +602,7 @@ updateCamera(.016);
 // Diagnostic-only state for automated interaction tests; no browser location or telemetry.
 window.__openSkySnapshot = () => ({
   x: flight.x, y: flight.y, z: flight.z, heading: flight.heading,
-  cameraYaw, cameraPitch, lookMode, throttleMode, speed:flight.speed,
+  cameraYaw, cameraPitch, throttleMode, speed:flight.speed,
   ground: groundHeight(flight.x, flight.z), mode, audioEnabled: sound.enabled
 });
 document.documentElement.dataset.openSkyReady = 'true';
