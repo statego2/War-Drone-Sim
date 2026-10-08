@@ -38,8 +38,33 @@ sky.frustumCulled = false;
 sky.renderOrder = -100;
 scene.add(sky);
 
-const terrainMat = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.FrontSide });
-const roadMat = new THREE.MeshLambertMaterial({ color: 0x4b4b42, roughness: 1 });
+// Micro-detail texture prevents the procedural ground from looking like a uniform
+// green plastic surface. Generated locally, no paid/external imagery.
+function surfaceTexture(type) {
+  const c = document.createElement('canvas'); c.width = c.height = 192;
+  const g = c.getContext('2d'), data=g.createImageData(192,192);
+  let seed = type === 'grass' ? 729 : 181;
+  for(let i=0;i<data.data.length;i+=4) {
+    seed = (Math.imul(seed,1664525)+1013904223)>>>0;
+    const grain=(seed>>>16)/65535;
+    const base=type==='grass'? 218:169;
+    const v=Math.floor(base+(grain-.5)*(type==='grass'?32:43));
+    data.data[i]=v;
+    data.data[i+1]=type==='grass'?Math.min(255,v+8):v;
+    data.data[i+2]=type==='grass'?Math.min(255,v+1):v;
+    data.data[i+3]=255;
+  }
+  g.putImageData(data,0,0);
+  const texture=new THREE.CanvasTexture(c);
+  texture.wrapS=texture.wrapT=THREE.RepeatWrapping;
+  texture.repeat.set(type==='grass'?6:1, type==='grass'?6:11);
+  texture.colorSpace=THREE.SRGBColorSpace;
+  texture.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());
+  return texture;
+}
+const terrainTex = surfaceTexture('grass'), roadTex = surfaceTexture('road');
+const terrainMat = new THREE.MeshLambertMaterial({ vertexColors: true, map: terrainTex, side: THREE.FrontSide });
+const roadMat = new THREE.MeshLambertMaterial({ color: 0x5d615e, map: roadTex });
 const shoulderMat = new THREE.MeshLambertMaterial({ color: 0x82785f });
 const stripeMat = new THREE.MeshBasicMaterial({ color: 0xb7aa83 });
 const leafMat = new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true });
@@ -52,10 +77,11 @@ function pineGeometry() {
     { base: -.49, tip: .11, radius: .50 },
     { base: -.21, tip: .31, radius: .40 },
     { base: .08, tip: .48, radius: .30 },
-    { base: .31, tip: .55, radius: .18 }
+    { base: .31, tip: .55, radius: .18 },
+    { base: .44, tip: .65, radius: .10 }
   ];
   for (let tier = 0; tier < layers.length; tier++) {
-    const { base, tip, radius } = layers[tier], start = vertices.length / 3, slices = 9;
+    const { base, tip, radius } = layers[tier], start = vertices.length / 3, slices = 11;
     for (let j = 0; j < slices; j++) {
       const a = j * Math.PI * 2 / slices;
       const uneven = 1 + Math.sin(j * 7.23 + tier * 2.67) * .095;
@@ -75,10 +101,10 @@ function pineGeometry() {
 const treeCone = pineGeometry();
 const treeTrunk = new THREE.CylinderGeometry(.28, .41, 1, 5);
 const rockGeo = new THREE.DodecahedronGeometry(1, 0);
-const broadGeo = new THREE.IcosahedronGeometry(1, 1);
-const broadPalette = [0x405d36, 0x566943, 0x6b7848, 0x3b5839, 0x667247];
+const broadGeo = new THREE.IcosahedronGeometry(1, 2);
+const broadPalette = [0x4d6740, 0x688050, 0x7d8c54, 0x496e42, 0x73845d, 0x42644b];
 const temp = new THREE.Object3D();
-const greenPalette = [0x203e33, 0x294938, 0x31503c, 0x3b563e, 0x435b42, 0x365243];
+const greenPalette = [0x213e32, 0x294d36, 0x375740, 0x305238, 0x466344, 0x2c4d3f, 0x4c5e39, 0x335f45];
 const tiles = new Map();
 let flight = makeFlight(), mode = 'home', view = 'chase', boost = false, last = 0, lastSector = '', frameCount = 0, smoothMs = 17;
 let pointer = null;
@@ -86,20 +112,25 @@ const keys = new Set();
 
 function terrainColor(x, y, z) {
   const n = hash(Math.floor(x / 14), Math.floor(z / 14));
-  const forest = y > 105 ? [0x6a705f, 0x7d7967, 0x878474] : [0x354d35, 0x3d5838, 0x465d3b];
+  const slope = Math.abs(groundHeight(x+3,z)-groundHeight(x-3,z)) +
+                Math.abs(groundHeight(x,z+3)-groundHeight(x,z-3));
+  const forest = y > 115 ? [0x7b806f,0x8d896e,0x868f7f] :
+                 slope>6 ? [0x64705a,0x676c54,0x716f5d] :
+                 [0x4a6540,0x537145,0x62764d,0x516d44,0x6b7445];
   const c = new THREE.Color(forest[Math.floor(n * forest.length)]);
   const tint = (hash(Math.floor(x / 33), Math.floor(z / 33)) - .5) * .14;
   c.offsetHSL(0, 0, tint);
   return c;
 }
 function terrainGeometry(cx, cz, segments = 24, size = TILE) {
-  const positions = [], colors = [], indices = [];
+  const positions = [], colors = [], indices = [], uvs = [];
   const baseX = cx * TILE, baseZ = cz * TILE;
   for (let iz = 0; iz <= segments; iz++) {
     for (let ix = 0; ix <= segments; ix++) {
       const px = ix / segments * size, pz = iz / segments * size;
       const x = baseX + px, z = baseZ + pz, y = groundHeight(x, z);
       positions.push(px, y, pz);
+      uvs.push(ix / segments,iz / segments);
       const col = terrainColor(x, y, z);
       colors.push(col.r, col.g, col.b);
     }
@@ -112,6 +143,7 @@ function terrainGeometry(cx, cz, segments = 24, size = TILE) {
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
   geometry.setIndex(indices); geometry.computeVertexNormals();
   return geometry;
 }
@@ -121,7 +153,7 @@ function ownedMesh(geometry, material) {
   return mesh;
 }
 function makeRoadStrip(cx, cz, halfWidth, offsetY, material, centerOffset = 0, dash = false) {
-  const verts = [], inds = [], z0 = cz * TILE;
+  const verts = [], inds = [], uvs = [], z0 = cz * TILE;
   const steps = dash ? 48 : 44;
   for (let i = 0; i <= steps; i++) {
     const z = z0 + i * TILE / steps;
@@ -131,6 +163,7 @@ function makeRoadStrip(cx, cz, halfWidth, offsetY, material, centerOffset = 0, d
       const x = axis + (centerOffset + side * halfWidth) * ox;
       const zz = z + (centerOffset + side * halfWidth) * oz;
       verts.push(x - cx * TILE, groundHeight(x, zz) + offsetY, zz - cz * TILE);
+      uvs.push((side+1)*.5, i / steps);
     }
     if (i === 0) continue;
     const a = 2 * (i - 1);
@@ -138,6 +171,7 @@ function makeRoadStrip(cx, cz, halfWidth, offsetY, material, centerOffset = 0, d
   }
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+  geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
   geometry.setIndex(inds); geometry.computeVertexNormals();
   return ownedMesh(geometry, material);
 }
@@ -296,11 +330,11 @@ function updateFarLand() {
   const nextScale = Math.ceil(size / 1200) * 1200;
   if (gx !== farX || gz !== farZ || nextScale !== farScale) {
     farX = gx; farZ = gz; farScale = nextScale;
-    const positions = [], colors = [], indices = [], n = 60;
+    const positions = [], colors = [], indices = [], uvs = [], n = 60;
     for (let j = 0; j <= n; j++) for (let i = 0; i <= n; i++) {
       const x = (i / n - .5) * nextScale, z = (j / n - .5) * nextScale;
       const wx = gx + x, wz = gz + z, h = groundHeight(wx, wz) - 22;
-      positions.push(x, h, z);
+      positions.push(x, h, z);uvs.push(i/n,j/n);
       const c = terrainColor(wx, h, wz); colors.push(c.r, c.g, c.b);
     }
     for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
@@ -310,6 +344,7 @@ function updateFarLand() {
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
     geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));
     geometry.setIndex(indices); geometry.computeVertexNormals();
     farLand.geometry.dispose(); farLand.geometry = geometry;
   }
