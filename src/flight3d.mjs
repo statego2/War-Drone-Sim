@@ -16,6 +16,10 @@ export function noise(x, z) {
 export function roadCenter(z) {
   return 57 * Math.sin(z * 0.0023) + 24 * Math.sin(z * 0.0061 + 0.7);
 }
+export const LAKE = Object.freeze({ x: -180, z: 400, rx: 145, rz: 160, level: 8 });
+export function lakeProximity(x,z) {
+  return Math.hypot((x-LAKE.x)/LAKE.rx,(z-LAKE.z)/LAKE.rz);
+}
 export function groundHeight(x, z) {
   const d = Math.abs(x - roadCenter(z));
   const foothill = smooth((d - 65) / 590);
@@ -24,7 +28,13 @@ export function groundHeight(x, z) {
   const roadBlend = smooth((d - 12) / 46);
   const detail = 4 * noise(x * 0.022, z * 0.022) * roadBlend + 8 * noise(x * 0.007, z * 0.007);
   const mountains = foothill * (65 + 76 * noise(x * 0.0018 + 100, z * 0.0018));
-  return base + detail + mountains;
+  const raw = base + detail + mountains;
+  // A hand-placed scenic lake basin to create an actual geographical landmark.
+  const radius = lakeProximity(x,z);
+  if (radius >= 1.23) return raw;
+  const hollow = smooth((1.23-radius) / .55);
+  return lerp(raw, LAKE.level - 5.8, hollow);
+
 }
 export function makeFlight() {
   const x = roadCenter(0), z = 10;
