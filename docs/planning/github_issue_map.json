@@ -1,0 +1,712 @@
+{
+  "as_of": "2026-10-08",
+  "repo": "statego2/War-Drone-Sim",
+  "issue_count": 55,
+  "items": [
+    {
+      "id": "T-001",
+      "gate": "G0",
+      "priority": "P0",
+      "estimated_hours": 8,
+      "depends_on": [],
+      "issue_number": 1,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/1",
+      "title": "Compare Unity 6 native, Unity web and Godot/web delivery"
+    },
+    {
+      "id": "T-002",
+      "gate": "G0",
+      "priority": "P0",
+      "estimated_hours": 8,
+      "depends_on": [
+        "T-001"
+      ],
+      "issue_number": 2,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/2",
+      "title": "Build signed portrait hello world on a real iPhone or Android"
+    },
+    {
+      "id": "T-003",
+      "gate": "G0",
+      "priority": "P0",
+      "estimated_hours": 6,
+      "depends_on": [
+        "T-001"
+      ],
+      "issue_number": 3,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/3",
+      "title": "Initialize clean engine project and ignore generated files"
+    },
+    {
+      "id": "T-004",
+      "gate": "G0",
+      "priority": "P0",
+      "estimated_hours": 4,
+      "depends_on": [
+        "T-003"
+      ],
+      "issue_number": 4,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/4",
+      "title": "Add CI build smoke and EditMode test skeleton"
+    },
+    {
+      "id": "T-005",
+      "gate": "G0",
+      "priority": "P0",
+      "estimated_hours": 5,
+      "depends_on": [
+        "T-002",
+        "T-003"
+      ],
+      "issue_number": 5,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/5",
+      "title": "Benchmark baseline forest greybox on reference phone"
+    },
+    {
+      "id": "T-006",
+      "gate": "G0",
+      "priority": "P0",
+      "estimated_hours": 6,
+      "depends_on": [
+        "T-002",
+        "T-003"
+      ],
+      "issue_number": 6,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/6",
+      "title": "Prototype portrait drag versus thumbstick controls"
+    },
+    {
+      "id": "T-007",
+      "gate": "G0",
+      "priority": "P0",
+      "estimated_hours": 3,
+      "depends_on": [
+        "T-001"
+      ],
+      "issue_number": 7,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/7",
+      "title": "Audit starter assets and source licenses"
+    },
+    {
+      "id": "T-008",
+      "gate": "G0",
+      "priority": "P0",
+      "estimated_hours": 3,
+      "depends_on": [
+        "T-002",
+        "T-004",
+        "T-005",
+        "T-006",
+        "T-007"
+      ],
+      "issue_number": 8,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/8",
+      "title": "Hold G0 architecture and distribution approval gate"
+    },
+    {
+      "id": "T-009",
+      "gate": "G0",
+      "priority": "P1",
+      "estimated_hours": 3,
+      "depends_on": [
+        "T-008"
+      ],
+      "issue_number": 9,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/9",
+      "title": "Lock thin vertical slice specification and quality baseline"
+    },
+    {
+      "id": "T-010",
+      "gate": "G1",
+      "priority": "P0",
+      "estimated_hours": 10,
+      "depends_on": [
+        "T-006",
+        "T-008",
+        "T-009"
+      ],
+      "issue_number": 10,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/10",
+      "title": "Implement assisted arcade drone motor"
+    },
+    {
+      "id": "T-011",
+      "gate": "G1",
+      "priority": "P0",
+      "estimated_hours": 9,
+      "depends_on": [
+        "T-010"
+      ],
+      "issue_number": 11,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/11",
+      "title": "Implement chase camera with occlusion and recovery"
+    },
+    {
+      "id": "T-012",
+      "gate": "G1",
+      "priority": "P0",
+      "estimated_hours": 5,
+      "depends_on": [
+        "T-010"
+      ],
+      "issue_number": 12,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/12",
+      "title": "Create curated greybox forest corridor and road"
+    },
+    {
+      "id": "T-013",
+      "gate": "G1",
+      "priority": "P0",
+      "estimated_hours": 6,
+      "depends_on": [
+        "T-012"
+      ],
+      "issue_number": 13,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/13",
+      "title": "Implement moving fictional vehicle and replayable route"
+    },
+    {
+      "id": "T-014",
+      "gate": "G1",
+      "priority": "P0",
+      "estimated_hours": 8,
+      "depends_on": [
+        "T-010",
+        "T-013"
+      ],
+      "issue_number": 14,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/14",
+      "title": "Implement contact resolver and outcome priority"
+    },
+    {
+      "id": "T-015",
+      "gate": "G1",
+      "priority": "P0",
+      "estimated_hours": 8,
+      "depends_on": [
+        "T-014"
+      ],
+      "issue_number": 15,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/15",
+      "title": "Build full run lifecycle state machine"
+    },
+    {
+      "id": "T-016",
+      "gate": "G1",
+      "priority": "P0",
+      "estimated_hours": 6,
+      "depends_on": [
+        "T-015"
+      ],
+      "issue_number": 16,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/16",
+      "title": "Implement score, best, HUD and local save"
+    },
+    {
+      "id": "T-017",
+      "gate": "G1",
+      "priority": "P0",
+      "estimated_hours": 7,
+      "depends_on": [
+        "T-014",
+        "T-015"
+      ],
+      "issue_number": 17,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/17",
+      "title": "Build temporary impact VFX, audio and rapid retry"
+    },
+    {
+      "id": "T-018",
+      "gate": "G1",
+      "priority": "P0",
+      "estimated_hours": 8,
+      "depends_on": [
+        "T-011",
+        "T-016",
+        "T-017",
+        "T-050",
+        "T-051"
+      ],
+      "issue_number": 18,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/18",
+      "title": "Run 5 first-player mobile usability sessions"
+    },
+    {
+      "id": "T-019",
+      "gate": "G1",
+      "priority": "P0",
+      "estimated_hours": 4,
+      "depends_on": [
+        "T-018"
+      ],
+      "issue_number": 19,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/19",
+      "title": "Decide G1 fun go/no-go and design revision"
+    },
+    {
+      "id": "T-020",
+      "gate": "G2",
+      "priority": "P1",
+      "estimated_hours": 6,
+      "depends_on": [
+        "T-019",
+        "T-007"
+      ],
+      "issue_number": 20,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/20",
+      "title": "Select coherent forest and vehicle art source"
+    },
+    {
+      "id": "T-021",
+      "gate": "G2",
+      "priority": "P1",
+      "estimated_hours": 14,
+      "depends_on": [
+        "T-020"
+      ],
+      "issue_number": 21,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/21",
+      "title": "Assemble optimized woodland route slice"
+    },
+    {
+      "id": "T-022",
+      "gate": "G2",
+      "priority": "P1",
+      "estimated_hours": 9,
+      "depends_on": [
+        "T-021",
+        "T-013"
+      ],
+      "issue_number": 22,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/22",
+      "title": "Finish forest road and moving traffic silhouettes"
+    },
+    {
+      "id": "T-023",
+      "gate": "G2",
+      "priority": "P1",
+      "estimated_hours": 6,
+      "depends_on": [
+        "T-021",
+        "T-022"
+      ],
+      "issue_number": 23,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/23",
+      "title": "Tune reveal cues and portrait readability"
+    },
+    {
+      "id": "T-024",
+      "gate": "G2",
+      "priority": "P1",
+      "estimated_hours": 8,
+      "depends_on": [
+        "T-011",
+        "T-021"
+      ],
+      "issue_number": 24,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/24",
+      "title": "Polish chase camera collision and comfort"
+    },
+    {
+      "id": "T-025",
+      "gate": "G2",
+      "priority": "P1",
+      "estimated_hours": 11,
+      "depends_on": [
+        "T-021",
+        "T-022"
+      ],
+      "issue_number": 25,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/25",
+      "title": "Profile forest on low/mid/high target devices"
+    },
+    {
+      "id": "T-026",
+      "gate": "G2",
+      "priority": "P1",
+      "estimated_hours": 7,
+      "depends_on": [
+        "T-017",
+        "T-021"
+      ],
+      "issue_number": 26,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/26",
+      "title": "Create polished stylized impact feedback"
+    },
+    {
+      "id": "T-027",
+      "gate": "G2",
+      "priority": "P1",
+      "estimated_hours": 5,
+      "depends_on": [
+        "T-016",
+        "T-024"
+      ],
+      "issue_number": 27,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/27",
+      "title": "Implement transparent result/home UX and options"
+    },
+    {
+      "id": "T-028",
+      "gate": "G2",
+      "priority": "P1",
+      "estimated_hours": 8,
+      "depends_on": [
+        "T-023",
+        "T-025",
+        "T-026",
+        "T-027",
+        "T-052",
+        "T-053"
+      ],
+      "issue_number": 28,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/28",
+      "title": "Run vertical-slice regressions on device matrix"
+    },
+    {
+      "id": "T-029",
+      "gate": "G2",
+      "priority": "P1",
+      "estimated_hours": 4,
+      "depends_on": [
+        "T-028"
+      ],
+      "issue_number": 55,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/55",
+      "title": "Conduct G2 performance and design sign-off"
+    },
+    {
+      "id": "T-030",
+      "gate": "G3",
+      "priority": "P2",
+      "estimated_hours": 9,
+      "depends_on": [
+        "T-029"
+      ],
+      "issue_number": 29,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/29",
+      "title": "Build 2–4 curated encounter variations"
+    },
+    {
+      "id": "T-031",
+      "gate": "G3",
+      "priority": "P2",
+      "estimated_hours": 6,
+      "depends_on": [
+        "T-029"
+      ],
+      "issue_number": 30,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/30",
+      "title": "Balance speed, drift, turn rate and challenge"
+    },
+    {
+      "id": "T-032",
+      "gate": "G3",
+      "priority": "P2",
+      "estimated_hours": 5,
+      "depends_on": [
+        "T-029"
+      ],
+      "issue_number": 31,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/31",
+      "title": "Refine beginner onboarding without menus"
+    },
+    {
+      "id": "T-033",
+      "gate": "G3",
+      "priority": "P2",
+      "estimated_hours": 7,
+      "depends_on": [
+        "T-030",
+        "T-031"
+      ],
+      "issue_number": 32,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/32",
+      "title": "Build matrix regression plan and test cases"
+    },
+    {
+      "id": "T-034",
+      "gate": "G3",
+      "priority": "P2",
+      "estimated_hours": 8,
+      "depends_on": [
+        "T-030",
+        "T-032"
+      ],
+      "issue_number": 33,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/33",
+      "title": "Observe expanded playtest round"
+    },
+    {
+      "id": "T-035",
+      "gate": "G3",
+      "priority": "P2",
+      "estimated_hours": 8,
+      "depends_on": [
+        "T-025",
+        "T-030"
+      ],
+      "issue_number": 34,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/34",
+      "title": "Optimize CPU/GPU spikes, warm-up and memory"
+    },
+    {
+      "id": "T-036",
+      "gate": "G3",
+      "priority": "P2",
+      "estimated_hours": 5,
+      "depends_on": [
+        "T-031",
+        "T-034"
+      ],
+      "issue_number": 35,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/35",
+      "title": "Tune scoring and progression for flow"
+    },
+    {
+      "id": "T-037",
+      "gate": "G3",
+      "priority": "P2",
+      "estimated_hours": 6,
+      "depends_on": [
+        "T-033",
+        "T-035"
+      ],
+      "issue_number": 36,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/36",
+      "title": "Hardening: app lifecycle, corrupt preferences, errors"
+    },
+    {
+      "id": "T-038",
+      "gate": "G3",
+      "priority": "P2",
+      "estimated_hours": 4,
+      "depends_on": [
+        "T-034",
+        "T-037"
+      ],
+      "issue_number": 37,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/37",
+      "title": "Review analytics need and privacy implications"
+    },
+    {
+      "id": "T-039",
+      "gate": "G3",
+      "priority": "P2",
+      "estimated_hours": 4,
+      "depends_on": [
+        "T-036",
+        "T-037",
+        "T-038",
+        "T-054"
+      ],
+      "issue_number": 38,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/38",
+      "title": "Approve beta content and release candidate gate"
+    },
+    {
+      "id": "T-040",
+      "gate": "G4",
+      "priority": "P2",
+      "estimated_hours": 5,
+      "depends_on": [
+        "T-039"
+      ],
+      "issue_number": 39,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/39",
+      "title": "Finalize icons, screenshots, listing copy"
+    },
+    {
+      "id": "T-041",
+      "gate": "G4",
+      "priority": "P2",
+      "estimated_hours": 6,
+      "depends_on": [
+        "T-039"
+      ],
+      "issue_number": 40,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/40",
+      "title": "Configure signing, identifiers and release builds"
+    },
+    {
+      "id": "T-042",
+      "gate": "G4",
+      "priority": "P2",
+      "estimated_hours": 4,
+      "depends_on": [
+        "T-007",
+        "T-020",
+        "T-039"
+      ],
+      "issue_number": 41,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/41",
+      "title": "Audit third-party asset licenses and attributions"
+    },
+    {
+      "id": "T-043",
+      "gate": "G4",
+      "priority": "P2",
+      "estimated_hours": 5,
+      "depends_on": [
+        "T-038",
+        "T-039"
+      ],
+      "issue_number": 42,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/42",
+      "title": "Complete privacy and store policy review"
+    },
+    {
+      "id": "T-044",
+      "gate": "G4",
+      "priority": "P2",
+      "estimated_hours": 5,
+      "depends_on": [
+        "T-041"
+      ],
+      "issue_number": 43,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/43",
+      "title": "Run external test distribution and crash triage"
+    },
+    {
+      "id": "T-045",
+      "gate": "G4",
+      "priority": "P2",
+      "estimated_hours": 5,
+      "depends_on": [
+        "T-041",
+        "T-044"
+      ],
+      "issue_number": 44,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/44",
+      "title": "Perform final stability/performance QA pass"
+    },
+    {
+      "id": "T-046",
+      "gate": "G4",
+      "priority": "P2",
+      "estimated_hours": 4,
+      "depends_on": [
+        "T-040",
+        "T-042",
+        "T-043",
+        "T-045",
+        "T-055"
+      ],
+      "issue_number": 45,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/45",
+      "title": "Prepare owner approval release checklist"
+    },
+    {
+      "id": "T-047",
+      "gate": "G4",
+      "priority": "P2",
+      "estimated_hours": 4,
+      "depends_on": [
+        "T-046"
+      ],
+      "issue_number": 46,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/46",
+      "title": "Publish to chosen store after approval"
+    },
+    {
+      "id": "T-048",
+      "gate": "G4",
+      "priority": "P2",
+      "estimated_hours": 4,
+      "depends_on": [
+        "T-047"
+      ],
+      "issue_number": 47,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/47",
+      "title": "Post-release crash, reviews and defect response"
+    },
+    {
+      "id": "T-049",
+      "gate": "G4",
+      "priority": "P2",
+      "estimated_hours": 3,
+      "depends_on": [
+        "T-048"
+      ],
+      "issue_number": 48,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/48",
+      "title": "Archive release baseline and next-version ideas"
+    },
+    {
+      "id": "T-050",
+      "gate": "G1",
+      "priority": "P1",
+      "estimated_hours": 4,
+      "depends_on": [
+        "T-003",
+        "T-010"
+      ],
+      "issue_number": 49,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/49",
+      "title": "Add flight state and scoring EditMode tests"
+    },
+    {
+      "id": "T-051",
+      "gate": "G1",
+      "priority": "P1",
+      "estimated_hours": 5,
+      "depends_on": [
+        "T-014",
+        "T-015"
+      ],
+      "issue_number": 50,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/50",
+      "title": "Add PlayMode contact and retry regression tests"
+    },
+    {
+      "id": "T-052",
+      "gate": "G2",
+      "priority": "P1",
+      "estimated_hours": 4,
+      "depends_on": [
+        "T-020"
+      ],
+      "issue_number": 51,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/51",
+      "title": "Set asset import and public-repo third-party policies"
+    },
+    {
+      "id": "T-053",
+      "gate": "G2",
+      "priority": "P1",
+      "estimated_hours": 6,
+      "depends_on": [
+        "T-003",
+        "T-025"
+      ],
+      "issue_number": 52,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/52",
+      "title": "Set low/mid/high adaptive graphics presets"
+    },
+    {
+      "id": "T-054",
+      "gate": "G3",
+      "priority": "P2",
+      "estimated_hours": 5,
+      "depends_on": [
+        "T-026",
+        "T-033"
+      ],
+      "issue_number": 53,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/53",
+      "title": "Finish coherent sonic identity and haptic options"
+    },
+    {
+      "id": "T-055",
+      "gate": "G4",
+      "priority": "P2",
+      "estimated_hours": 4,
+      "depends_on": [
+        "T-039"
+      ],
+      "issue_number": 54,
+      "url": "https://github.com/statego2/War-Drone-Sim/issues/54",
+      "title": "Write build/operator runbook and handoff template"
+    }
+  ]
+}
