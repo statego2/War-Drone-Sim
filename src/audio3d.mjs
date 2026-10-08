@@ -201,6 +201,10 @@ export function createFlightAudio() {
       tone(t + .072, 630, 750, .09, .015, 'sine');
     } else if (name === 'view') {
       tone(t, 520, 410, .085, .018, 'triangle');
+    } else if (name === 'miss') {
+      tone(t, 390, 220, .19, .036, 'sine', .012);
+      tone(t + .095, 270, 165, .27, .028, 'triangle', .018);
+      noise(t + .02, .21, .021, 400, 2200, .012, true);
     }
   }
 
