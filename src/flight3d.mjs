@@ -20,7 +20,9 @@ export function groundHeight(x, z) {
   const d = Math.abs(x - roadCenter(z));
   const foothill = smooth((d - 65) / 590);
   const base = 9 * Math.sin(z * 0.0027) + 7 * Math.sin(x * 0.0037);
-  const detail = 4 * noise(x * 0.022, z * 0.022) + 8 * noise(x * 0.007, z * 0.007);
+  // Reduce high-frequency terrain under and beside the road, preventing buried asphalt.
+  const roadBlend = smooth((d - 12) / 46);
+  const detail = 4 * noise(x * 0.022, z * 0.022) * roadBlend + 8 * noise(x * 0.007, z * 0.007);
   const mountains = foothill * (65 + 76 * noise(x * 0.0018 + 100, z * 0.0018));
   return base + detail + mountains;
 }
