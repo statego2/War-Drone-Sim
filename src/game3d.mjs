@@ -476,4 +476,5 @@ rebuildTiles(true);
 moveTiles(); updateFarLand();
 camera.position.set(0, flight.y + 6, -19);
 updateCamera(.016);
+document.documentElement.dataset.openSkyReady = 'true';
 requestAnimationFrame(frame);
