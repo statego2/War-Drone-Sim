@@ -100,14 +100,18 @@ export function stepFlight(f,input,dt) {
   const forwardAcceleration=clamp((forwardTarget-along)*lerp(2.2,1.15,tilt),-82,65);
   // Independent sideways movement works even in HOVER. Chase camera-right
   // is body -X here; combining axes permits all four diagonals.
-  const lateralAcceleration=-across*lerp(2.7,2.05,tilt)-steer*27;
+  // Extra lateral authority at full pullback keeps reversed diagonals fun
+  // rather than letting backward momentum cancel the sideways gesture.
+  const lateralAcceleration=-across*lerp(2.7,2.05,tilt)-steer*27*(1+.95*pullback);
   f.vx+=(fx*forwardAcceleration+rx*lateralAcceleration)*dt;
   f.vz+=(fz*forwardAcceleration+rz*lateralAcceleration)*dt;
 
   // A tilted craft has less upward support. In an aggressive nose-down
   // dive gravity exceeds vertical lift, so falling speed ACCUMULATES.
   // Small/positive vertical gestures get forgiving assisted lift.
-  const supportedLift=(GRAVITY+up*19-down*2.8)*Math.cos(f.pitch);
+  // At very high nose-up attitudes the arcade lift assist compensates
+  // for the lost vertical component so climb and dive recovery stay viable.
+  const supportedLift=(GRAVITY+up*(19+24*pullback)-down*2.8)*Math.cos(f.pitch);
   const diveAssist=6.3*Math.max(0,f.throttle)*Math.sin(Math.max(0,f.pitch));
   const verticalAcceleration=supportedLift-GRAVITY-diveAssist-.11*f.vy-.006*f.vy*Math.abs(f.vy);
   f.vy+=verticalAcceleration*dt;
