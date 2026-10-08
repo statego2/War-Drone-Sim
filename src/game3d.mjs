@@ -11,7 +11,7 @@ const hud = $('hud'), pauseButton = $('pause'), distanceEl = $('distance');
 const altitudeEl = $('altitude'), speedEl = $('speed'), hint = $('hint');
 const viewButton = $('view-mode'), boostButton = $('boost'), muteButton = $('sound-toggle'), warning = $('warning');
 const sound = createFlightAudio();
-const scenery = createScenery(THREE, { TILE, hash, groundHeight, roadCenter });
+const scenery = createScenery(THREE, { TILE, hash, groundHeight, roadCenter, lakeProximity });
 const mobile = matchMedia('(pointer: coarse)').matches;
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
 renderer.outputColorSpace = THREE.SRGBColorSpace;
