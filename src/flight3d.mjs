@@ -69,7 +69,7 @@ export function stepFlight(f,input,dt) {
   // Horizontal drag primarily banks and translates; cruise gently turns.
   // HOVER has no commanded yaw so left/right really travels sideways.
   const turnAuthority=Math.min(1,Math.abs(f.throttle)*1.5);
-  f.yawRate=lerp(f.yawRate,-steer*TURN_RATE*.42*turnAuthority,1-Math.exp(-10*dt));
+  f.yawRate=lerp(f.yawRate,-steer*TURN_RATE*.72*turnAuthority,1-Math.exp(-10*dt));
   f.heading=Math.atan2(Math.sin(f.heading+f.yawRate*dt),Math.cos(f.heading+f.yawRate*dt));
   f.bank=lerp(f.bank,-steer*.38,1-Math.exp(-7*dt));
   f.throttle=clamp(f.throttle,-.6,1);
@@ -84,8 +84,12 @@ export function stepFlight(f,input,dt) {
   // orientation redirects *new* movement, not existing momentum. Full
   // nose-down keeps a glide rather than imposing an artificial air brake.
   const tilt=smooth(Math.max(0,f.pitch)/MAX_DIVE_PITCH);
-  const forwardTarget=f.throttle*78*Math.cos(f.pitch);
-  const forwardAcceleration=clamp((forwardTarget-along)*lerp(2.2,.72,tilt),-60,60);
+  // Redirected thrust makes a committed nose-dive accelerate *forward*
+  // while gravity accelerates downward. No magic airborne stop or reversal.
+  // Drag and speed targets remain arcade-friendly, not rotor specifications.
+  const diveDrive=22*Math.max(0,f.throttle)*Math.sin(Math.max(0,f.pitch));
+  const forwardTarget=f.throttle*78+diveDrive;
+  const forwardAcceleration=clamp((forwardTarget-along)*lerp(2.2,1.15,tilt),-60,65);
   // Independent sideways movement works even in HOVER. Chase camera-right
   // is body -X here; combining axes permits all four diagonals.
   const lateralAcceleration=-across*lerp(2.7,2.05,tilt)-steer*27;
