@@ -1,4 +1,4 @@
-// War Drone Sim — Feel-Good Audio Director v2.
+// War Drone Sim — Quiet Air-Glide Director v3.
 // Original fictional arcade sounds. Deliberately musical, soft-edged and non-literal.
 // Procedural Web Audio, no downloads, no microphones, no real aircraft audio.
 const clamp = (v, a, b) => Math.min(b, Math.max(a, Number.isFinite(v) ? v : 0));
@@ -12,18 +12,20 @@ export function deriveFlightMix(speed=0, height=0, options={}) {
   const near=ease(clamp((42-height)/42,0,1));
   const throttle=clamp(((options.throttle ?? .72)+.38)/1.38,0,1);
   const fast=options.throttleMode==='fast'?1:0;
+  const turn=ease(clamp(Math.abs(options.bank ?? 0)*3.3+Math.abs(options.sideRate ?? 0)/24,0,1));
   return {
-    // Soft electro-glider tone: deliberately avoids screaming sawtooth "machinery".
-    rotorHz: 89+26*v+10*throttle,
-    rotorGain: .32+.105*v+.035*throttle,
-    rotorFilter: 305+175*v+35*throttle,
-    // Motion is communicated primarily through silky filtered air, not harsh pitch.
-    windGain: .070+.105*v+.020*h,
-    windFilter: 740+980*v+180*near,
-    diveGain: .008+.160*down+.025*fast,
-    diveFilter: 960+790*down,
-    ambienceGain: Math.max(.13,.32-.13*v-.07*down),
-    proximity: near, dive:down
+    // v3: NO CONTINUOUS MOTOR/ROTOR OSCILLATOR. Fly on silky, breathable airflow.
+    windGain: .034+.065*v+.012*h,
+    windFilter: 520+600*v+130*near,
+    // "Lift" layer follows movement without tonal buzz or mechanical engine loops.
+    glideGain: .016+.058*v+.016*fast,
+    glideFilter: 365+390*v+145*near,
+    bankGain: .004+.037*turn,
+    bankFilter: 520+340*turn,
+    diveGain: .003+.155*down+.018*fast,
+    diveFilter: 840+760*down,
+    ambienceGain: Math.max(.10,.22-.075*v-.065*down),
+    proximity: near, dive:down, turn
   };
 }
 
@@ -42,9 +44,9 @@ export function deriveImpactMix({chain=1,finale=false,intensity=1}={}) {
 
 export function createFlightAudio() {
   let ctx=null, gate=null, flightBus=null, worldBus=null, effectsBus=null;
-  let rotorGain=null, rotorFilter=null, windGain=null, windFilter=null;
-  let diveGain=null, diveFilter=null, ambienceGain=null;
-  let motor=[], sources=[], airy=null, warm=null;
+  let windGain=null, windFilter=null, glideGain=null, glideFilter=null;
+  let bankGain=null, bankFilter=null, diveGain=null, diveFilter=null;
+  let ambienceGain=null, sources=[], airy=null, warm=null;
   let enabled=true, active=false, hidden=false, voices=0, nextUpdate=0;
   let birdsAt=15, birdElapsed=0, lastCueTime=-100, duckUntil=0;
   const MAX_VOICES=32;
@@ -91,25 +93,24 @@ export function createFlightAudio() {
 
     warm=noiseBuffer('warm');airy=noiseBuffer('airy');
 
-    // Three quiet harmonics, all sine/triangle; no buzz/saw/pulse.
-    rotorGain=nodeGain(0);
-    rotorFilter=filter('lowpass',370,.6);
-    rotorGain.connect(rotorFilter).connect(flightBus);
-    for(const [type,ratio,level] of [['sine',1,.125],['triangle',1.503,.048],['sine',2.006,.027]]) {
-      const o=ctx.createOscillator(),g=nodeGain(level);
-      o.type=type;o.frequency.value=105*ratio;
-      o.connect(g).connect(rotorGain);o.start();
-      motor.push({o,ratio});sources.push(o);
-    }
+    // The player reported every permanent electric drone note as irritating.
+    // ONLY naturally flowing noise runs continuously; sine tones are short event cues.
+    // Each layer has a different spectral shape and a long gain/filter smoothing time.
     windGain=nodeGain(0);
-    windFilter=loop(airy,windGain,100,760);
+    windFilter=loop(airy,windGain,145,940);
     windGain.connect(flightBus);
+    glideGain=nodeGain(0);
+    glideFilter=loop(warm,glideGain,110,700);
+    glideGain.connect(flightBus);
+    bankGain=nodeGain(0);
+    bankFilter=loop(airy,bankGain,200,650);
+    bankGain.connect(flightBus);
     diveGain=nodeGain(0);
     diveFilter=loop(warm,diveGain,155,1050);
     diveGain.connect(flightBus);
-    ambienceGain=nodeGain(.19);
+    ambienceGain=nodeGain(.09);
     ambienceGain.connect(worldBus);
-    loop(warm,ambienceGain,90,600);
+    loop(warm,ambienceGain,90,440);
   }
 
   async function unlock() {
@@ -252,8 +253,9 @@ export function createFlightAudio() {
     active=!!value;
     if(!active&&ctx) {
       const t=ctx.currentTime;
-      rotorGain.gain.setTargetAtTime(0,t,.06);
       windGain.gain.setTargetAtTime(0,t,.12);
+      glideGain.gain.setTargetAtTime(0,t,.14);
+      bankGain.gain.setTargetAtTime(0,t,.12);
       diveGain.gain.setTargetAtTime(0,t,.08);
       worldBus.gain.setTargetAtTime(0,t,.16);
     }
@@ -270,15 +272,16 @@ export function createFlightAudio() {
     nextUpdate=t+.045;
     const m=deriveFlightMix(speed,height,options);
     const playing=active&&enabled&&!hidden;
-    for(const {o,ratio} of motor)o.frequency.setTargetAtTime(m.rotorHz*ratio,t,.18);
-    rotorFilter.frequency.setTargetAtTime(m.rotorFilter,t,.22);
-    windFilter.frequency.setTargetAtTime(m.windFilter,t,.20);
+    windFilter.frequency.setTargetAtTime(m.windFilter,t,.24);
+    glideFilter.frequency.setTargetAtTime(m.glideFilter,t,.22);
+    bankFilter.frequency.setTargetAtTime(m.bankFilter,t,.20);
     diveFilter.frequency.setTargetAtTime(m.diveFilter,t,.12);
-    const duck=t<duckUntil?.42:1;
-    rotorGain.gain.setTargetAtTime(playing?m.rotorGain*duck:0,t,.14);
-    windGain.gain.setTargetAtTime(playing?m.windGain*duck:0,t,.14);
-    diveGain.gain.setTargetAtTime(playing?m.diveGain*duck:0,t,.105);
-    worldBus.gain.setTargetAtTime(playing?m.ambienceGain*.7:0,t,.30);
+    const duck=t<duckUntil?.30:1;
+    windGain.gain.setTargetAtTime(playing?m.windGain*duck:0,t,.21);
+    glideGain.gain.setTargetAtTime(playing?m.glideGain*duck:0,t,.25);
+    bankGain.gain.setTargetAtTime(playing?m.bankGain*duck:0,t,.16);
+    diveGain.gain.setTargetAtTime(playing?m.diveGain*duck:0,t,.11);
+    worldBus.gain.setTargetAtTime(playing?m.ambienceGain*.7:0,t,.33);
   }
 
   function suspendOnHidden(){
