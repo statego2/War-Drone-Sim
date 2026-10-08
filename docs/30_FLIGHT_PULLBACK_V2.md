@@ -19,7 +19,7 @@ Under the previous arcade flight model, dragging upward gently or fully always p
 ## CI acceptance and manual playtest
 
 - `tests/flight3d.test.mjs`: full/soft input separation, positive-to-negative speed transition, reversing in HOVER/CRUISE/FAST, sustained high-altitude climb, pull-out recovery, diagonal control continuity, variable-frame consistency.
-- `tests/browser-smoke.mjs`: simulate holding a full upward gesture, confirm a reverse-speed state and continue normal diagonal, dive and UI lifecycle checks.
+- `tests/browser-smoke.mjs`: verify the actual portrait browser upward gesture initiates nose-high pullback and reduces forward speed; software WebGL can under-advance simulated seconds in wall-clock time, so complete reverse-speed convergence is checked by frame-independent model tests instead.
 - Check GitHub Actions before merge. **Physical iPhone Safari touch, feel, heat, audio and performance are not yet validated.**
 
 ### Owner playtest
