@@ -4,6 +4,7 @@ import { createFlightAudio } from './audio3d.mjs';
 import { createScenery } from './scenery3d.mjs';
 import { createClouds } from './atmosphere3d.mjs';
 import { makeEncounter, resolveContact, applyContact, nextDrone } from './encounter.mjs';
+import { createImpactFX, impactEnvelope } from './impactfx3d.mjs';
 
 // A floating-origin, streamed polygonal world. No real-drone targeting or hardware integration.
 const $ = id => document.getElementById(id);
@@ -282,17 +283,7 @@ const encounterView = new THREE.Group(); scene.add(encounterView);
 const targetColors = [0x9b7856, 0x607d76, 0x767e99];
 const intactViews = [], wreckViews = [], smokeViews = [];
 const smokeGeo = new THREE.IcosahedronGeometry(1, 1);
-const flashMat = new THREE.MeshBasicMaterial({color:0xffda8a,transparent:true,opacity:0,depthWrite:false});
-const flash = new THREE.Mesh(new THREE.IcosahedronGeometry(1,1),flashMat);
-encounterView.add(flash); flash.visible = false;
-const burst = new THREE.Group();encounterView.add(burst);
-const sparks=[];
-const sparkGeo=new THREE.IcosahedronGeometry(.45,0);
-const sparkMat=new THREE.MeshBasicMaterial({color:0xffb961});
-for(let i=0;i<14;i++){
-  const spark=new THREE.Mesh(sparkGeo,sparkMat);
-  spark.visible=false;burst.add(spark);sparks.push(spark);
-}
+const impactFX = createImpactFX(THREE, encounterView);
 function buildTargets() {
   for (const target of encounter.vehicles) {
     const root = new THREE.Group();
@@ -575,7 +566,7 @@ function spawnDrone() {
   flight.vy = 0;flight.throttle = .72;
   pointer = null;keys.clear();cameraYaw = flight.heading;cameraPitch = .05;
   camera.position.set(0,flight.y+5,-16);
-  impactAge=0;impactType='';flash.visible=false;drone.visible=view==='chase';
+  impactAge=0;impactType='';impactFX.clear();drone.visible=view==='chase';
   sound.setActive(true);
   if (encounter.drones > 1 || encounter.round > 1) sound.cue('respawn');
 }
@@ -586,10 +577,9 @@ function endFlight(contact) {
   if(contact.type==='vehicle') {applyContact(encounter,contact);syncTargets();}
   if(contact.type==='vehicle') {
     const target=encounter.vehicles[contact.id];
-    flash.position.set(target.x,target.y,target.z);flash.visible=true;
-    flashMat.opacity=1;
-    burst.position.copy(flash.position);
-    sparks.forEach((spark,i)=>{spark.visible=true;spark.position.set(0,0,0);});
+    impactFX.start('vehicle',{ x:target.x, y:target.y-2.2, z:target.z });
+  } else {
+    impactFX.start('ground',{ x:flight.x, y:groundHeight(flight.x,flight.z), z:flight.z });
   }
   sound.setActive(false);sound.impact(contact.type==='vehicle');
   warning.textContent=contact.type==='vehicle' ? 'DIRECT HIT' : 'GROUND IMPACT';
@@ -681,22 +671,11 @@ function frame(now) {
     });
   } else if (mode === 'impact') {
     impactAge+=dt;
-    if(flash.visible){
-      flash.scale.setScalar(2+impactAge*24);
-      flashMat.opacity=Math.max(0,1-impactAge*4.5);
-      if(impactAge>.34)flash.visible=false;
-    }
-    if(impactType==='vehicle')sparks.forEach((spark,i)=>{
-      spark.visible=impactAge<.75;
-      const angle=i*2.39996, radius=impactAge*(14+i%4*3);
-      spark.position.set(Math.cos(angle)*radius,impactAge*(7+i%5*3)-impactAge*impactAge*24,Math.sin(angle)*radius);
-      spark.scale.setScalar(Math.max(.01,1-impactAge*1.2));
-    });
+    impactFX.update(impactAge);
     if(impactAge>.98){
       const completed=encounter.hits===3;
       encounter=nextDrone(encounter);syncTargets();
       spawnDrone();mode='flying';
-      sparks.forEach(spark=>spark.visible=false);
       roundBannerTime=completed?1.7:0;
       warning.textContent=completed?`ENCOUNTER ${encounter.round} · AGAIN` : '';
       lastSector='';rebuildTiles(true);moveTiles();updateFarLand();updateHUD();
@@ -714,7 +693,8 @@ function frame(now) {
   updateCamera(dt);
   // Speed conveys energy through the lens rather than altering aircraft physics.
   const visualSpeed = Math.hypot(flight.vx,flight.vy,flight.vz);
-  const targetFov = baseFov + clamp((visualSpeed - 16) / 90,0,1) * 8;
+  const impactFov = mode === 'impact' ? impactEnvelope(impactAge, impactType).cameraKick : 0;
+  const targetFov = baseFov + clamp((visualSpeed - 16) / 90,0,1) * 8 + impactFov;
   const nextFov = camera.fov + (targetFov-camera.fov)*(1-Math.exp(-2.1*dt));
   if (Math.abs(nextFov-camera.fov)>.02) {
     camera.fov=nextFov;

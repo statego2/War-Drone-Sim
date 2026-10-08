@@ -1,4 +1,7 @@
-# NEXT ACTION — Forest Encounter v0.8
+# NEXT ACTION — Forest Encounter v0.8 + impact VFX experiment
+
+2026-10-08 impact-feedback branch note: `feat/impact-feedback-3d-v1` adds reusable layered visual hit effects and unit tests without touching sound. See [docs/27_IMPACT_FEEDBACK_V1.md](docs/27_IMPACT_FEEDBACK_V1.md). This code is on a feature branch, not yet published in the live Pages build; browser CI and actual phone feedback remain acceptance gates. Another open branch/PR is working on the steep dive, and audio/graphics work is separate; reconcile overlapping changes before merge.
+
 
 2026-10-08. Based on `feat/camera-stability-speed-cues-v0-7` (`9700fd6`).
 
