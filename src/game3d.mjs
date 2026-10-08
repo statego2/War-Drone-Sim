@@ -522,11 +522,18 @@ window.addEventListener('keydown', e => {
 });
 window.addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
 window.addEventListener('blur', () => { pointer = null; keys.clear(); if(mode === 'flying') setPause(); });
-document.addEventListener('visibilitychange', () => { if (document.hidden && mode === 'flying') setPause(); last = 0; });
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    if (mode === 'flying') setPause();
+    sound.suspendOnHidden();
+  }
+  last = 0;
+});
 function toggleView() {
   view = view === 'chase' ? 'fpv' : 'chase';
   viewButton.textContent = view === 'chase' ? 'FPV' : 'CHASE';
   drone.visible = view === 'chase';
+  sound.cue('view');
 }
 viewButton.addEventListener('click', toggleView);
 const modes = ['hover','cruise','fast','reverse'];
@@ -535,6 +542,7 @@ function cycleThrottle() {
   throttleMode = modes[(modes.indexOf(throttleMode)+1)%modes.length];
   boostButton.textContent = throttleMode.toUpperCase();
   boostButton.setAttribute('aria-label','Ταχύτητα: '+throttleMode);
+  sound.cue('mode');
 }
  boostButton.addEventListener('click', cycleThrottle);
 muteButton.addEventListener('click', () => {
@@ -545,7 +553,7 @@ muteButton.addEventListener('click', () => {
   if (value) sound.unlock();
 });
 function startFlight() {
-  sound.unlock(); sound.setActive(true);
+  sound.unlock(); sound.setActive(true); sound.cue('start');
   encounter = makeEncounter(); syncTargets();
   spawnDrone(); mode = 'flying'; view = 'chase'; pointer = null;
   cameraYaw = flight.heading; cameraPitch=.05; throttleMode='cruise';
@@ -569,6 +577,7 @@ function spawnDrone() {
   camera.position.set(0,flight.y+5,-16);
   impactAge=0;impactType='';flash.visible=false;drone.visible=view==='chase';
   sound.setActive(true);
+  if (encounter.drones > 1 || encounter.round > 1) sound.cue('respawn');
 }
 function endFlight(contact) {
   if(mode!=='flying')return;
@@ -600,7 +609,7 @@ function setPause() {
 pauseButton.addEventListener('click', setPause);
 primary.addEventListener('click', () => {
   if (mode === 'paused') {
-    mode = 'flying'; overlay.className = 'panel hidden'; sound.unlock(); sound.setActive(true);
+    mode = 'flying'; overlay.className = 'panel hidden'; sound.unlock(); sound.setActive(true); sound.cue('start');
     hud.classList.remove('hidden'); pauseButton.classList.remove('hidden');
     viewButton.classList.remove('hidden'); boostButton.classList.remove('hidden'); muteButton.classList.remove('hidden');
      last = performance.now();
@@ -667,7 +676,9 @@ function frame(now) {
     const contact=resolveContact(encounter,previous,flight,flight.groundContact);
     if(contact)endFlight(contact);
     rebuildTiles(); moveTiles(); updateFarLand(); updateHUD();
-    sound.update(Math.hypot(flight.vx,flight.vy,flight.vz),Math.max(0,flight.y-groundHeight(flight.x,flight.z)),dt);
+    sound.update(Math.hypot(flight.vx,flight.vy,flight.vz),Math.max(0,flight.y-groundHeight(flight.x,flight.z)),dt,true,{
+      verticalSpeed: flight.vy, throttle: flight.throttle, throttleMode
+    });
   } else if (mode === 'impact') {
     impactAge+=dt;
     if(flash.visible){
