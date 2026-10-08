@@ -24,6 +24,17 @@ We are **not** building a real-world training tool, tactical navigation system, 
 
 **Current gameplay execution priority:** [Gameplay Focus Rebaseline](docs/27_GAMEPLAY_FOCUS_PLAN.md) · [Live coordination issue #68](https://github.com/statego2/War-Drone-Sim/issues/68). This is a small, evidence-driven queue for high-speed flight feel, steep dive, satisfying impact, three-vehicle choice, ~1s auto-respawn and real portrait iPhone verification; **not** racing/free-flight modes or an expansion of the original Unity schedule. Legacy 55-task WBS remains historical until separately reconciled.
 
+## Approved creative direction — design plan, not shipped art
+
+On 2026-10-08 the owner approved **Premium Cinematic Arcade**: a beautiful golden-hour forest, premium one-tap FLY launch, minimalist portrait HUD, a signature forest reveal and fictional vehicle silhouettes, controlled cinematic impact, and consistent pause/respawn micro-interactions. **North star: Beauty in flight. Precision in motion. Spectacle in impact.**
+
+- **[Creative Direction 2.0 — canonical specification and CD-00…CD-09 work plan](docs/29_APPROVED_CREATIVE_DIRECTION_V2.md)**
+- [Visual/audio production guidance](docs/12_VISUAL_AUDIO_DIRECTION.md)
+- [Gameplay GP-00…GP-06 sequencing](docs/27_GAMEPLAY_FOCUS_PLAN.md)
+- [Open graphics overhaul PR #66](https://github.com/statego2/War-Drone-Sim/pull/66) — technical design-only proposal to reconcile, not a second approved art direction.
+
+Visual redesign is **not yet implemented** in the playable build; phone proof and performance acceptance remain pending.
+
 ## Work status
 
 - The root `index.html` now contains the 3D encounter. Phone feel and performance have not been verified.
