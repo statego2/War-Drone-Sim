@@ -16,6 +16,7 @@ jobs:
       - run: node --check src/game.mjs
       - run: node --check src/game3d.mjs
       - run: node --check src/flight3d.mjs
+      - run: node --check src/encounter.mjs
 
   visual:
     runs-on: ubuntu-latest
@@ -31,6 +32,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: open-sky-chromium-preview
-          path: artifacts/open-sky-webgl.png
+          name: forest-encounter-chromium-preview
+          path: artifacts/forest-encounter-webgl.png
           if-no-files-found: ignore
