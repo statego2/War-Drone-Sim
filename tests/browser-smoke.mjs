@@ -46,7 +46,7 @@ try{
   const diagonal=await page.evaluate(()=>window.__openSkySnapshot());
   await page.mouse.up();
   console.log('DIAGONAL SNAPSHOT',JSON.stringify({before:beforeDiagonal,after:diagonal}));
-  assert.ok(diagonal.x < beforeDiagonal.x-2,'diagonal right drag must translate sideways');
+  assert.ok(diagonal.vx < beforeDiagonal.vx-9,'diagonal right drag must accelerate sideways despite existing forward inertia');
   assert.ok(diagonal.y > beforeDiagonal.y+2,'diagonal up drag must continue climbing');
   assert.ok(diagonal.bank<-.2,'lateral swipe banks the drone');
   await page.mouse.move(190,400);await page.mouse.down();
