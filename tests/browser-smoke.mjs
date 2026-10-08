@@ -48,6 +48,7 @@ try {
   assert.ok(parseInt(after,10) > parseInt(before,10), 'drag-up should increase AGL');
   // Nose-down attitude and gravity-driven acceleration are independent
   // of steering. The game remains an entertainment flight experience.
+  const beforeDive = await page.evaluate(() => window.__openSkySnapshot());
   await page.mouse.move(185,430);
   await page.mouse.down();
   await page.mouse.move(185,690,{steps:8});
@@ -55,9 +56,12 @@ try {
   const noseDown = await page.evaluate(() => window.__openSkySnapshot());
   await page.mouse.up();
   assert.ok(noseDown.pitch > .7,'steep finger-down gesture should tilt nose down');
-  assert.ok(noseDown.vy < -.5,'steep forward pitch must create downward velocity');
+  // The previous action climbed, so its upward momentum must first be
+  // cancelled. Browser test checks deceleration, pure model test checks
+  // negative velocity and full recovery from a neutral high-altitude start.
+  assert.ok(noseDown.vy < beforeDive.vy - 1,'steep forward pitch must create downward acceleration');
   assert.ok(noseDown.cameraPitch < -.3,'camera should follow the diving attitude');
-  assert.match(await page.locator('#vertical-rate').innerText(),/↓/,'HUD should show descent');
+  assert.match(await page.locator('#vertical-rate').innerText(),/[↑↓]/,'HUD shows signed vertical rate');
   const initial = await page.evaluate(() => window.__openSkySnapshot());
   assert.equal(await page.locator('#look-mode').count(), 0, 'no LOOK button');
   assert.equal(await page.locator('#align-view').count(), 0, 'no FACE button');
