@@ -1,5 +1,17 @@
 # Visual, UI, Cinematography and Audio Art Direction
-Status: Concept. Art assets not yet imported.
+**Status:** Visual identity APPROVED 2026-10-08; the details below remain production guidance, not proof of imported assets or validated sound. **Primary approved visual specification:** [Creative Direction 2.0](29_APPROVED_CREATIVE_DIRECTION_V2.md). **Gameplay priority:** [GP Plan](27_GAMEPLAY_FOCUS_PLAN.md).
+
+## Owner-approved visual decision — summary
+
+- **Premium Cinematic Arcade:** 70% golden-hour cinematic woodland, 20% premium tactical-minimalist UI, 10% stylized arcade impact (conceptual proportions, not shader math).
+- Identity: **Beauty in flight. Precision in motion. Spectacle in impact.**
+- Palette: Deep Forest #172B27, Moss #526D57, Soft Ivory #F1EEE3, Golden Hour #E4BB82, Ember #FA874E.
+- **Home:** full-screen live forest, custom typographic hierarchy, one **FLY** CTA, one-line optional flavor; move long explanation/version into About/debug; seamless transition to input-ready flight.
+- **Flight:** 3 discrete progress marks, optional subtle speed, telemetry secondary, no clutter or fake targeting reticle; do not bury FAST if needed for controls.
+- **World:** one designed forest reveal and clearing before broad foliage work; cohesive graphite drone and 3 distinct fictional vehicle silhouettes.
+- **Impact/flow:** reuse and choreograph existing sound/VFX, success vs ground miss, no forced pause beyond approx. one-second next drone.
+- **Pause/finish:** calm translucent live-scene overlay, one dominant RESUME, non-modal completion reward, consistent transitions and accessibility.
+- Implementation order, owners, gate/evidence, rollback and exclusivity are defined in **CD-00…CD-09** in the approved spec. The open graphics PR #66 is a technical annex, **not** another direction.
 
 ## Mood
 Forest at golden-hour/dappled sunlight, aerial speed, close-call vegetation, and sudden short reward at impact. The world feels substantial but **calm, readable and beautiful**. Avoid a maximalist tactical HUD or battlefield realism. The core look should read as a **premium stylized arcade game**, not a simulation dashboard.

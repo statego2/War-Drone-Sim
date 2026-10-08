@@ -30,6 +30,14 @@ Parallel work checked at authoring:
 
 **Current main** includes #74 inertial gesture flight, but not proof of approved game feel on phone. Do not silently mark historical issues done.
 
+## 2A. Approved art and UI direction — coordinated with gameplay (2026-10-08)
+
+Owner approved [**Premium Cinematic Arcade / Creative Direction 2.0**](29_APPROVED_CREATIVE_DIRECTION_V2.md): cinematic golden-hour forest, one-action live-scene FLY launch, minimalist HUD, three distinguishable original fictional vehicle silhouettes, hero drone, choreographed short impact, elegant pause, continuous respawn. This is **design approval, not implementation completion**.
+
+**Single-source rule:** this file remains the official **GP implementation sequence**. The art plan owns CD-00…CD-09 and visual acceptance. Existing [graphics-overhaul PR #66](https://github.com/statego2/War-Drone-Sim/pull/66) is an **unmerged technical proposal**; reconcile with CD and current main before merge, not an independent art direction. Do not let a new UI or art branch overwrite flight/encounter, sound, impact, or NEXT_ACTION work.
+
+**Scheduling:** GP-00 phone/device baseline and GP-01 flight feel stay high priority. CD-00/01 non-invasive baselines/tokens may run independently; launch (CD-02) and minimal HUD (CD-03) can be reversible UI-only slices, validated before/after against flight feel. First authored clearing (CD-04) supports GP-03. Atmosphere/vehicles/impact/finish (CD-05…08) follow the same verified fun/performance gates. CD-09 provides iPhone real-device, accessibility and regression acceptance. **No new mode, gameplay score complexity, target-lock UI, forced transitions, or delay to approx. 1-second retry.**
+
 ## 3. Active execution queue (small, ordered vertical slices)
 
 **Work in progress limit: one implementation gameplay PR at a time.** Each change should be small enough to compare before/after and revert independently. Documentation/art planning may happen in parallel without overwriting the flight/encounter branch.

@@ -32,3 +32,11 @@ No real-world targeting, vehicle damage calculations, live drone protocols or ph
 - Gameplay rewards sound progression across 3 empty fictional vehicle contacts: short confirmation, richer confirmation, special completion cadence. FAST and dive develop audio energy without harsh perpetual whistles.
 - Unit tests include bounded timbre, dive-vs-level contrast, and unique chord-length reward design; CI will be tracked on the review PR. A passing browser test **does not prove acoustic enjoyment**.
 - **Next acceptance step:** owner listens on real iPhone speaker and headphones and compares 20 consecutive flight/impact cycles; tune rotor/wind/explosion response based on the actual listening feedback.
+
+
+## Owner-approved creative design plan — 2026-10-08 (planning only)
+
+- **ACCEPTED identity:** Premium Cinematic Arcade / “Beauty in flight. Precision in motion. Spectacle in impact.” See [Creative Direction 2.0](docs/29_APPROVED_CREATIVE_DIRECTION_V2.md), CD-00…CD-09 and [ADR-006](docs/09_DECISIONS.md). This is **not a runtime visual release**.
+- Order: CD-00 actual portrait baseline (coordinates with GP-00) → CD-01 CSS tokens → CD-02 single-CTA live forest launch → CD-03 minimal HUD; CD-04 authored clearing → CD-05 lighting → CD-06 drone/vehicle silhouettes → CD-07 reward polish → CD-08 pause/micro-UX → CD-09 live iPhone acceptance.
+- Preserve high-priority flight/dive, impact audio and performance work from above. Do not merge PR #66 as-is without reconciling graphics-overhaul concepts against approved CD direction and current shipped VFX/audio.
+- **Next safe art action:** capture current 390×844 home/flight/impact screenshot baselines; record which are desktop-only versus actually tested on iPhone, then implement a reversible launch-only PR. Do not modify game physics or hitboxes to achieve visual polish.
