@@ -33,3 +33,8 @@ On real **iPhone Safari in portrait**:
 - Optional accessibility: separate master/effects/environment sliders; lower-intensity mode if listening tests indicate fatigue.
 - Dynamic music score is an independent art decision. Do not add continuous soundtrack until mixed against flight SFX.
 - No claimed real-device FPS or professional mastered loudness measurement at this stage.
+
+## Canvas fallback coverage
+The original `legacy-canvas.html` also imports the same shared `createFlightAudio()` director, retiring its independent one-oscillator SFX. It now has dynamic forward-flight bed, impact for vehicle/tree, gentle missed-encounter cue, start/resume sound, mute control, background suspension, and pause handling.
+
+The desktop Chromium smoke test checks loading the fallback, starting, toggling mute, pausing and resuming. Audio audibility and timbre are still **manual device acceptance** items.
