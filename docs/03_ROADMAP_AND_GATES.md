@@ -1,6 +1,12 @@
 # Roadmap, Critical Path, Milestones, Capacity Model
 Planning baseline 2026-10-08. This is **relative sequencing**, not a promise of elapsed dates.
 
+## Active browser gameplay rebaseline (2026-10-08)
+
+**Read first:** [Gameplay Focus Rebaseline](27_GAMEPLAY_FOCUS_PLAN.md) and [GP execution Issue #68](https://github.com/statego2/War-Drone-Sim/issues/68). The live project is a Three.js/WebGL browser encounter on GitHub Pages, not the Unity-native project assumed by the flow chart and estimates below. The 55-ticket WBS and 330h native plan remain retained for historical traceability; they are **not binding blockers** for the web-first GP-00…GP-06 queue.
+
+Current critical path: real portrait iPhone baseline → flight and committed dive feel (reconcile open PR #67) → rewarding impact/audio → three-vehicle selection/contact fairness → seamless next drone → owner/5-player fun decision → limited in-loop variety. The graphics redesign in open PR #66 is only a parallel design proposal until implemented and performance-tested. Do not close old native-specific tasks without updating their scope/evidence.
+
 ## Work estimates and uncertainty
 Estimates are **single-developer focused engineering hours**, excluding wait for app review, owner feedback, external QA scheduling, troubleshooting unknown hardware and graphics labor beyond noted asset integration. Add 30–50% contingency for a first engine/mobile project. Several tasks depend on purchasing/licenses and on-screen UX playtesting.
 

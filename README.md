@@ -20,6 +20,10 @@ We are **not** building a real-world training tool, tactical navigation system, 
 - [v0.8 implementation and iPhone checklist](docs/25_FOREST_ENCOUNTER_V08.md). Three.js loads from jsDelivr; phone framerate and game feel remain unverified.
 
 
+## Active web-first gameplay plan
+
+**Current gameplay execution priority:** [Gameplay Focus Rebaseline](docs/27_GAMEPLAY_FOCUS_PLAN.md) · [Live coordination issue #68](https://github.com/statego2/War-Drone-Sim/issues/68). This is a small, evidence-driven queue for high-speed flight feel, steep dive, satisfying impact, three-vehicle choice, ~1s auto-respawn and real portrait iPhone verification; **not** racing/free-flight modes or an expansion of the original Unity schedule. Legacy 55-task WBS remains historical until separately reconciled.
+
 ## Work status
 
 - The root `index.html` now contains the 3D encounter. Phone feel and performance have not been verified.
