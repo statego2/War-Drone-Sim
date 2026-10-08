@@ -1,26 +1,24 @@
 # NEXT_ACTION — War Drone Sim
 
-**Updated:** 2026-10-08. **Stage:** browser G0/G1 experimental playable implementation, device gate open. **Primary channel:** portrait mobile browser per owner. **Prototype:** root `index.html` with Canvas perspective renderer and JavaScript model.
+**Updated:** 2026-10-08. **Current work:** Open Sky v0.2 polygonal 3D experiment on branch `feat/webgl-open-world-flight-v0-2`, not yet proven on iPhone. **Default target:** portrait mobile browser.
 
-## Completed in browser prototype v0.1
+## Just implemented in review branch
 
-- One-screen start → fly → fictional moving vehicle / tree / miss → result → retry.
-- Seeded forest corridor, road, perspective camera, relative touch drag and keyboard, auto-forward arcade flight, local best score and brief synth cue.
-- Six model tests and JS syntax checks passed locally on Node 24.19.0; GitHub Actions browser checks passed on the merged commit.
-- Desktop Chrome preview rendered the forest and completed a successful contact with score; retry, pause and resume were observed. This is not an iPhone test.
-- See `docs/18_BROWSER_PROTOTYPE.md` for commands, design tradeoffs and precise limitations.
+- `src/flight3d.mjs`: deterministic terrain + arcade free-flight with no arbitrary altitude ceiling or 24-second timeout, AGL terrain-floor checks and smooth yaw/climb; no real-world drone physics.
+- `src/game3d.mjs`: genuine WebGL 3D scene (Three.js r180 CDN), streaming hilly tiles with visible depth, mixed conifer/deciduous meshes, roadside objects, low-poly vehicle scenery, chase/FPV camera, atmospheric sky/fog and high-altitude distant-terrain LOD.
+- `index.html` and `src/style3d.css`: portrait first controls, altitude/speed/distance HUD, view toggle, cruising speed toggle, pause and intro.
+- `legacy-canvas.html`: v0.1 preserved, with redirect fallback if WebGL or import is unavailable.
+- `tests/flight3d.test.mjs` and CI workflow additional syntax checks authored (not yet independently confirmed green at this handoff).
+- `docs/19_WEBGL_3D_OPEN_SKY.md`: scope, dependencies, acceptance plan, aesthetic limits and non-military-simulation boundaries.
 
 ## Immediate next action
 
-1. Configure and verify GitHub Pages if not already enabled; open the deployed URL in a browser.
-2. **Real iPhone portrait test (T-002 re-scoped):** complete hit, tree collision, miss, pause/resume and retry; record iPhone/iOS/browser, screenshot, control latency, rendering and FPS feel in `docs/11_PLAYTESTS.md`. No physical device test has happened in this session.
-3. Fix any observed input/visual/contact faults. Then ask 5 first players to try it (T-018) before claiming G1 acceptance.
-4. Rebaseline native Unity-specific G0 tasks and the 330h schedule for the browser-first decision; do not close those tasks as completed by a Canvas implementation.
+1. Review PR for `feat/webgl-open-world-flight-v0-2`, inspect GitHub Actions results and repair any test/syntax failures.
+2. Open actual `index.html` as a website on **iPhone portrait**; screenshot the forest/road from chase camera and FPV, test long climb/descending, pause, fast flight and Safari behavior. No browser runtime/device render confirmation has yet been supplied here.
+3. Inspect actual forest density, road elevation and tile pop at altitude; tune rendering BEFORE creating new gameplay systems. Profile on target phone for sustained framerate and memory, and reduce tree counts/LOD if needed.
+4. Decide whether to merge Open Sky as the main free-flight direction after phone visual review, or retain a mode switch alongside the old impact loop. Preserve old gameplay at `legacy-canvas.html`.
+5. Record all observations and screenshots in `docs/11_PLAYTESTS.md`; revisit G1/G2 gate only with test evidence.
 
-## Known validation limits
+## Validation honesty
 
-Local Playwright Chromium was unavailable and its download failed; the cloud browser could not reach localhost. A public commit preview was instead opened in desktop Chrome and visually exercised through contact/result and pause/resume. Touch on iPhone, Safari rendering, FPS, thermal behavior and fun remain unverified. No paid assets, backend, real-world control or weapon integration were added.
-
-## Product gates
-
-The user chose link-playable browser; full polygonal 3D renderer vs current software perspective remains an open product/technical call after seeing this slice. G0/G1 owner acceptance and real-phone evidence remain open. Do not interpret merged code or CI as a successful device test.
+No actual iPhone Safari / Chrome graphical inspection or measured framerate is established here. Source changes, authored tests and CI workflow are **not** equivalent to a verified working browser session. CDN usage requires network on first launch. No real-world mission, targeting, flight-controller or military training integration. Desktop v0.1 testing evidence remains in `docs/18_BROWSER_PROTOTYPE.md`.
