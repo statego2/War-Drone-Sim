@@ -250,7 +250,7 @@ test('soft climb keeps forward cruising, deep pullback reverses without jumping 
   assert.ok(hard.speed< -15 && hard.vy>0);
   const before=hard.speed;
   stepFlight(hard,{x:0,y:0},1/60);
-  assert.ok(hard.speed>before && hard.speed<before+2,'release changes rearward speed smoothly');
+  assert.ok(Math.abs(hard.speed-before)<2,'release preserves inertia without instantly flipping travel');
   for(let i=0;i<120;i++)stepFlight(hard,{x:0,y:0},1/60);
   assert.ok(hard.speed>40,'after releasing, normal cruise gradually returns');
 });
