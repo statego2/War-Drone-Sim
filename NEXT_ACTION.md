@@ -1,10 +1,10 @@
 # NEXT_ACTION — War Drone Sim
 
-**Last updated:** 2026-10-08. **Stage:** G0 — foundation/planning. **Build available:** NO. **Engine project:** NOT YET CREATED.
+**Last updated:** 2026-10-08. **Stage:** G0 — planning baseline DONE; implementation NOT STARTED. **Build available:** NO. **Engine project:** NOT YET CREATED. **GitHub backlog:** 55 open work item issues.
 
 ## First action for the next agent
 
-**T-001 / T-002 (P0): Perform engine and delivery feasibility spike.** Inspect repo docs and determine whether Unity 6 URP native iOS + Android is feasible with the available Mac / development environment and which native / browser path best matches the owner's ability to try the game. Create a minimal empty-engine project on a separate branch, pin editor/package versions, make a basic portrait app render on at least one **real device**. Record actual results (or precise blockers), not assumptions.
+**[T-001](https://github.com/statego2/War-Drone-Sim/issues/1) / [T-002](https://github.com/statego2/War-Drone-Sim/issues/2) (P0): Perform engine and delivery feasibility spike.** Inspect repo docs and determine whether Unity 6 URP native iOS + Android is feasible with the available Mac / development environment and which native / browser path best matches the owner's ability to try the game. Create a minimal empty-engine project on a separate branch, pin editor/package versions, make a basic portrait app render on at least one **real device**. Record actual results (or precise blockers), not assumptions.
 
 See [docs/09_DECISIONS.md](docs/09_DECISIONS.md), [docs/07_DELIVERY_AND_RELEASE.md](docs/07_DELIVERY_AND_RELEASE.md), WBS IDs T-001..T-006 and corresponding GitHub issues.
 
@@ -27,4 +27,4 @@ See [docs/09_DECISIONS.md](docs/09_DECISIONS.md), [docs/07_DELIVERY_AND_RELEASE.
 - Final collision loop semantics (instant respawn, limited lives, or run timer). Prototype alternatives.
 
 ## Honest status
-Only planning documentation/backlog is being created in this session; no engine build was downloaded, compiled or run. **Do not claim an app exists.** Next agent's first job is G0 implementation and evidence.
+Planning baseline, 55 GitHub issues, and a 330h dependency-validated scheduling scenario have been created. No engine build was downloaded, compiled or run. **Do not claim an app exists.** Next agent's first job is [T-001](https://github.com/statego2/War-Drone-Sim/issues/1), then G0 device feasibility; see [Project Status](docs/17_PROJECT_STATUS.md) and [Resource Schedule](docs/16_RESOURCE_SCHEDULE.md).
