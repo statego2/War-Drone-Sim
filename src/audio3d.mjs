@@ -1,300 +1,293 @@
-// War Drone Sim — procedural arcade sound director.
-// Original synthesized sound, with no external samples, network traffic or real-world systems.
-// All signals are headroom-limited for mobile speakers and unlock only on a user gesture.
+// War Drone Sim — Feel-Good Audio Director v2.
+// Original fictional arcade sounds. Deliberately musical, soft-edged and non-literal.
+// Procedural Web Audio, no downloads, no microphones, no real aircraft audio.
+const clamp = (v, a, b) => Math.min(b, Math.max(a, Number.isFinite(v) ? v : 0));
+const ease = x => x*x*(3-2*x);
 
-const clamp = (value, low, high) => Math.min(high, Math.max(low, Number.isFinite(value) ? value : 0));
-const smooth = x => x * x * (3 - 2 * x);
-
-export function deriveFlightMix(speed = 0, height = 0, options = {}) {
-  const velocity = clamp(speed / 85, 0, 1);
-  const altitude = clamp(height / 180, 0, 1);
-  const dive = smooth(clamp(-(options.verticalSpeed ?? 0) / 35, 0, 1));
-  const proximity = smooth(clamp((38 - height) / 38, 0, 1));
-  const throttle = clamp((options.throttle ?? 0.72) * .5 + .5, 0, 1);
-  const isFast = options.throttleMode === 'fast' ? 1 : 0;
+// Pure, bounded and independently testable sound-to-gameplay mapping.
+export function deriveFlightMix(speed=0, height=0, options={}) {
+  const v=clamp(speed/85,0,1);
+  const h=clamp(height/170,0,1);
+  const down=ease(clamp(-(options.verticalSpeed ?? 0)/32,0,1));
+  const near=ease(clamp((42-height)/42,0,1));
+  const throttle=clamp(((options.throttle ?? .72)+.38)/1.38,0,1);
+  const fast=options.throttleMode==='fast'?1:0;
   return {
-    rotorHz: 84 + velocity * 92 + throttle * 27,
-    rotorGain: .39 + velocity * .19 + throttle * .08,
-    rotorFilter: 330 + 450 * velocity + 160 * throttle,
-    windGain: .13 + .24 * velocity + .09 * altitude,
-    windFilter: 540 + 1700 * velocity + 450 * proximity,
-    diveGain: .015 + .28 * dive + .09 * isFast,
-    diveFilter: 800 + 2200 * dive,
-    ambienceGain: Math.max(.11, .36 - .19 * velocity - .09 * dive),
-    proximity,
-    dive
+    // Soft electro-glider tone: deliberately avoids screaming sawtooth "machinery".
+    rotorHz: 89+26*v+10*throttle,
+    rotorGain: .32+.105*v+.035*throttle,
+    rotorFilter: 305+175*v+35*throttle,
+    // Motion is communicated primarily through silky filtered air, not harsh pitch.
+    windGain: .070+.105*v+.020*h,
+    windFilter: 740+980*v+180*near,
+    diveGain: .008+.160*down+.025*fast,
+    diveFilter: 960+790*down,
+    ambienceGain: Math.max(.13,.32-.13*v-.07*down),
+    proximity: near, dive:down
+  };
+}
+
+export function deriveImpactMix({chain=1,finale=false,intensity=1}={}) {
+  const tier=clamp(Math.round(chain),1,3);
+  return {
+    chain:tier,
+    finale:!!finale,
+    force:clamp(intensity,.7,1.15),
+    // Each successful hit is pleasant on its own; the third resolves a little bigger.
+    rewardNotes: finale ? [392,494,587,784] : tier===2 ? [392,494,659] : [392,494],
+    bodyLevel:.16+(.016*(tier-1)),
+    airLevel:.095
   };
 }
 
 export function createFlightAudio() {
-  let ctx = null, gate = null, master = null, flightBus = null;
-  let worldBus = null, effectsBus = null, rotorGain = null, windGain = null;
-  let diveGain = null, rotorFilter = null, windFilter = null, diveFilter = null;
-  let rotor = [], sources = [], whiteNoise = null, softNoise = null;
-  let enabled = true, active = false, birdClock = 0, nextBird = 8;
-  let nextUpdateAt = 0, duckUntil = 0, mutedByVisibility = false;
-  let voiceCount = 0;
-  const MAX_VOICES = 36;
+  let ctx=null, gate=null, flightBus=null, worldBus=null, effectsBus=null;
+  let rotorGain=null, rotorFilter=null, windGain=null, windFilter=null;
+  let diveGain=null, diveFilter=null, ambienceGain=null;
+  let motor=[], sources=[], airy=null, warm=null;
+  let enabled=true, active=false, hidden=false, voices=0, nextUpdate=0;
+  let birdsAt=15, birdElapsed=0, lastCueTime=-100, duckUntil=0;
+  const MAX_VOICES=32;
+  const nodeGain=v=>{const n=ctx.createGain();n.gain.value=v;return n;};
+  const filter=(type,frequency,Q=.7)=>{const n=ctx.createBiquadFilter();n.type=type;n.frequency.value=frequency;n.Q.value=Q;return n;};
 
-  function noisyBuffer(mode) {
-    const duration = 3.2, rate = ctx.sampleRate;
-    const buffer = ctx.createBuffer(1, Math.ceil(duration * rate), rate);
-    const data = buffer.getChannelData(0);
-    let seed = mode === 'soft' ? 1357911 : 24681357, low = 0;
-    for (let i = 0; i < data.length; i++) {
-      seed ^= seed << 13; seed ^= seed >>> 17; seed ^= seed << 5;
-      const white = (seed / 2147483648);
-      low = low * .97 + white * .03;
-      data[i] = mode === 'soft' ? low * 2.9 : white * .8 + low * .7;
+  function noiseBuffer(kind) {
+    const rate=ctx.sampleRate, len=Math.ceil(rate*2.6);
+    const buffer=ctx.createBuffer(1,len,rate);
+    const data=buffer.getChannelData(0);
+    let seed=kind==='warm'?24681357:1357911, slow=0, fast=0;
+    for(let i=0;i<len;i++) {
+      // Repeatable noise, smoothed before playback to suppress gritty digital fizz.
+      seed^=seed<<13;seed^=seed>>>17;seed^=seed<<5;
+      const white=seed/2147483648;
+      fast=fast*.68+white*.32;
+      slow=slow*.97+white*.03;
+      data[i]=kind==='warm'?clamp((fast*.55+slow*1.3)*.78,-1,1)
+                           :clamp((fast*.72+slow*.45)*.78,-1,1);
     }
     return buffer;
   }
 
-  function filter(type, frequency, Q = .7) {
-    const node = ctx.createBiquadFilter();
-    node.type = type;
-    node.frequency.value = frequency;
-    node.Q.value = Q;
-    return node;
-  }
-
-  function gain(value) {
-    const node = ctx.createGain();
-    node.gain.value = value;
-    return node;
-  }
-
-  function loopNoise(buffer, destination, highHz, lowHz) {
-    const source = ctx.createBufferSource();
-    const hp = filter('highpass', highHz), lp = filter('lowpass', lowHz);
-    source.buffer = buffer;
-    source.loop = true;
-    source.connect(hp).connect(lp).connect(destination);
-    source.start();
-    sources.push(source);
+  function loop(buffer,destination,high,low) {
+    const src=ctx.createBufferSource(), hp=filter('highpass',high), lp=filter('lowpass',low);
+    src.buffer=buffer;src.loop=true;src.connect(hp).connect(lp).connect(destination);
+    src.start();sources.push(src);
     return lp;
   }
 
   function build() {
-    if (ctx) return;
-    const AudioCtx = globalThis.AudioContext || globalThis.webkitAudioContext;
-    if (!AudioCtx) return; // visual game continues normally when audio is unsupported
-    ctx = new AudioCtx({ latencyHint: 'interactive' });
-    gate = gain(enabled ? 1 : 0);
-    master = gain(.72);
-    const limiter = ctx.createDynamicsCompressor();
-    limiter.threshold.value = -18;
-    limiter.knee.value = 10;
-    limiter.ratio.value = 6;
-    limiter.attack.value = .003;
-    limiter.release.value = .18;
-    const lowCut = filter('highpass', 48, .65);
-    gate.connect(master).connect(lowCut).connect(limiter).connect(ctx.destination);
-    flightBus = gain(1); flightBus.connect(gate);
-    worldBus = gain(0); worldBus.connect(gate);
-    effectsBus = gain(.88); effectsBus.connect(gate);
+    if(ctx)return;
+    const Ctx=globalThis.AudioContext||globalThis.webkitAudioContext;
+    if(!Ctx)return;
+    ctx=new Ctx({latencyHint:'interactive'});
+    gate=nodeGain(enabled?1:0);
+    const master=nodeGain(.62), hiPass=filter('highpass',70,.65);
+    const comp=ctx.createDynamicsCompressor();
+    comp.threshold.value=-15;comp.knee.value=12;comp.ratio.value=3.2;
+    comp.attack.value=.004;comp.release.value=.2;
+    gate.connect(master).connect(hiPass).connect(comp).connect(ctx.destination);
+    flightBus=nodeGain(.8);worldBus=nodeGain(0);effectsBus=nodeGain(.92);
+    flightBus.connect(gate);worldBus.connect(gate);effectsBus.connect(gate);
 
-    whiteNoise = noisyBuffer('white');
-    softNoise = noisyBuffer('soft');
+    warm=noiseBuffer('warm');airy=noiseBuffer('airy');
 
-    // Dual-detuned harmonics create a rounded electric rotor, not a brittle alarm.
-    rotorGain = gain(0);
-    rotorFilter = filter('lowpass', 620, .62);
+    // Three quiet harmonics, all sine/triangle; no buzz/saw/pulse.
+    rotorGain=nodeGain(0);
+    rotorFilter=filter('lowpass',370,.6);
     rotorGain.connect(rotorFilter).connect(flightBus);
-    for (const [type, ratio, level] of [['triangle', 1, .10], ['sawtooth', 1.015, .023], ['sine', 2.01, .036]]) {
-      const oscillator = ctx.createOscillator(), balance = gain(level);
-      oscillator.type = type;
-      oscillator.frequency.value = 125 * ratio;
-      oscillator.connect(balance).connect(rotorGain);
-      oscillator.start();
-      rotor.push({ oscillator, ratio });
-      sources.push(oscillator);
+    for(const [type,ratio,level] of [['sine',1,.125],['triangle',1.503,.048],['sine',2.006,.027]]) {
+      const o=ctx.createOscillator(),g=nodeGain(level);
+      o.type=type;o.frequency.value=105*ratio;
+      o.connect(g).connect(rotorGain);o.start();
+      motor.push({o,ratio});sources.push(o);
     }
-
-    // Broadband air + an independent dive rush are deliberately independent.
-    windGain = gain(0);
-    windFilter = loopNoise(whiteNoise, windGain, 110, 800);
+    windGain=nodeGain(0);
+    windFilter=loop(airy,windGain,100,760);
     windGain.connect(flightBus);
-    diveGain = gain(0);
-    diveFilter = loopNoise(whiteNoise, diveGain, 260, 900);
+    diveGain=nodeGain(0);
+    diveFilter=loop(warm,diveGain,155,1050);
     diveGain.connect(flightBus);
-
-    // Forest atmosphere has space without a piercing, constantly repeated beep.
-    const canopy = gain(.075), ground = gain(.06);
-    canopy.connect(worldBus);
-    ground.connect(worldBus);
-    loopNoise(softNoise, canopy, 140, 1000);
-    loopNoise(softNoise, ground, 55, 420);
+    ambienceGain=nodeGain(.19);
+    ambienceGain.connect(worldBus);
+    loop(warm,ambienceGain,90,600);
   }
 
   async function unlock() {
     try {
       build();
-      if (!ctx) return;
-      if (ctx.state !== 'running') await ctx.resume();
-      mutedByVisibility = false;
-    } catch (error) {
-      console.warn('Audio unavailable; gameplay remains playable.', error);
+      if(!ctx)return;
+      if(ctx.state!=='running')await ctx.resume();
+      hidden=false;
+    }catch(e){console.warn('Audio unavailable; flight remains playable.',e);}
+  }
+
+  function envelope(g,at,attack,seconds,level,curve='exp') {
+    const p=g.gain;
+    p.setValueAtTime(.0001,at);
+    p.linearRampToValueAtTime(level,at+Math.min(attack,seconds*.45));
+    if(curve==='soft') {
+      p.linearRampToValueAtTime(level*.48,at+seconds*.48);
     }
+    p.exponentialRampToValueAtTime(.0001,at+seconds);
   }
 
-  // Every one-shot owns its nodes and disconnects them when playback ends.
-  function oneShot(source, nodes, at, duration) {
+  // One-shots are fully owned and cleaned after playback.
+  function play(source,nodes,at,length) {
     source.connect(nodes[0]);
-    for (let i = 0; i < nodes.length - 1; i++) nodes[i].connect(nodes[i + 1]);
-    nodes[nodes.length - 1].connect(effectsBus);
-    voiceCount++;
-    source.onended = () => {
-      source.disconnect();
-      for (const node of nodes) node.disconnect();
-      voiceCount = Math.max(0, voiceCount - 1);
+    for(let i=0;i<nodes.length-1;i++)nodes[i].connect(nodes[i+1]);
+    nodes[nodes.length-1].connect(effectsBus);
+    voices++;
+    source.onended=()=> {
+      try{source.disconnect();for(const node of nodes)node.disconnect();}finally{voices=Math.max(0,voices-1);}
     };
-    source.start(at);
-    source.stop(at + duration + .008);
+    source.start(at);source.stop(at+length+.008);
   }
 
-  function envelope(node, at, attack, duration, peak) {
-    const g = node.gain;
-    g.setValueAtTime(.0001, at);
-    g.linearRampToValueAtTime(peak, at + Math.min(attack, duration * .45));
-    g.exponentialRampToValueAtTime(.0001, at + duration);
+  function tone(at,a,b,length,level,type='sine',attack=.009) {
+    if(!ctx||voices>=MAX_VOICES)return;
+    const o=ctx.createOscillator(),g=nodeGain(0);
+    o.type=type;
+    o.frequency.setValueAtTime(Math.max(32,a),at);
+    o.frequency.exponentialRampToValueAtTime(Math.max(32,b),at+length);
+    envelope(g,at,attack,length,level,'soft');
+    play(o,[g],at,length);
   }
 
-  function tone(at, startHz, endHz, seconds, level, type = 'sine', attack = .006) {
-    if (!ctx || voiceCount >= MAX_VOICES) return;
-    const oscillator = ctx.createOscillator(), amp = gain(0);
-    oscillator.type = type;
-    oscillator.frequency.setValueAtTime(Math.max(30, startHz), at);
-    oscillator.frequency.exponentialRampToValueAtTime(Math.max(30, endHz), at + seconds);
-    envelope(amp, at, attack, seconds, level);
-    oneShot(oscillator, [amp], at, seconds);
+  function noise(at,length,level,hp=120,lp=1800,attack=.014) {
+    if(!ctx||voices>=MAX_VOICES)return;
+    const src=ctx.createBufferSource(),hi=filter('highpass',hp),lo=filter('lowpass',lp),g=nodeGain(0);
+    src.buffer=warm;
+    envelope(g,at,attack,length,level,'soft');
+    play(src,[hi,lo,g],at,length);
   }
 
-  function noise(at, seconds, level, hp = 100, lp = 5000, attack = .003, soft = false) {
-    if (!ctx || voiceCount >= MAX_VOICES) return;
-    const source = ctx.createBufferSource();
-    source.buffer = soft ? softNoise : whiteNoise;
-    const high = filter('highpass', hp), low = filter('lowpass', lp), amp = gain(0);
-    envelope(amp, at, attack, seconds, level);
-    oneShot(source, [high, low, amp], at, seconds);
-  }
-
-  function bird() {
-    if (!ctx || !enabled || !active || mutedByVisibility) return;
-    const t = ctx.currentTime;
-    tone(t, 1670, 2200, .105, .012, 'sine', .016);
-    tone(t + .105, 2290, 1500, .19, .010, 'sine', .012);
+  function canPlay(){return !!ctx&&ctx.state==='running'&&enabled&&!hidden;}
+  function softBird() {
+    if(!canPlay()||!active)return;
+    const t=ctx.currentTime;
+    // Almost subliminal natural punctuation — never a piercing telephone beep.
+    tone(t,970,1160,.18,.008,'sine',.045);
+    tone(t+.16,1130,850,.23,.007,'sine',.04);
   }
 
   function cue(name) {
-    if (!ctx || ctx.state !== 'running' || !enabled || mutedByVisibility) return;
-    const t = ctx.currentTime;
-    if (name === 'start') {
-      noise(t, .22, .060, 270, 2700, .09, true);
-      tone(t, 310, 620, .24, .029, 'sine', .014);
-      tone(t + .10, 470, 700, .22, .019, 'triangle', .01);
-    } else if (name === 'respawn') {
-      tone(t, 370, 620, .15, .020, 'sine');
-      noise(t, .14, .025, 320, 1800);
-    } else if (name === 'mode') {
-      tone(t, 470, 570, .075, .019, 'sine');
-      tone(t + .072, 630, 750, .09, .015, 'sine');
-    } else if (name === 'view') {
-      tone(t, 520, 410, .085, .018, 'triangle');
-    } else if (name === 'miss') {
-      tone(t, 390, 220, .19, .036, 'sine', .012);
-      tone(t + .095, 270, 165, .27, .028, 'triangle', .018);
-      noise(t + .02, .21, .021, 400, 2200, .012, true);
+    if(!canPlay())return;
+    const t=ctx.currentTime;
+    // Avoid stacking UI chirps from rapid control changes.
+    if((name==='mode'||name==='view')&&t-lastCueTime<.095)return;
+    if(name==='mode'||name==='view')lastCueTime=t;
+    if(name==='start'){
+      noise(t,.23,.055,120,1350,.06);
+      tone(t+.025,255,390,.21,.038,'sine',.032);
+    }else if(name==='respawn'){
+      // Short "ready again" lift, not a new fanfare every second.
+      tone(t,240,400,.135,.034,'sine',.012);
+      noise(t,.16,.024,170,950,.025);
+    }else if(name==='mode'){
+      tone(t,340,485,.105,.030,'sine',.012);
+      noise(t,.072,.013,240,950,.019);
+    }else if(name==='view'){
+      tone(t,450,340,.095,.022,'sine',.012);
+    }else if(name==='miss'){
+      tone(t,300,225,.20,.043,'sine',.018);
+      tone(t+.085,245,188,.21,.027,'sine',.023);
     }
   }
 
-  function impact(vehicle) {
-    if (!ctx || ctx.state !== 'running' || !enabled || mutedByVisibility) return;
-    const t = ctx.currentTime;
-    duckUntil = t + (vehicle ? .88 : .40);
-    // Distinct fictional arcade payoff: transient + mid-body + low body + debris + air tail.
-    // Upper-mid punch translates on phone speakers; low end is present, never the only impact.
-    if (vehicle) {
-      tone(t, 142, 43, .46, .30, 'sine', .008);
-      tone(t + .008, 275, 97, .25, .096, 'triangle', .005);
-      noise(t, .115, .28, 370, 6800, .002);
-      noise(t + .022, .38, .19, 115, 2400, .012, true);
-      noise(t + .045, .79, .105, 180, 1300, .02, true);
-      for (let i = 0; i < 4; i++) {
-        const at = t + .105 + i * .085;
-        noise(at, .055 + i * .016, .060 - i * .008, 630, 4800 - i * 620);
-        tone(at, 950 - i * 100, 250 - i * 18, .075, .012, 'triangle');
-      }
-      // Reward motif blends into the tail; deliberately softer than the hit.
-      tone(t + .32, 392, 392, .21, .025, 'sine', .016);
-      tone(t + .42, 494, 494, .21, .023, 'sine', .018);
-      tone(t + .52, 587, 587, .29, .021, 'sine', .025);
-    } else {
-      tone(t, 108, 52, .28, .21, 'sine', .008);
-      tone(t + .002, 185, 90, .17, .062, 'triangle');
-      noise(t, .13, .17, 180, 3100);
-      noise(t + .03, .34, .090, 190, 1100, .025, true);
+  function impact(vehicle,opts={}) {
+    if(!canPlay())return;
+    const t=ctx.currentTime;
+    if(!vehicle) {
+      // Ground/tree = a soft, compact "oof", never the reward chord.
+      duckUntil=t+.33;
+      tone(t,155,83,.23,.12,'sine',.012);
+      tone(t+.006,290,150,.13,.055,'triangle',.009);
+      noise(t,.16,.082,110,1200,.017);
+      noise(t+.065,.22,.028,100,690,.04);
+      return;
+    }
+    const design=deriveImpactMix(opts);
+    const force=design.force;
+    duckUntil=t+.85;
+    // A deep rounded "BOOM" with a punch in audible mids; no brittle white-noise crack.
+    tone(t,175,63,.32,design.bodyLevel*force,'sine',.012);
+    tone(t+.005,345,122,.18,.085*force,'triangle',.009);
+    tone(t+.03,122,77,.37,.085*force,'sine',.04);
+    noise(t,.12,design.airLevel*force,120,1950,.008);
+    noise(t+.035,.36,.055*force,110,990,.022);
+    noise(t+.13,.46,.026,105,520,.06);
+
+    // Little audible sparkles after the thump, not four repetitions of harsh hiss.
+    tone(t+.12,740,550,.10,.017,'sine',.025);
+    tone(t+.205,630,455,.13,.013,'sine',.025);
+
+    // Hit confirmation is a tiny two-note musical cadence; subsequent targets
+    // develop it into a three-hit arc, final target gets a tasteful resolution.
+    const rewardStart=t+.19;
+    for(let i=0;i<design.rewardNotes.length;i++){
+      const hz=design.rewardNotes[i],at=rewardStart+i*.077;
+      const level=(i===design.rewardNotes.length-1?.052:.034)*(i===0?1:.90);
+      tone(at,hz*.985,hz,.23+(design.finale?.075:0),level,'sine',.022);
+    }
+    if(design.finale) {
+      // A short warm bloom rather than an extra noisy explosion.
+      tone(t+.40,196,196,.31,.038,'sine',.032);
+      noise(t+.39,.34,.017,240,1450,.09);
     }
   }
 
-  function setEnabled(value) {
-    enabled = !!value;
-    if (ctx) gate.gain.setTargetAtTime(enabled ? 1 : 0, ctx.currentTime, .015);
+  function setEnabled(value){
+    enabled=!!value;
+    if(ctx)gate.gain.setTargetAtTime(enabled?1:0,ctx.currentTime,.025);
   }
 
-  function setActive(value) {
-    active = !!value;
-    if (ctx && !active) {
-      const t = ctx.currentTime;
-      rotorGain.gain.setTargetAtTime(0, t, .07);
-      windGain.gain.setTargetAtTime(0, t, .10);
-      diveGain.gain.setTargetAtTime(0, t, .08);
-      worldBus.gain.setTargetAtTime(0, t, .3);
+  function setActive(value){
+    active=!!value;
+    if(!active&&ctx) {
+      const t=ctx.currentTime;
+      rotorGain.gain.setTargetAtTime(0,t,.06);
+      windGain.gain.setTargetAtTime(0,t,.12);
+      diveGain.gain.setTargetAtTime(0,t,.08);
+      worldBus.gain.setTargetAtTime(0,t,.16);
     }
   }
 
-  function update(speed, height, delta, airborne = true, options = {}) {
-    if (!ctx || ctx.state !== 'running') return;
-    if (active && enabled && airborne && height < 160) {
-      birdClock += Math.max(0, delta || 0);
-      if (birdClock >= nextBird) {
-        bird();
-        birdClock = 0;
-        nextBird = 6.5 + Math.random() * 10;
-      }
+  function update(speed,height,dt,airborne=true,options={}){
+    if(!ctx||ctx.state!=='running')return;
+    if(active&&enabled&&!hidden&&airborne&&height<125){
+      birdElapsed+=Math.max(0,dt||0);
+      if(birdElapsed>=birdsAt){softBird();birdElapsed=0;birdsAt=13+Math.random()*14;}
     }
-    const t = ctx.currentTime;
-    if (t < nextUpdateAt) return; // bounded automation overhead on high-refresh screens
-    nextUpdateAt = t + .038;
-    const values = deriveFlightMix(speed, height, options);
-    const playing = enabled && active && !mutedByVisibility;
-    for (const { oscillator, ratio } of rotor) oscillator.frequency.setTargetAtTime(values.rotorHz * ratio, t, .13);
-    rotorFilter.frequency.setTargetAtTime(values.rotorFilter, t, .17);
-    windFilter.frequency.setTargetAtTime(values.windFilter, t, .2);
-    diveFilter.frequency.setTargetAtTime(values.diveFilter, t, .13);
-    rotorGain.gain.setTargetAtTime(playing ? values.rotorGain : 0, t, .085);
-    windGain.gain.setTargetAtTime(playing ? values.windGain : 0, t, .14);
-    diveGain.gain.setTargetAtTime(playing ? values.diveGain : 0, t, .09);
-    worldBus.gain.setTargetAtTime(playing ? values.ambienceGain * (t < duckUntil ? .35 : 1) : 0, t, .20);
+    const t=ctx.currentTime;
+    if(t<nextUpdate)return;
+    nextUpdate=t+.045;
+    const m=deriveFlightMix(speed,height,options);
+    const playing=active&&enabled&&!hidden;
+    for(const {o,ratio} of motor)o.frequency.setTargetAtTime(m.rotorHz*ratio,t,.18);
+    rotorFilter.frequency.setTargetAtTime(m.rotorFilter,t,.22);
+    windFilter.frequency.setTargetAtTime(m.windFilter,t,.20);
+    diveFilter.frequency.setTargetAtTime(m.diveFilter,t,.12);
+    const duck=t<duckUntil?.42:1;
+    rotorGain.gain.setTargetAtTime(playing?m.rotorGain*duck:0,t,.14);
+    windGain.gain.setTargetAtTime(playing?m.windGain*duck:0,t,.14);
+    diveGain.gain.setTargetAtTime(playing?m.diveGain*duck:0,t,.105);
+    worldBus.gain.setTargetAtTime(playing?m.ambienceGain*.7:0,t,.30);
   }
 
-  function suspendOnHidden() {
-    mutedByVisibility = true;
+  function suspendOnHidden(){
+    hidden=true;setActive(false);
+    if(ctx?.state==='running')ctx.suspend().catch(()=>{});
+  }
+
+  async function dispose(){
     setActive(false);
-    if (ctx?.state === 'running') ctx.suspend().catch(() => {});
+    for(const src of sources){try{src.stop();}catch{}}
+    sources=[];
+    if(ctx&&ctx.state!=='closed')await ctx.close();
+    ctx=null;
   }
-
-  async function dispose() {
-    setActive(false);
-    for (const source of sources) { try { source.stop(); } catch {} }
-    sources = [];
-    if (ctx && ctx.state !== 'closed') await ctx.close();
-    ctx = null;
-  }
-
-  return {
-    unlock, setEnabled, setActive, update, impact, cue, suspendOnHidden, dispose,
-    get enabled() { return enabled; },
-    get supported() { return !!(globalThis.AudioContext || globalThis.webkitAudioContext); }
+  return {unlock,setEnabled,setActive,update,impact,cue,suspendOnHidden,dispose,
+    get enabled(){return enabled;},
+    get supported(){return !!(globalThis.AudioContext||globalThis.webkitAudioContext);}
   };
 }
