@@ -7,12 +7,13 @@ const canvas = $('scene'), overlay = $('overlay'), primary = $('primary');
 const hud = $('hud'), pauseButton = $('pause'), distanceEl = $('distance');
 const altitudeEl = $('altitude'), speedEl = $('speed'), hint = $('hint');
 const viewButton = $('view-mode'), boostButton = $('boost'), warning = $('warning');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: false, powerPreference: 'high-performance' });
+const mobile = matchMedia('(pointer: coarse)').matches;
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.27;
-const mobile = matchMedia('(pointer: coarse)').matches;
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, mobile ? 1.35 : 1.8));
+let qualityDpr = Math.min(window.devicePixelRatio || 1, mobile ? 1.45 : 1.85);
+renderer.setPixelRatio(qualityDpr);
 const scene = new THREE.Scene();
 scene.fog = new THREE.FogExp2(0x9eafa8, .00034);
 const camera = new THREE.PerspectiveCamera(mobile ? 73 : 70, 1, .15, 6500);
@@ -75,7 +76,7 @@ const broadPalette = [0x405d36, 0x566943, 0x6b7848, 0x3b5839, 0x667247];
 const temp = new THREE.Object3D();
 const greenPalette = [0x203e33, 0x294938, 0x31503c, 0x3b563e, 0x435b42, 0x365243];
 const tiles = new Map();
-let flight = makeFlight(), mode = 'home', view = 'chase', boost = false, last = 0, lastSector = '', frameCount = 0;
+let flight = makeFlight(), mode = 'home', view = 'chase', boost = false, last = 0, lastSector = '', frameCount = 0, smoothMs = 17;
 let pointer = null;
 const keys = new Set();
 
@@ -456,7 +457,19 @@ function frame(now) {
   sky.position.copy(camera.position);
   for (let i = 0; i < rotors.length; i++) rotors[i].rotation.y += dt * (i % 2 ? -43 : 43);
   renderer.render(scene, camera);
+  smoothMs = smoothMs * .98 + Math.min(dt * 1000, 50) * .02;
   frameCount++;
+  // Very small adaptive-resolution feedback loop, deliberately gated to avoid thrashing.
+  if (mode === 'flying' && frameCount % 180 === 0) {
+    const maxDpr = Math.min(window.devicePixelRatio || 1, mobile ? 1.6 : 2);
+    const wanted = smoothMs > 29 ? Math.max(1, qualityDpr - .16)
+                 : smoothMs < 17.7 ? Math.min(maxDpr, qualityDpr + .08) : qualityDpr;
+    if (Math.abs(wanted - qualityDpr) > .01) {
+      qualityDpr = wanted;
+      renderer.setPixelRatio(qualityDpr);
+      resize();
+    }
+  }
   requestAnimationFrame(frame);
 }
 rebuildTiles(true);
