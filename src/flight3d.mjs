@@ -77,9 +77,16 @@ export function stepFlight(f,input,dt) {
   const rx=Math.cos(f.heading),rz=-Math.sin(f.heading);
   const along=f.vx*fx+f.vz*fz;
   const across=f.vx*rx+f.vz*rz;
-  const forwardAcceleration=clamp((f.throttle*78-along)*2.1+
-    11*Math.sin(f.pitch),-55,55);
-  const lateralAcceleration=-across*2.7;
+  // Arcade dive brake: near-vertical nose-down intent transitions from
+  // horizontal travel into a falling plunge. Keep the existing momentum so
+  // the change is continuous, rather than teleporting the drone's position.
+  // This deliberately prioritizes readable one-finger game feel over real
+  // rotor aerodynamics; it must not be treated as an actual quadcopter model.
+  const diveBrake=smooth((f.pitch-.80)/.48);
+  const targetHorizontal=f.throttle*78*(1-diveBrake);
+  const forwardAcceleration=clamp(
+    (targetHorizontal-along)*(2.1+2.5*diveBrake),-120,85);
+  const lateralAcceleration=-across*(2.7+1.1*diveBrake);
   f.vx+=(fx*forwardAcceleration+rx*lateralAcceleration)*dt;
   f.vz+=(fz*forwardAcceleration+rz*lateralAcceleration)*dt;
 
