@@ -671,7 +671,8 @@ function frame(now) {
     if(contact)endFlight(contact);
     rebuildTiles(); moveTiles(); updateFarLand(); updateHUD();
     sound.update(Math.hypot(flight.vx,flight.vy,flight.vz),Math.max(0,flight.y-groundHeight(flight.x,flight.z)),dt,true,{
-      verticalSpeed: flight.vy, throttle: flight.throttle, throttleMode
+      verticalSpeed: flight.vy, throttle: flight.throttle, throttleMode,
+      bank: flight.bank, sideRate: flight.sideRate
     });
   } else if (mode === 'impact') {
     impactAge+=dt;

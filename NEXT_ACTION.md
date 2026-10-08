@@ -46,3 +46,9 @@ No real-world targeting, vehicle damage calculations, live drone protocols or ph
 - Owner confirmed the 3 encounter targets should look like **fictional military vehicles**, not generic civilian cars: **tank silhouette, APC/armored carrier silhouette, military transport truck silhouette**. Matte olive/military green, khaki/dust materials; recognizable from above at flight speed and distinct settled wrecks.
 - Authoritative scope: [Creative Direction 2.0](docs/29_APPROVED_CREATIVE_DIRECTION_V2.md) CD-06 + [ADR-006](docs/09_DECISIONS.md), tracked under [Issue #76](https://github.com/statego2/War-Drone-Sim/issues/76). This is **plan approval only**, not imported meshes or deployed gameplay visuals.
 - Preserve fixed 3-target encounter, fictional unoccupied objects, and existing hitbox/flight/instant-respawn contracts. No real vehicle replicas, military targeting UI or weapons simulation. Reconcile existing graphics PR #66 before implementing CD-06.
+
+## Quiet Air-Glide v3 — owner listening complaint (2026-10-08)
+
+- The owner still finds the constant drone sound irritating. `feat/quiet-air-glide-v3-rebased` eliminates the permanently running rotor oscillators instead of lowering their volume. See `docs/29_QUIET_AIR_GLIDE_V3.md`.
+- Flight now communicates speed, banking and dives through quiet movement-reactive air layers; reward and impact sounds remain separate.
+- Tests check that unlocking audio creates no continuous motor oscillator, plus speed/dive/turn response. Real iPhone listening remains the final comfort gate; passing automated tests does not establish sound quality.

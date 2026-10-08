@@ -5,7 +5,7 @@ import { createFlightAudio, deriveFlightMix, deriveImpactMix } from '../src/audi
 test('higher speed increases aerodynamic feedback without changing global state', () => {
   const slow = deriveFlightMix(12, 20, { throttle: .72 });
   const fast = deriveFlightMix(78, 20, { throttle: 1, throttleMode: 'fast' });
-  assert.ok(fast.rotorHz > slow.rotorHz);
+  assert.ok(fast.glideGain > slow.glideGain);
   assert.ok(fast.windGain > slow.windGain);
   assert.ok(fast.windFilter > slow.windFilter);
   assert.equal(deriveFlightMix(12, 20).rotorHz, deriveFlightMix(12, 20).rotorHz);
@@ -27,11 +27,15 @@ test('comfort mix stays low-mid and smooth while giving noticeable speed and div
   const hover = deriveFlightMix(0, 32, { throttleMode:'hover', throttle:0 });
   const fast = deriveFlightMix(82, 32, { throttleMode:'fast', throttle:1 });
   const dive = deriveFlightMix(82, 12, { throttleMode:'fast', throttle:1, verticalSpeed:-35 });
-  assert.ok(hover.rotorHz >= 80 && fast.rotorHz < 140, 'motor timbre stays rounded, never a high-pitched whine');
-  assert.ok(fast.windGain > hover.windGain && fast.windGain < .24, 'air is expressive but restrained');
+  assert.equal('rotorHz' in hover, false, 'continuous motor pitch is removed');
+  assert.equal('rotorGain' in fast, false, 'continuous rotor amplitude is removed');
+  assert.ok(fast.windGain > hover.windGain && fast.windGain < .16, 'air is expressive but restrained');
   assert.ok(dive.diveGain > fast.diveGain + .10, 'dramatic dive has an audible identity');
-  assert.ok(fast.rotorFilter < 600, 'high rotor overtones are intentionally suppressed');
-  assert.ok(dive.windFilter < 2200, 'no overly bright wind hiss');
+  assert.ok(fast.glideFilter < 950, 'glide stays muted and soft');
+  assert.ok(dive.windFilter < 1500, 'no bright constant hiss');
+  const turning = deriveFlightMix(60, 32, { bank: -.27, sideRate: 5 });
+  const straight = deriveFlightMix(60, 32, { bank: 0, sideRate: 0 });
+  assert.ok(turning.bankGain > straight.bankGain * 3, 'banking creates pleasant movement airflow');
 });
 
 test('vehicle success forms an escalating musical reward arc ending in a finale', () => {
@@ -71,11 +75,12 @@ class FakeNode {
 }
 class FakeAudioContext {
   static constructions = 0;
+  static oscillatorCreations = 0;
   constructor() { FakeAudioContext.constructions++; this.sampleRate = 8000; this.currentTime = 0; this.state = 'suspended'; this.destination = new FakeNode(); }
   createGain() { return new FakeNode(); }
   createBiquadFilter() { return new FakeNode(); }
   createDynamicsCompressor() { return new FakeNode(); }
-  createOscillator() { return new FakeNode(); }
+  createOscillator() { FakeAudioContext.oscillatorCreations++; return new FakeNode(); }
   createBufferSource() { return new FakeNode(); }
   createBuffer(_channels, length) { return { getChannelData: () => new Float32Array(length) }; }
   async resume() { this.state = 'running'; }
@@ -88,14 +93,16 @@ test('gesture gating, dynamic updates, SFX, mute and cleanup are browser-safe', 
   try {
     globalThis.AudioContext = FakeAudioContext;
     FakeAudioContext.constructions = 0;
+    FakeAudioContext.oscillatorCreations = 0;
     const audio = createFlightAudio();
     assert.equal(audio.enabled, true);
     assert.equal(audio.supported, true);
     assert.equal(FakeAudioContext.constructions, 0, 'nothing starts before user gesture');
     await audio.unlock();
     assert.equal(FakeAudioContext.constructions, 1);
+    assert.equal(FakeAudioContext.oscillatorCreations, 0, 'no constant electrical motor oscillator exists');
     audio.setActive(true);
-    audio.update(57, 26, 1 / 60, true, { verticalSpeed: -22, throttleMode: 'fast', throttle: 1 });
+    audio.update(57, 26, 1 / 60, true, { verticalSpeed: -22, throttleMode: 'fast', throttle: 1, bank: .24, sideRate: 8 });
     audio.cue('start');
     audio.cue('mode','fast');
     audio.cue('mode','hover');
