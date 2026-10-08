@@ -123,6 +123,10 @@ export function advanceFlight(f, input, elapsed) {
   while (left > 0.000001) {
     const dt = Math.min(0.025, left);
     stepFlight(f, input, dt);
+    // Stop the fixed substeps at the very first terrain impact. Continuing
+    // integration after contact can advance the craft along the ground and
+    // make a fast browser frame report a misleading hit location.
+    if (f.groundContact) break;
     left -= dt;
   }
   return f;
