@@ -29,6 +29,8 @@ This is the **single approved creative direction** for the shipped web-first gam
 | Golden Hour | #E4BB82 | sun warmth, small premium highlights |
 | Ember | #FA874E | brief contact/reward accents |
 
+**Vehicle-only color/material family (owner approved 2026-10-08):** olive/military green, dark forest green, khaki and subdued dusty brown; matte painted armor/cargo panels with restrained wear, dust and subtle metal variation. These are distinct from the general UI palette. Avoid shiny civilian paint; all three objects should read as a coherent fictional military-style group at speed and from above.
+
 Do not tint the entire world with CSS tokens: terrain/sun/sky materials may vary realistically, subject to scene coherence and target readability. Limit saturation, avoid neon greens, heavy red HUD, military targeting reticles and noisy gradients. Contrast and silhouette beat color alone; verify low-brightness visibility and color-vision accessibility.
 
 **Typography:** one expressive heavyweight compact uppercase display face/system-safe fallback for WAR DRONE SIM; one legible restrained sans-serif for actions, readable data and hints. Establish font-scale, tracking, weights and contrast tokens in CSS. No decorative tiny labels as essential instructions. Avoid large web font downloads or unlicensed typefaces.
@@ -57,7 +59,12 @@ Do not tint the entire world with CSS tokens: terrain/sun/sky materials may vary
 - Author one **representative** route and 3-vehicle clearing before attempting global asset overhaul.
 - Compose spawn, acceleration, V-shaped reveal and luminous clearing; near-tree parallax communicates speed. Frame vehicles against lower-clutter ground so they remain distinguishable in downward dives.
 - Keep seeded world generation/instancing; selectively art-direct hero trees, road shoulder/material transitions and ground contact shadows only where visible.
-- Create three **distinct original/fictitious silhouettes**: compact utility vehicle, blocky heavy van, longer transporter; recognizable from above/oblique chase camera; no military realism or real-world markings.
+- **Owner-approved target vehicle art clarification (2026-10-08): not generic civilian cars.** Create three distinct **fictional, unoccupied, military-style game target silhouettes**:
+  1. **Tank-style** — compact low heavy tracked hull, broad readable turret shape (visual silhouette only, no functional systems).
+  2. **Armored personnel carrier (APC) / military carrier-style** — taller, blocky armored transport volume with distinctive broad roof and rugged wheel/track profile.
+  3. **Military transport truck** — longer cargo/logistics silhouette, recognizable separate cab and large rear cargo body.
+- All three use matte olive/military green, khaki and dusty dark-green variations, visibly military in *style* but not replicas of identifiable real-world models. No real flags/insignia, specific weapon mechanics, occupants, authentic armor stats, targeting behavior or operational details. Prioritize top-down/oblique recognition in fast portrait gameplay and make the three wreck variants as visually distinct as the intact targets.
+- Preserve the current encounter state machine, 3-target count, collision volumes and hit/respawn semantics unless the independent gameplay plan approves an explicit change. These are purely fictional, non-graphic arcade props.
 - Drone is a cohesive "hero product" silhouette: graphite industrial design, subtle warm accents, readable camera pod and animated rotors. Do not pay triangle or texture costs for invisible details.
 
 ### D — Impact / Reward
@@ -88,7 +95,7 @@ Tasks start **NOT IMPLEMENTED**. Work on a focused branch and PR per slice; do n
 | CD-03 | P0 / clarity | Minimal HUD, dots 0/3, first-flight hint, pause/settings migration for secondary toggles (index.html, CSS, game3d) | CD-01, GP-00 and GP-01 controls test | All essential controls reachable; FAST cannot be silently removed; screen readability improves at dive; no HUD desync |
 | CD-04 | P0 / signature world | Hand-authored spawn→reveal→three-vehicle clearing composition, art-directed near trees, readable target contrast (src/game3d, scenery3d, optional render modules) | CD-00, GP-03 needs | At speed all three fictional objects recognizable; no change to hitboxes, collision, spawn or fairness without GP owner review |
 | CD-05 | P1 / atmosphere | Golden-hour lighting, sky/fog coherence, terrain/road palette, restrained quality settings | CD-04 screenshot baseline | Consistent look, no washed-out target, smooth mobile frametime; low-tier visual fallback |
-| CD-06 | P1 / silhouettes | Distinct fictional vehicle meshes/settled wreck variants, polished drone exterior; documented original/CC0 license provenance | CD-04, performance budget | Three instantly differentiated shapes, readable above/oblique; aligned with existing swept contact model |
+| CD-06 | P1 / silhouettes | Polished hero drone plus **three fictional military-style target models**: tracked tank silhouette, armored carrier/APC silhouette and cargo transport truck silhouette; olive/khaki matte materials and individually recognizable wrecks; original/CC0 provenance | CD-04, performance budget | All 3 clearly read as distinct military-style vehicles from above/in portrait at high speed; contrasts survive sunlight, meshes fit existing hitboxes/swept contact model and no new real-world weapon mechanics |
 | CD-07 | P1 / impact choreography | Timing/polish of existing flash, shock, embers, wreck, smoke, audio/game transition | GP-02, GP-04, CD-04 | Successful vehicle hit visually rewarding yet short; no repeat audio fatigue or FPS hitch; around 1s respawn |
 | CD-08 | P2 / polish | Unified pause/completion overlays, icon/loading/sound/micro-interactions | CD-02, CD-03, CD-07 | Cohesive presentation, no extra menus, honors reduced motion, controls and accessibility |
 | CD-09 | Gate / QA | Paired before/after screenshots + real iPhone portrait run, representative full encounter, controls/sound/thermal/contrast audit | Each implemented slice; final cross-slice check after CD-08 | Owner KEEP/TUNE/REVERT; mobile evidence logged; rollback or quality reduction when performance or clarity worsens |
@@ -102,7 +109,7 @@ Tasks start **NOT IMPLEMENTED**. Work on a focused branch and PR per slice; do n
 
 ## 5. Gate checklist and evidence, not aesthetic wishful thinking
 
-- **Composition:** actual portrait capture shows recognizable clearing, readable 3 options, enough lookahead at speed; not only an attractive promo render.
+- **Composition:** actual portrait capture shows recognizable clearing, readable 3 **military-style** options (tank/APC/truck by silhouette), enough lookahead at speed; not only an attractive promo render. Compare all three intact and settled-wreck looks without using real-world tactical markings.
 - **Accessibility:** iPhone safe areas, 44 CSS px target goal, bright-sun legibility, orientation handling, reduced motion/flash, focus visibility, screen-reader names for controls, no information conveyed only by color.
 - **Responsiveness:** startup, pause/resume, music/audio unlock, impact/restart and option changes tested with real touch. Do not regress existing 0.98s retry semantics.
 - **Performance:** record device/browser/build, consistent frame pacing / visible stutters, battery and thermal subjective note; screenshot/device validation required before claiming premium or 60 FPS. Compare quality tier changes.
