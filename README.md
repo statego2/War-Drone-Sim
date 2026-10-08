@@ -13,7 +13,7 @@ We are **not** building a real-world training tool, tactical navigation system, 
 
 ## Play the browser prototype
 
-Open `index.html` through a static web server or the GitHub Pages URL once configured. In the repo root, run `python3 -m http.server 8765`, then open `http://localhost:8765/`. Drag to steer and change altitude; tap BEGIN FLIGHT, find the moving fictional vehicle, and make contact. Keyboard WASD / arrows also work. Run `npm test` for pure model checks. See [browser prototype implementation and evidence](docs/18_BROWSER_PROTOTYPE.md).
+[Open the current browser preview](https://raw.githack.com/statego2/War-Drone-Sim/main/index.html) (external preview service; the first visit shows a source notice). Open `index.html` through a static web server or the GitHub Pages URL once configured. In the repo root, run `python3 -m http.server 8765`, then open `http://localhost:8765/`. Drag to steer and change altitude; tap BEGIN FLIGHT, find the moving fictional vehicle, and make contact. Keyboard WASD / arrows also work. Run `npm test` for pure model checks. See [browser prototype implementation and evidence](docs/18_BROWSER_PROTOTYPE.md).
 
 ## Work status
 

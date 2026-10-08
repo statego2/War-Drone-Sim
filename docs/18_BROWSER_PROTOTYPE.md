@@ -17,8 +17,9 @@ From repository root, run `python3 -m http.server 8765` and open `http://localho
 ## Evidence and limitations at this handoff
 
 - `node --check src/game.mjs` and `node --check src/model.mjs` passed on Node 24.19.0.
-- Five Node model tests passed, covering reproducible world, frame step consistency, vertical/lateral steering, one-shot hit, and failure outcomes.
-- Browser automation was **not** available locally: the Playwright package exists, but Chromium binary download failed in this environment; the cloud browser cannot reach a local loopback server. No claim of verified Safari rendering, touch latency, frame rate, device thermal behavior, or five-person playtest.
+- Six Node model tests passed, covering reproducible world, frame step consistency including slow render frames, vertical/lateral steering, one-shot hit, and failure outcomes.
+- The merged commit's GitHub Actions browser checks completed successfully. A desktop Chrome preview from the public commit rendered the forest/vehicle/drone and reached `DIRECT CONTACT` with +169 points; retry, pause and resume controls were observed. The preview is an external GitHub-source proxy, not GitHub Pages.
+- Local Playwright was **not** available: the Chromium binary download failed in this environment; the cloud browser could not reach a local loopback server. Desktop Chrome verification via the public commit preview succeeded. No claim of verified Safari rendering, touch latency, frame rate, device thermal behavior, or five-person playtest.
 - The rendered forest is a custom perspective Canvas renderer, not a polygonal engine scene. Some tree occlusion and contact volumes need tuning from actual phone play. Target is deliberately simple and unoccupied.
 - Opening the URL on the owner's iPhone in portrait and completing at least one hit, one tree crash, one miss, pause/resume and retry is the immediate G0/G1 validation task.
 

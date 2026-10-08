@@ -36,3 +36,6 @@
 
 ## Update — browser prototype v0.1 (2026-10-08)
 The owner explicitly chose browser play. Root `index.html`, `src/`, tests and CI now implement a perspective Canvas fly/contact/retry loop. The original Unity-native task sequence and 330h estimate are no longer the execution baseline. See `docs/18_BROWSER_PROTOTYPE.md` and `NEXT_ACTION.md`. G0 real-device validation and G1 fun gate remain open; earlier planning snapshot above is historical, not an implementation claim.
+
+### Browser smoke evidence
+Desktop Chrome loaded the public commit preview and showed the forest and vehicle, then `DIRECT CONTACT` +169 points. Retry and pause/resume were observed. GitHub Actions checks passed. This does not close the real iPhone or G1 playtest gate. GitHub Pages is not configured; the external preview URL is only a temporary way to play the repo code.
