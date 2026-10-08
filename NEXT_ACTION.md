@@ -1,29 +1,27 @@
-# NEXT ACTION — Forest Encounter v0.8 + impact VFX experiment
+# NEXT ACTION — War Drone Sim browser prototype
 
-2026-10-08 impact-feedback branch note: `feat/impact-feedback-3d-v1` adds reusable layered visual hit effects and unit tests without touching sound. See [docs/27_IMPACT_FEEDBACK_V1.md](docs/27_IMPACT_FEEDBACK_V1.md). This code is on a feature branch, not yet published in the live Pages build; browser CI and actual phone feedback remain acceptance gates. Another open branch/PR is working on the steep dive, and audio/graphics work is separate; reconcile overlapping changes before merge.
+**Updated 2026-10-08.** Source of truth: `main`. Hosted portrait build: https://statego2.github.io/War-Drone-Sim/
 
+## Landed in main
 
-2026-10-08. Based on `feat/camera-stability-speed-cues-v0-7` (`9700fd6`).
+- Browser WebGL Forest Encounter: one-finger steering, three fictional empty vehicles, swept contact, visible wreck states, automatic next drone (~0.98 s), next round once all three have been hit.
+- Faster actual cruise / FAST travel; gravity-driven dive. Follow-up commits `4af39cb` and `90b364f` transition a fully committed near-vertical dive away from horizontal travel while allowing shallow downward travel and recovery. Tests cover this behavior.
+- Procedural audio director: merged as `e9ada33`. Dynamic rotor/wind/altitude mix and synthesized distinct ground/vehicle contacts, with unit tests. See `docs/26_AUDIO_DIRECTOR_V1.md`.
+- Procedural visual impact pool: merged as `03cd218` via PR #71. Layered flash, planar shock ring, reusable embers and smoke, softer ground-impact treatment, mild FOV pulse, and deterministic envelope tests. See `docs/27_IMPACT_FEEDBACK_V1.md`.
+- All effects are fictional arcade feedback, not operational hardware/damage simulation.
 
-## Implemented
+## Evidence and remaining validation
 
-- Actual cruise speed is higher (43 m/s spawn, converging toward 56 m/s) and FAST converges toward 78 m/s; v0.7 only widened the FOV.
-- Steep downward gesture builds falling velocity and ground contact ends the current drone. Downward velocity remains available at contact, rather than silently bouncing.
-- One fixed fictional clearing with three empty colored vehicles, swept contact, one result per vehicle, persistent wreck/smoke, distinct ground failure, automatic drone continuation and a new round after all three.
-- Flash, reusable sparks and synthetic impact sound, with a 0.98 s result window. The previous touch state clears on respawn.
-- Pure model checks for speed, dive/ground and encounter transitions. `npm test` and syntax checks passed locally. The local browser server was blocked by `EPERM`; GitHub Actions desktop Chromium browser smoke passed on PR #65 (run 97). GitHub Pages deployed successfully from main commit `d2c8b0b` in deployment run 37822913999.
+- The pre-merge impact-VFX implementation branch's GitHub Actions run `37826960086` passed both logic and desktop Chromium visual smoke. Main's post-merge checks are tracked in GitHub Actions; do not mark them green until completed.
+- GitHub Pages deployment workflow `37827156003` reported success for merge commit `03cd218`. No actual iPhone Safari visual/audio/fps/haptics test has been performed in this session; do not claim professional sound mastering, 60fps, or player fun has been established.
+- Existing open PR #67 proposes an alternative stronger dive brake, but overlaps with already-merged changes. Compare its FAST behavior and short-travel acceptance test rather than merging or discarding it blindly. A note is on that PR.
+- The graphics overhaul design PR #66 is separate and does not by itself establish that the runtime visuals are implemented.
 
-## Next acceptance gate
+## Next unblocked game-feel work
 
-Play [the published build](https://statego2.github.io/War-Drone-Sim/) in portrait iPhone Safari. Check that all three targets are visible and hittable, that a full downward drag can end in the ground, that a vehicle hit leaves a wreck, and that the next drone arrives without a new tap. Tune spawn distance, altitude, flight speed, collision generosity, feedback and frame pacing from that device evidence. Test pause, mute and app switching. Five-player and performance gates remain open; no claims of measured FPS or validated fun.
+1. On iPhone portrait, compare shallow vs full dive including FAST, camera clarity, and how far the craft continues horizontally. Specifically confirm the owner-requested near-vertical stop.
+2. Play ten consecutive vehicle and ground impacts. Check that shockwave/embers/smoke and newly merged audio blend cleanly, reset every drone, and do not cause fatigue or frame spikes.
+3. Check three-target identification, first-approach timing, steering precision, pause/mute/resume and app switching. Document any reproducible failures in GitHub issues.
+4. Tune spawn, speed and feedback from phone evidence *before* adding more persistent systems. G1 fun and G2 phone performance remain unverified.
 
-This is an arcade fictional vehicle encounter. It includes no real-world vehicle models, drone control protocols, targeting assistance, operational terrain or physical attack calculations.
-
-
-## Audio implementation handoff (2026-10-08)
-
-- Branch: `feat/procedural-audio-director-v1`; see `docs/26_AUDIO_DIRECTOR_V1.md`.
-- Replaces the one-oscillator/one-noise prototype impact with a multi-layer event sound director and dynamic rotor/wind/dive/forest mix. The gain staging and limiting are explicitly phone-conscious.
-- `src/game3d.mjs` triggers start, respawn, mode/camera, differentiated fictional impacts, and passes flight vertical velocity/throttle to the sound mix. Browser tab background suspends the audio.
-- `tests/audio3d.test.mjs` provides pure mix checks and mocked browser-audio lifecycle checks; execute `npm test`. Real Safari speaker/headphone listening tests **not yet performed**.
-- Next acceptance gate: human listens on iPhone to 20 vehicle/ground impacts, checks clipping, fatigue, the muted/paused states and short feedback loops, then adjusts gains, filters and transient layers. No claim of validated mastering or iOS performance.
+No real-world targeting, vehicle damage calculations, live drone protocols or physical combat simulation belongs in this prototype.
