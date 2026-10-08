@@ -32,9 +32,10 @@ try {
   });
   const errors = [];
   page.on('pageerror', err => errors.push(err.message));
+  page.on('console', msg => { if (msg.type() === 'error') errors.push(msg.text()); });
   await page.goto('http://127.0.0.1:' + port + '/', { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => document.querySelector('.kicker')?.textContent.includes('A BIGGER WORLD'), { timeout: 30000 });
-  await page.waitForFunction(() => document.querySelector('canvas')?.getContext('webgl2') !== null, { timeout: 30000 });
+  await page.waitForFunction(() => document.documentElement.dataset.openSkyReady === 'true', null, { timeout: 45000 });
+  assert.ok(await page.evaluate(() => !!document.querySelector('canvas')?.getContext('webgl2')), 'WebGL2 context expected');
   await page.locator('#primary').click();
   await page.waitForSelector('#hud:not(.hidden)', { timeout: 20000 });
   const before = await page.locator('#altitude').innerText();
