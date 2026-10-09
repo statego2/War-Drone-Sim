@@ -32,6 +32,7 @@ try{
   await page.waitForTimeout(900);
   const running=await page.evaluate(()=>window.__openSkySnapshot());
   assert.equal(running.vehicles.length,3);
+  assert.ok(Number.isFinite(running.simulatedFlightSeconds) && running.simulatedFlightSeconds>0,'browser exposes accumulated simulated flight time');
   assert.ok(running.speed>43,'neutral flight maintains automatic forward cruise');
   assert.equal(await page.locator('#boost').count(),0,'one-finger flight must not show a speed-mode button');
   // A modest thumb movement should reach the intermediate near-hover band.
@@ -50,6 +51,7 @@ try{
   // covered by fixed-time pure flight tests on both CRUISE and FAST.
   assert.equal(reversing.gesture.y,1,'full-up keyboard or one-finger control reaches reverse command');
   assert.ok(reversing.brakeIntent>.2,'one rendered physics step registers the reverse braking intent');
+  assert.ok(reversing.simulatedFlightSeconds>nearHover.simulatedFlightSeconds,'reverse gesture advances simulation clock independently of wall time');
   await page.mouse.move(190,540);await page.mouse.down();
   await page.mouse.move(190,350,{steps:6});
   await page.waitForTimeout(900);
