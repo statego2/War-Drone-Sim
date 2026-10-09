@@ -126,6 +126,7 @@ const greenPalette = [0x213e32, 0x294d36, 0x375740, 0x305238, 0x466344, 0x2c4d3f
 const tiles = new Map();
 let flight = makeFlight(), mode = 'home', view = 'chase', cameraYaw = 0, cameraPitch = .05;
 let throttleMode = 'cruise', last = 0, lastSector = '', frameCount = 0, smoothMs = 17;
+let simulatedFlightSeconds = 0; // Diagnostic only; excludes home, pause and impact.
 let encounter = makeEncounter(), impactAge = 0, impactType = '', impactId = -1, roundBannerTime=0;
 let pointer = null;
 const keys = new Set();
@@ -661,6 +662,7 @@ function frame(now) {
     throttleMode=command.y<-.75?'fast':'gesture';
     const previous={x:flight.x,y:flight.y,z:flight.z};
     advanceFlight(flight, command, dt);
+    simulatedFlightSeconds += dt;
     const contact=resolveContact(encounter,previous,flight,flight.groundContact);
     if(contact)endFlight(contact);
     rebuildTiles(); moveTiles(); updateFarLand(); updateHUD();
@@ -726,6 +728,7 @@ updateCamera(.016);
 // Diagnostic-only state for automated interaction tests; no browser location or telemetry.
 window.__openSkySnapshot = () => ({
   x: flight.x, y: flight.y, z: flight.z, heading: flight.heading,
+  simulatedFlightSeconds,
   cameraYaw, cameraPitch, throttleMode, gesture: inputState(), speed:flight.speed,
   vx:flight.vx,vy:flight.vy,vz:flight.vz,pitch:flight.pitch,bank:flight.bank,sideRate:flight.sideRate,pullback:flight.pullback||0,brakeIntent:flight.brakeIntent||0,reverseIntent:flight.reverseIntent||0,
   ground: groundHeight(flight.x, flight.z), mode, audioEnabled: sound.enabled
