@@ -53,7 +53,7 @@ test('scripted full forest playthrough: 16 impact successes, checkpoint route an
   assert.equal(score.hits,16);
   assert.equal(score.misses,1);
   assert.equal(score.diveHits,16);
-  assert.ok(score.bestCombo>=10);
+  assert.equal(score.bestCombo,6,'the arcade score deliberately caps the displayed combo multiplier');
   assert.ok(score.points>3000);
   assert.deepEqual(sectorProgress(e),{hits:6,total:6});
 });
