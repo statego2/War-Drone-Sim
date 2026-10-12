@@ -733,6 +733,7 @@ function startFlight() {
   cameraYaw = flight.heading; cameraPitch=.05; throttleMode='cruise';
   drone.visible = true; viewButton.textContent = 'FPV';
   hint.textContent = 'Πάνω: ανέβα / φρένα / πίσω · κάτω: βουτιά · πλάγια: κατεύθυνση';
+  hint.style.opacity='1';
   overlay.className = 'panel hidden'; hud.classList.remove('hidden');
   pauseButton.classList.remove('hidden'); viewButton.classList.remove('hidden');
   warning.textContent = '';

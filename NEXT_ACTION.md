@@ -1,35 +1,27 @@
 # NEXT ACTION — War Drone Sim
 
-**Updated 2026-10-12.** Source of truth: `main`. [Play the portrait build](https://statego2.github.io/War-Drone-Sim/).
+**Updated 2026-10-12.** Canonical game: [mobile portrait browser build](https://statego2.github.io/War-Drone-Sim/). Source of truth: merged `main`; open PRs are not shipped until merge and Pages completes.
 
-## Shipped: first complete forest level
+## Implemented browser game
 
-- [PR #85](https://github.com/statego2/War-Drone-Sim/pull/85) merged as `30f0805`. The former three-target greybox is superseded. The level has a continuous forest route through three connected clearings, with 16 fictional empty vehicle props (5/5/6), persistent wrecks, progress HUD, quick checkpoint respawns near the earliest uncleared area, a final level-clear screen, replay, and locally saved best drone count. There is no three-target round reset or finite five-drone life limit.
-- One-finger flight, swept contact, impact visual/audio feedback, and fictional military-style tank/carrier/truck silhouettes remain the underlying mechanics and visual direction.
-- Local syntax and encounter checks passed; the PR's Node logic/syntax job passed in [run 38261307135](https://github.com/statego2/War-Drone-Sim/actions/runs/38261307135). Both [Pages deployment](https://github.com/statego2/War-Drone-Sim/actions/runs/38262074429) and [Pages build](https://github.com/statego2/War-Drone-Sim/actions/runs/38262072993) succeeded on the merge commit.
-- The [main browser run](https://github.com/statego2/War-Drone-Sim/actions/runs/38262074457) passed Node logic and desktop Chromium visual smoke. The cloud browser used in this session has WebGL disabled and opens the legacy Canvas fallback, so this is not a manual visual inspection of the new 3D route. Actual iPhone Safari play, FPS, sound comfort and fun remain unverified.
+- [PR #85](https://github.com/statego2/War-Drone-Sim/pull/85): complete connected three-clearing forest level with **16 fictional empty military-style props** (5/5/6), wreck persistence, checkpoint spawns, replay, last-sector finish and local best drone count. No three-target reset or finite ammunition/lives.
+- [PR #86](https://github.com/statego2/War-Drone-Sim/pull/86) and [#87](https://github.com/statego2/War-Drone-Sim/pull/87): six bounded moving props, swept vehicle/tree contacts, fair foliage hitboxes, next-objective direction, fast drone respawn, combos, dive points and saved best score. Scripted full-level Node integration checks.
+- [PR #88](https://github.com/statego2/War-Drone-Sim/pull/88): subtle close-range goal glints (no targeting UI) with reduced-motion handling.
+- [PR #89](https://github.com/statego2/War-Drone-Sim/pull/89): cached shared model geometries, per-tile instanced foliage frustum culling, bounded adaptive pixel ratio based on frame pacing. Tests measure algorithm, not actual phone FPS.
+- [PR #90](https://github.com/statego2/War-Drone-Sim/pull/90): survive Safari app switch / pause during impact and WebGL context interruptions without losing progress.
+- [PR #91](https://github.com/statego2/War-Drone-Sim/pull/91): quick redeploy (costs one drone, retains wrecks/points) and confirmed full restart in the pause overlay, no new in-flight touch controls.
+- [PR #92](https://github.com/statego2/War-Drone-Sim/pull/92): first-frame, flight, pause, small 320×568 and maneuver screenshots in Chromium CI; touch/landscape assertions and larger pause control. [Main Chromium run](https://github.com/statego2/War-Drone-Sim/actions/runs/38282246202) succeeded.
+- [PR #93](https://github.com/statego2/War-Drone-Sim/pull/93): **exact official MIT-licensed Three.js r180 local bundles**, removing external CDN dependency for WebGL boot; license and upstream provenance recorded. No promise of offline-first service worker support.
+- [PR #94](https://github.com/statego2/War-Drone-Sim/pull/94): fixes a **real screenshot-discovered regression**: the first-flight thumb hint was accidentally positioned above and across the top sector/altitude HUD. Moves hint to root of game, below the play space and above the action deck; hides on launch/pause; asserts position in browser CI. Pending PR CI/merge while this handoff was written.
 
-## Forest Engagement v2 — implementation and CI verified on PR #86
+## Quality and release truth
 
-- [PR #86](https://github.com/statego2/War-Drone-Sim/pull/86) adds six gently moving empty fictional vehicle props without changing the 16-target, 3-sector level, moving-object swept contacts, adaptive checkpoint respawns, a simple directional HUD cue, arcade dive/pace/combo points, and locally stored best score. The out-of-range military prop paint indexing is fixed. Wreck meshes stay at the actual impact location.
-- The [latest PR check](https://github.com/statego2/War-Drone-Sim/actions/runs/38278169100) passed **Node logic/unit tests and desktop Chromium portrait smoke**. A previous intermediate commit exposed an overly specific overshoot test; the test was corrected to model overshooting *all* remaining clearing targets. Final run passed both jobs.
-- This is **implementation and desktop regression evidence**, not verification of real iPhone feel, sustained phone FPS or audio comfort. Never conflate PR code with shipped Pages until merge/deploy finishes.
+Desktop Chromium (software WebGL) automated checks and uploaded screenshots establish that a 3D forest, road, drone and UI render and the tested interactions execute. They **do not** establish iPhone Safari performance, 16-target human playability, fun, audio comfort, thermals, WebGL restoration on iOS, or the quality of collision feel.
 
-## Forest hazards v3 — PR #87
+## Next unblocked work / decisive acceptance blocker
 
-- [PR #87](https://github.com/statego2/War-Drone-Sim/pull/87) **merged as 4e1adffd** with forgiving swept tree contacts from actually drawn local trees, deterministic hazard arbitration, a dedicated collision warning, full 16-hit scripted playthrough, and unit/browser regression tests. The final PR SHA `6489e520` passed Node logic and portrait Chromium browser smoke ([CI run 38279196320](https://github.com/statego2/War-Drone-Sim/actions/runs/38279196320)).
-- Real-phone fairness, frame pacing, visual readability and feel remain unverified. See [hazard technical notes](docs/33_FOREST_HAZARDS_V3.md).
+1. Confirm #94 final Node + Chromium checks green, merge and verify GitHub Pages/main CI at the exact resulting SHA. Inspect updated `02-flight-opening.png` screenshot and confirm guidance text no longer overlays the HUD.
+2. On the owner's actual iPhone, complete the entire 16-target forest route, plus ~10–15 retries and at least one moving target/tree contact. Check steering, reverse/climb, dive, every sector, one-second respawn, mobile pause/redeploy/restart, mute/app switch/WebGL, target readability and page reload. Capture build SHA + device/iOS, screenshot/video and frame-time observations.
+3. Once G1 fun and G2 mobile feasibility have empirical evidence, choose the **highest-impact concrete issue** (likely pacing, camera/sightline, foliage visibility or impact sound) and implement a focused reversible change. Do not equate CI with owner approval. Avoid adding modes or infinite content until the actual device gate is resolved.
 
-## October 12 follow-up — Forest v4 and Mobile Render Budget v5
-
-- [PR #88](https://github.com/statego2/War-Drone-Sim/pull/88) merged as `ac5e0138`: subdued warm objective glints above nearby intact vehicle props in the active sector, hidden beyond range and after destruction, with reduced-motion handling. Node and Chromium PR checks passed. The visual design still needs real iPhone review.
-- [PR #89](https://github.com/statego2/War-Drone-Sim/pull/89) proposes geometry reuse for target/roadside primitives, instanced-mesh frustum culling and a sample-window adaptive-resolution controller. Testable pure modules + desktop browser diagnostics are included, but no device FPS claim is made.
-- Performance verification criteria: same iPhone/Safari, compare baseline vs new commit, capture browser FPS distribution (p50/p95), target readability, crashes and memory/heat after 10–15 drone retries. If foliage vanishes unexpectedly, revert culling; if adaptive DPR flickers, broaden the cooldown/thresholds.
-
-## Next actions
-
-1. PR #86 merged as abb0c149 with successful Pages/main CI. PR #87 merged as 4e1adffd; verify its GitHub Pages deployment and main CI, then inspect the 3D portrait build at 390×844 with WebGL. Check tree-contact fairness, moving props, wreck placement and navigation.
-2. Play the **entire 16-target route** on iPhone portrait, including a moving target and a missed/overshot target: first approach, three clearing transitions, checkpoint spawn, wreck persistence, sector counter, final clear and replay. Also test one-finger climb/brake/reverse, diagonals, dives, ground impact, pause/mute/resume, and app switching.
-3. Record concrete observations, then tune pacing, sightlines, target spacing, controls, sound and visual feedback. Treat G1 fun and G2 phone performance as open until owner playtest evidence supports them. The linked [gameplay plan](docs/27_GAMEPLAY_FOCUS_PLAN.md) and [approved creative direction](docs/29_APPROVED_CREATIVE_DIRECTION_V2.md) set priorities.
-
-The owner explicitly requested a **whole playable level**; old three-target notes in historical PRs and documents are superseded. Keep the experience fictional arcade play, without real-world targeting or weapon simulation.
+Only fictional arcade vehicles; no real-world targeting, hardware flight interfaces or real attack specifications.
