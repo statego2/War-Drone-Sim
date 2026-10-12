@@ -3,7 +3,7 @@
 // prop moves quickly between rendered frames, without frame-rate artifacts.
 // These are intentionally NOT physical vehicle specifications.
 export const ARCADE_HIT_VOLUME=Object.freeze({
-  tank:Object.freeze({x:8.1,y:6.0,z:11.8}),
+  tank:Object.freeze({x:8.8,y:9.0,z:13.6}),
   carrier:Object.freeze({x:9.2,y:6.4,z:12.5}),
   truck:Object.freeze({x:9.0,y:6.5,z:13.6})
 });
