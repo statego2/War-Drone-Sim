@@ -148,3 +148,16 @@
   left:20px;right:20px;pointer-events:none;text-align:center;}
 #hud.hidden + #hint{display:none;}
 @media(max-height:610px){#hint{bottom:calc(env(safe-area-inset-bottom) + 83px);font-size:10px;}}
+
+/* Explicit fatal startup state: never disguise module or WebGL failure as the v0.1 game. */
+.boot-error{position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;
+  padding:calc(env(safe-area-inset-top) + 20px) 23px calc(env(safe-area-inset-bottom) + 24px);
+  background:linear-gradient(155deg,#132d2c 0%,#07191b 100%);color:#f1eee3;}
+.boot-error-content{width:100%;max-width:430px;}
+.boot-error h2{font-size:clamp(26px,7vw,39px);line-height:1.06;letter-spacing:-.04em;margin:15px 0;}
+.boot-error p{font-size:15px;line-height:1.6;color:#dce4db;}
+.boot-error .boot-error-details{font-size:12px;overflow-wrap:anywhere;opacity:.72;font-family:ui-monospace,monospace;}
+.boot-error button{width:100%;min-height:52px;border:0;border-radius:8px;margin:12px 0 22px;
+ background:#f1eee3;color:#132b27;font-weight:900;font-size:14px;}
+.boot-error a{font-size:12px;color:#e4bb82;text-underline-offset:4px;}
+.boot-error button:focus-visible,.boot-error a:focus-visible{outline:3px solid #e4bb82;outline-offset:3px;}

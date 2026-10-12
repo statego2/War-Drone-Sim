@@ -14,6 +14,13 @@
 - [PR #93](https://github.com/statego2/War-Drone-Sim/pull/93): **exact official MIT-licensed Three.js r180 local bundles**, removing external CDN dependency for WebGL boot; license and upstream provenance recorded. No promise of offline-first service worker support.
 - [PR #94](https://github.com/statego2/War-Drone-Sim/pull/94): fixes a **real screenshot-discovered regression**: the first-flight thumb hint was accidentally positioned above and across the top sector/altitude HUD. Moves hint to root of game, below the play space and above the action deck; hides on launch/pause; asserts position in browser CI. Pending PR CI/merge while this handoff was written.
 
+## P0 — 2026-10-12 iPhone regression and deployment root cause
+
+- Owner sent a real iPhone screenshot of **FOREST RUN / BEST / 034 M**, definitively the `legacy-canvas.html` v0.1 page rather than the 16-target WebGL build.
+- **Root cause established:** PR #93 moved Three.js r180 to local `vendor/` imports, but `.github/workflows/deploy-pages.yml` continued staging only `src/`, `index.html` and `legacy-canvas.html`. CI browser tested the repository root rather than the exact published `public/` output, masking the missing vendor files.
+- Fix branch `fix/pages-vendor-three-boot-v11`: publish `vendor/` through shared verified `scripts/stage-pages.mjs`; run node regression tests and browser smoke against the exact `public/` artifact; avoid automatic `legacy-canvas.html` redirects on 3D errors and show a visible retry screen with opt-in legacy.
+- **Acceptance:** Green Node and Chromium artifact tests; GitHub Pages deployment green; check actual public URLs for both Three.js modules and iPhone Safari. Do not declare iPhone acceptance from desktop CI alone.
+
 ## Quality and release truth
 
 Desktop Chromium (software WebGL) automated checks and uploaded screenshots establish that a 3D forest, road, drone and UI render and the tested interactions execute. They **do not** establish iPhone Safari performance, 16-target human playability, fun, audio comfort, thermals, WebGL restoration on iOS, or the quality of collision feel.

@@ -38,13 +38,28 @@
       <div class="footer">FOREST ENCOUNTER</div>
     </section>
     <div id="landscape">Γύρισε το κινητό όρθιο για να παίξεις.</div>
+    <section id="boot-error" class="boot-error hidden" role="alert" aria-live="assertive">
+      <div class="boot-error-content">
+        <span class="kicker">WAR DRONE SIM · 3D STARTUP</span>
+        <h2>Δεν άνοιξε η 3D πίστα.</h2>
+        <p>Η παλιά έκδοση δεν θα αντικαταστήσει κρυφά το παιχνίδι. Κάνε νέα προσπάθεια ή άνοιξε τον σύνδεσμο απευθείας στο Safari.</p>
+        <p id="boot-error-details" class="boot-error-details"></p>
+        <button id="boot-retry" type="button">ΔΟΚΙΜΑΣΕ ΞΑΝΑ ↗</button>
+        <a href="./legacy-canvas.html">Παλιό Canvas prototype (προαιρετικά)</a>
+      </div>
+    </section>
   </main>
   <script type="module">
     try {
       await import('./src/game3d.mjs');
     } catch (error) {
-      console.error('3D renderer unavailable; loading legacy Canvas preview.', error);
-      window.location.replace('./legacy-canvas.html');
+      console.error('3D game failed to start:', error);
+      document.documentElement.dataset.openSkyBoot = 'failed';
+      const panel=document.getElementById('boot-error');
+      const detail=document.getElementById('boot-error-details');
+      detail.textContent=error instanceof Error ? error.message : String(error);
+      panel.classList.remove('hidden');
+      document.getElementById('boot-retry').addEventListener('click',()=>window.location.reload());
     }
   </script>
 </body>
