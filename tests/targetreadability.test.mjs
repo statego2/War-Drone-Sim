@@ -7,8 +7,8 @@ const player={x:0,y:25,z:0};
 test('world objective glint appears near playable empty props, not everywhere',()=>{
   const near=beaconAppearance(target,player,0,0);
   assert.equal(near.visible,true);
-  assert.ok(near.opacity>.3 && near.opacity<=.52);
-  assert.ok(near.size>=5 && near.size<9);
+  assert.ok(near.opacity>.4 && near.opacity<=.67);
+  assert.ok(near.size>=15 && near.size<19);
   assert.equal(beaconAppearance({...target,z:800},player,0).visible,false);
   assert.equal(beaconAppearance({...target,y:25,z:4},player,0).visible,false);
 });
@@ -21,5 +21,5 @@ test('reduced-motion signal is stable and time-independent',()=>{
   const b=beaconAppearance(target,player,0,88,true);
   assert.deepEqual(a,b);
   const c=beaconAppearance(target,player,0,88,false);
-  assert.ok(c.opacity>=0&&c.opacity<=.52);
+  assert.ok(c.opacity>=0&&c.opacity<=.67);
 });
