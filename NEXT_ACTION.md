@@ -9,10 +9,16 @@
 - Local syntax and encounter checks passed; the PR's Node logic/syntax job passed in [run 38261307135](https://github.com/statego2/War-Drone-Sim/actions/runs/38261307135). Both [Pages deployment](https://github.com/statego2/War-Drone-Sim/actions/runs/38262074429) and [Pages build](https://github.com/statego2/War-Drone-Sim/actions/runs/38262072993) succeeded on the merge commit.
 - The [main browser run](https://github.com/statego2/War-Drone-Sim/actions/runs/38262074457) passed Node logic and desktop Chromium visual smoke. The cloud browser used in this session has WebGL disabled and opens the legacy Canvas fallback, so this is not a manual visual inspection of the new 3D route. Actual iPhone Safari play, FPS, sound comfort and fun remain unverified.
 
+## Forest Engagement v2 — implementation and CI verified on PR #86
+
+- [PR #86](https://github.com/statego2/War-Drone-Sim/pull/86) adds six gently moving empty fictional vehicle props without changing the 16-target, 3-sector level, moving-object swept contacts, adaptive checkpoint respawns, a simple directional HUD cue, arcade dive/pace/combo points, and locally stored best score. The out-of-range military prop paint indexing is fixed. Wreck meshes stay at the actual impact location.
+- The [latest PR check](https://github.com/statego2/War-Drone-Sim/actions/runs/38278169100) passed **Node logic/unit tests and desktop Chromium portrait smoke**. A previous intermediate commit exposed an overly specific overshoot test; the test was corrected to model overshooting *all* remaining clearing targets. Final run passed both jobs.
+- This is **implementation and desktop regression evidence**, not verification of real iPhone feel, sustained phone FPS or audio comfort. Never conflate PR code with shipped Pages until merge/deploy finishes.
+
 ## Next actions
 
-1. Inspect the deployed 3D portrait build at 390×844 in a WebGL-capable browser, then fix any concrete visual issues.
-2. Play the **entire 16-target route** on iPhone portrait: first approach, three clearing transitions, checkpoint spawn, wreck persistence, sector counter, final clear and replay. Also test one-finger climb/brake/reverse, diagonals, dives, ground impact, pause/mute/resume, and app switching.
+1. Merge PR #86 if CI remains green; verify Pages deployment on the merge SHA. Inspect the updated 3D portrait build at 390×844 in WebGL, including moving target visuals, wreck position and guidance legibility.
+2. Play the **entire 16-target route** on iPhone portrait, including a moving target and a missed/overshot target: first approach, three clearing transitions, checkpoint spawn, wreck persistence, sector counter, final clear and replay. Also test one-finger climb/brake/reverse, diagonals, dives, ground impact, pause/mute/resume, and app switching.
 3. Record concrete observations, then tune pacing, sightlines, target spacing, controls, sound and visual feedback. Treat G1 fun and G2 phone performance as open until owner playtest evidence supports them. The linked [gameplay plan](docs/27_GAMEPLAY_FOCUS_PLAN.md) and [approved creative direction](docs/29_APPROVED_CREATIVE_DIRECTION_V2.md) set priorities.
 
 The owner explicitly requested a **whole playable level**; old three-target notes in historical PRs and documents are superseded. Keep the experience fictional arcade play, without real-world targeting or weapon simulation.
