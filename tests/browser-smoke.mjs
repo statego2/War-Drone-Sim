@@ -33,6 +33,11 @@ try{
   const running=await page.evaluate(()=>window.__openSkySnapshot());
   assert.equal(running.vehicles.length,16,'full forest level has sixteen persistent targets');
   assert.equal(running.total,16);
+  assert.equal(running.moving,6,'six unoccupied fictional props patrol short arcade tracks');
+  assert.ok(running.target?.distance>0,'target guidance is available as soon as a run starts');
+  assert.equal(running.points,0,'a new run starts with a clean score');
+  assert.equal(await page.locator('#arcade-score').innerText(),'0 PTS');
+  assert.match(await page.locator('#target-compass').innerText(),/M$/);
   assert.equal(await page.locator('#progress span:not(.hidden)').count(),5,'entry clearing has five goals');
   assert.ok(running.speed>43,'neutral flight maintains automatic forward cruise');
   assert.equal(await page.locator('#boost').count(),0,'one-finger flight must not show a speed-mode button');
