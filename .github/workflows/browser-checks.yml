@@ -36,3 +36,22 @@ jobs:
           name: forest-encounter-chromium-preview
           path: artifacts/*.png
           if-no-files-found: ignore
+
+  safari-family-boot:
+    name: desktop WebKit portrait 3D boot (not physical iPhone)
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --no-package-lock playwright@1.56.1
+      - run: npx playwright install --with-deps webkit
+      - run: node tests/webkit-boot.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: forest-encounter-desktop-webkit
+          path: artifacts/webkit-portrait-gameplay.png
+          if-no-files-found: ignore
