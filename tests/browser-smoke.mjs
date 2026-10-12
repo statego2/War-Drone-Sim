@@ -52,6 +52,7 @@ try{
   await page.screenshot({path:join(root,'artifacts','02-flight-opening.png')});
   const running=await page.evaluate(()=>window.__openSkySnapshot());
   assert.equal(running.vehicles.length,16,'full forest level has sixteen persistent targets');
+  assert.equal(running.scenicSites,3,'three distinct side-clearing environments accompany the route');
   assert.equal(running.total,16);
   assert.equal(running.moving,6,'six unoccupied fictional props patrol short arcade tracks');
   assert.ok(running.redOutlines>=1 && running.redOutlines<=5,
