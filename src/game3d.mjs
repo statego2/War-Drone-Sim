@@ -10,6 +10,7 @@ import { gestureAxes } from './touchflight.mjs';
 import { treeHazard, resolveTreeContact, chooseContact } from './hazards.mjs';
 import { beaconAppearance } from './targetreadability.mjs';
 import { outlineAppearance } from './targetoutline.mjs';
+import { FOREST_SITES, sideTrailPoint, scenicTrailClearance } from './forestlayout.mjs';
 import { createPrimitiveGeometryPool } from './geometrypool.mjs';
 import { createRenderBudget } from './renderbudget.mjs';
 import { pauseFlightState, resumeFlightState } from './flightlifecycle.mjs';
@@ -92,6 +93,10 @@ const stripeMat = new THREE.MeshBasicMaterial({ color: 0xb7aa83 });
 const leafMat = new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true });
 const barkMat = new THREE.MeshLambertMaterial({ color: 0x42352b });
 const stoneMat = new THREE.MeshLambertMaterial({ color: 0x929081, flatShading: true });
+const dirtTrackMat = new THREE.MeshLambertMaterial({ color:0x887a5e, side:THREE.DoubleSide });
+const campPadMat = new THREE.MeshLambertMaterial({ color:0x6d6650, side:THREE.DoubleSide });
+const tentMat = new THREE.MeshLambertMaterial({ color:0x5d6751, flatShading:true });
+const cargoMat = new THREE.MeshLambertMaterial({ color:0x7d745a });
 // Procedural layered conifers: each is an actual irregular 3D mesh, not a sprite or 2D triangle.
 function pineGeometry() {
   const vertices = [], indices = [];
@@ -267,7 +272,8 @@ function addForest(group, cx, cz, near) {
     const rz = hash(cx * 2203 + i * 31, cz * 499 + 12);
     const x = rx * TILE, z = rz * TILE, wx = cx * TILE + x, wz = cz * TILE + z;
     const h = groundHeight(wx, wz);
-    if (Math.abs(wx - roadCenter(wz)) < clearingRadius(wz) || lakeProximity(wx,wz) < 1.12) continue;
+    if (Math.abs(wx - roadCenter(wz)) < clearingRadius(wz) ||
+        scenicTrailClearance(wx,wz) || lakeProximity(wx,wz) < 1.12) continue;
     const size = (near ? 10 : 7) + 15 * hash(cx * 299 + i, cz * 41 + i * 61);
     const tree = { x, z, h, size, r: 1.7 + size * .19, color: greenPalette[Math.floor(hash(i + cx * 9, cz * 7 + i) * greenPalette.length)], turn: hash(i, cz * 2 + cx) * Math.PI * 2 };
     if (i % 13 === 0) rocks.push({ x, z, h, s: 1 + hash(i + cx, cz) * 2.3 });
@@ -572,6 +578,49 @@ function addLake(group,cx,cz) {
   perimeter.scale.set(LAKE.rx*.79,LAKE.rz*.78,1);
   group.add(perimeter);
 }
+// Distinct readable areas beyond the main strip make the forest feel like a
+// small playable location, not one generated road. Environmental props have no
+// collision or score effect and live only in authored wooded pockets.
+function addForestSideTrail(group,cx,cz,site) {
+  const baseZ=cz*TILE;
+  const verts=[],triangles=[],width=4.2,steps=28;
+  for(let i=0;i<=steps;i++){
+    const t=i/steps,p=sideTrailPoint(site,t);
+    const before=sideTrailPoint(site,Math.max(0,t-.002));
+    const after=sideTrailPoint(site,Math.min(1,t+.002));
+    const dx=after.x-before.x,dz=after.z-before.z;
+    const length=Math.hypot(dx,dz)||1,nx=dz/length,nz=-dx/length;
+    for(const side of [-1,1]){
+      const x=p.x+side*width*nx,z=p.z+side*width*nz;
+      verts.push(x-cx*TILE,groundHeight(x,z)+.42,z-baseZ);
+    }
+    if(i>0){const k=(i-1)*2;triangles.push(k,k+2,k+1,k+1,k+2,k+3);}
+  }
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
+  geo.setIndex(triangles);geo.computeVertexNormals();
+  group.add(ownedMesh(geo,dirtTrackMat));
+
+  const endpoint=sideTrailPoint(site,1),y=groundHeight(endpoint.x,endpoint.z);
+  const pad=ownedMesh(new THREE.CircleGeometry(23,24),campPadMat);
+  pad.rotation.x=-Math.PI/2;
+  pad.position.set(endpoint.x-cx*TILE,y+.33,endpoint.z-baseZ);
+  group.add(pad);
+  // A simple triangular canvas-tent and supply crates provide deliberate
+  // visual variation off the road without introducing another game mode.
+  const tent=ownedMesh(new THREE.ConeGeometry(9,9,4),tentMat);
+  tent.rotation.y=Math.PI/4;
+  tent.position.set(endpoint.x-cx*TILE-8,y+4.5,endpoint.z-baseZ+4);
+  group.add(tent);
+  const supply=new THREE.Group();
+  supply.position.set(endpoint.x-cx*TILE+9,y+.5,endpoint.z-baseZ-6);
+  for(let i=0;i<4;i++){
+    const crate=addBox(supply,3.4,1.8,2.8,i%2?1.9:-1.9,1+(i>1?1.75:0),i%2?1.1:-1.1,cargoMat);
+    crate.rotation.y=(i%2?-.2:.19);
+  }
+  group.add(supply);
+}
+
 function makeTile(cx, cz, near) {
   const group = new THREE.Group();
   const terrain = ownedMesh(terrainGeometry(cx, cz, near ? 32 : 18), terrainMat);
@@ -588,6 +637,11 @@ function makeTile(cx, cz, near) {
   }
   const hazards=addForest(group, cx, cz, near);
   if(near)for(const vehicle of encounter.vehicles)makeClearingTrail(group,cx,cz,vehicle);
+  if(near)for(const site of FOREST_SITES){
+    const origin=sideTrailPoint(site,0);
+    if(cx===Math.floor(origin.x/TILE)&&cz===Math.floor(origin.z/TILE))
+      addForestSideTrail(group,cx,cz,site);
+  }
   scenery.decorateTile(group, cx, cz, near);
   addLake(group, cx, cz);
   scene.add(group);
@@ -1083,6 +1137,7 @@ window.__openSkySnapshot = () => ({
   nearbyTrees:tiles.get(Math.floor(flight.x/TILE)+':'+Math.floor(flight.z/TILE))?.hazards.length||0,
   beacons:beaconViews.filter(b=>b.visible).length,
   redOutlines:outlineViews.filter(o=>o.group.visible).length,
+  scenicSites:FOREST_SITES.length,
   dpr:budget.dpr,graphicsReady,resumeMode,renderCalls:renderer.info.render.calls,
   geometries:renderer.info.memory.geometries,primitiveGeometries:primitives.stats.total,
   framePacing:budget.stats
