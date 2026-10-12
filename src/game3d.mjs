@@ -7,6 +7,7 @@ import { makeEncounter, updateEncounter, spawnForNextTarget, resolveContact, app
 import { makeScorecard, registerResult, guidanceFor } from './arcadeflow.mjs';
 import { createImpactFX, impactEnvelope } from './impactfx3d.mjs';
 import { gestureAxes } from './touchflight.mjs';
+import { treeHazard, resolveTreeContact, chooseContact } from './hazards.mjs';
 
 // A floating-origin, streamed polygonal world. No real-drone targeting or hardware integration.
 const $ = id => document.getElementById(id);
@@ -265,10 +266,16 @@ function addForest(group, cx, cz, near) {
   }
   if (rocks.length) {
     const mesh = instanced(rockGeo, stoneMat, rocks.length);
-    rocks.forEach((r, i) => setInstance(mesh, i, r.x, r.h + r.s * .25, r.z, r.s, r.s * .55, r.s * 1.3, i));
+    rocks.forEach((r, i) => setInstance(mesh, i, r.x, r.h + r.s * .25, r.z, r.s, r.s * 1.3, i));
     mesh.instanceMatrix.needsUpdate = true;
     group.add(mesh);
   }
+  // Colliders come directly from actually rendered near trees. No invisible
+  // obstacle fields and no raycasting against thousands of foliage triangles.
+  return near ? trees.concat(broad).map((t,i)=>treeHazard({
+    id:cx+':'+cz+':'+i, x:cx*TILE+t.x,z:cz*TILE+t.z,
+    ground:t.h,size:t.size,radius:t.r
+  })) : [];
 }
 function addBox(parent, w, h, d, x, y, z, mat) {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
@@ -454,11 +461,11 @@ function makeTile(cx, cz, near) {
     group.add(makeRoadStrip(cx, cz, .08, .51, stripeMat, -4.17));
     addScenicVehicle(group, cx, cz);
   }
-  addForest(group, cx, cz, near);
+  const hazards=addForest(group, cx, cz, near);
   scenery.decorateTile(group, cx, cz, near);
   addLake(group, cx, cz);
   scene.add(group);
-  return { group, cx, cz, near };
+  return { group, cx, cz, near, hazards };
 }
 function disposeTile(tile) {
   scene.remove(tile.group);
@@ -490,6 +497,23 @@ function rebuildTiles(force = false) {
 function moveTiles() {
   for (const tile of tiles.values())
     tile.group.position.set(tile.cx * TILE - flight.x, 0, tile.cz * TILE - flight.z);
+}
+function forestContact(from,to) {
+  // Only read streamed tiles intersecting the swept player path: normally 1-4
+  // near tiles rather than iterating over the entire surrounding forest.
+  const pad=8;
+  const x0=Math.floor((Math.min(from.x,to.x)-pad)/TILE);
+  const x1=Math.floor((Math.max(from.x,to.x)+pad)/TILE);
+  const z0=Math.floor((Math.min(from.z,to.z)-pad)/TILE);
+  const z1=Math.floor((Math.max(from.z,to.z)+pad)/TILE);
+  let first=null;
+  for(let cz=z0;cz<=z1;cz++)for(let cx=x0;cx<=x1;cx++){
+    const tile=tiles.get(cx+':'+cz);
+    if(!tile?.near)continue;
+    const hit=resolveTreeContact(from,to,tile.hazards);
+    if(hit&&(!first||hit.t<first.t))first=hit;
+  }
+  return first;
 }
 
 // Distant simplified land ensures high-altitude views do not end at a square forest edge.
@@ -663,7 +687,9 @@ function endFlight(contact) {
     const target=encounter.vehicles[contact.id];
     impactFX.start('vehicle',{ x:target.x, y:target.y-2.2, z:target.z });
   } else {
-    impactFX.start('ground',{ x:flight.x, y:groundHeight(flight.x,flight.z), z:flight.z });
+    impactFX.start('ground',contact.type==='tree'
+      ? { x:contact.x, y:contact.y, z:contact.z }
+      : { x:flight.x, y:groundHeight(flight.x,flight.z), z:flight.z });
   }
   lastAward=registerResult(scorecard,contact.type==='vehicle',flight);
   sound.setActive(false);
@@ -671,7 +697,8 @@ function endFlight(contact) {
     chain: contact.type==='vehicle' ? sectorProgress(encounter,encounter.vehicles[contact.id].sector).hits : 0,
     finale: contact.type==='vehicle' && (advancedSector || levelComplete(encounter))
   });
-  warning.textContent=lastAward.label + (lastAward.points ? '  +' + lastAward.points : '');
+  warning.textContent=(contact.type==='tree'?'TREE COLLISION':lastAward.label) +
+    (lastAward.points ? '  +' + lastAward.points : '');
   drone.visible=false;
 }
 function showLevelComplete() {
@@ -789,7 +816,9 @@ function frame(now) {
     const previous={x:flight.x,y:flight.y,z:flight.z};
     advanceFlight(flight, command, dt);
     updateEncounter(encounter,dt);
-    const contact=resolveContact(encounter,previous,flight,flight.groundContact);
+    const vehicleContact=resolveContact(encounter,previous,flight,flight.groundContact);
+    const treeContact=forestContact(previous,flight);
+    const contact=chooseContact(vehicleContact,treeContact,flight.groundContact);
     if(contact)endFlight(contact);
     rebuildTiles(); moveTiles(); updateFarLand(); updateHUD();
     sound.update(Math.hypot(flight.vx,flight.vy,flight.vz),Math.max(0,flight.y-groundHeight(flight.x,flight.z)),dt,true,{
@@ -863,7 +892,8 @@ window.__openSkySnapshot = () => ({
   ground: groundHeight(flight.x, flight.z), mode, audioEnabled: sound.enabled
   , hits:encounter.hits, drones:encounter.drones, sector:activeSectorIndex(encounter), total:LEVEL_TARGETS, vehicles:encounter.vehicles.map(v=>v.destroyed),
   points:scorecard.points, combo:scorecard.combo, moving:encounter.vehicles.filter(v=>v.moving&&!v.destroyed).length,
-  target:guidanceFor(encounter,flight), spawn:spawnForNextTarget(encounter), lastAward
+  target:guidanceFor(encounter,flight), spawn:spawnForNextTarget(encounter), lastAward,
+  nearbyTrees:tiles.get(Math.floor(flight.x/TILE)+':'+Math.floor(flight.z/TILE))?.hazards.length||0
 });
 document.documentElement.dataset.openSkyReady = 'true';
 requestAnimationFrame(frame);
