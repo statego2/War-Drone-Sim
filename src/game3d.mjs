@@ -12,6 +12,7 @@ import { beaconAppearance } from './targetreadability.mjs';
 import { createPrimitiveGeometryPool } from './geometrypool.mjs';
 import { createRenderBudget } from './renderbudget.mjs';
 import { pauseFlightState, resumeFlightState } from './flightlifecycle.mjs';
+import { redeployWithPenalty } from './recovery.mjs';
 
 // A floating-origin, streamed polygonal world. No real-drone targeting or hardware integration.
 const $ = id => document.getElementById(id);
@@ -20,6 +21,8 @@ const hud = $('hud'), pauseButton = $('pause'), distanceEl = $('distance');
 const altitudeEl = $('altitude'), speedEl = $('speed'), hint = $('hint');
 const viewButton = $('view-mode'), muteButton = $('sound-toggle');
 const warning = $('warning');
+const redeployButton=$('redeploy'),restartButton=$('restart-level');
+let restartArmed=false;
 const sound = createFlightAudio();
 const scenery = createScenery(THREE, { TILE, hash, groundHeight, roadCenter, lakeProximity });
 const mobile = matchMedia('(pointer: coarse)').matches;
@@ -813,8 +816,33 @@ function setPause() {
   overlay.querySelector('h1').innerHTML = 'ABOVE<br><em>THE TREES</em>';
   overlay.querySelector('p').textContent = `${encounter.hits}/${LEVEL_TARGETS} οχήματα · drone ${encounter.drones} · περιοχή ${activeSectorIndex(encounter)+1}/${LEVEL_SECTORS.length}.`;
   primary.innerHTML = 'RESUME FLIGHT <span>↗</span>';
+  restartArmed=false;restartButton.textContent='RESTART LEVEL';
+  redeployButton.disabled=levelComplete(encounter);
 }
 pauseButton.addEventListener('click', setPause);
+redeployButton.addEventListener('click',()=>{
+  if(mode!=='paused'||!graphicsReady)return;
+  const result=redeployWithPenalty(encounter,scorecard);
+  if(!result.ok)return;
+  spawnDrone();mode='flying';resumeMode='flying';
+  overlay.className='panel hidden';
+  hud.classList.remove('hidden');pauseButton.classList.remove('hidden');
+  viewButton.classList.remove('hidden');muteButton.classList.remove('hidden');
+  warning.textContent='NEW DRONE';
+  roundBannerTime=1.4;roundBannerText='REDEPLOYED · DRONE '+encounter.drones;
+  lastSector='';rebuildTiles(true);moveTiles();updateFarLand();updateHUD();
+  sound.unlock();budget.reset();last=performance.now();
+});
+restartButton.addEventListener('click',()=>{
+  if(mode!=='paused'||!graphicsReady)return;
+  if(!restartArmed){
+    restartArmed=true;
+    restartButton.textContent='CONFIRM RESTART';
+    return;
+  }
+  restartArmed=false;restartButton.textContent='RESTART LEVEL';
+  startFlight();
+});
 primary.addEventListener('click', () => {
   if(!graphicsReady)return;
   if(mode==='paused'){
@@ -972,7 +1000,8 @@ window.__openSkySnapshot = () => ({
   vx:flight.vx,vy:flight.vy,vz:flight.vz,pitch:flight.pitch,bank:flight.bank,sideRate:flight.sideRate,pullback:flight.pullback||0,brakeIntent:flight.brakeIntent||0,reverseIntent:flight.reverseIntent||0,
   ground: groundHeight(flight.x, flight.z), mode, audioEnabled: sound.enabled
   , hits:encounter.hits, drones:encounter.drones, sector:activeSectorIndex(encounter), total:LEVEL_TARGETS, vehicles:encounter.vehicles.map(v=>v.destroyed),
-  points:scorecard.points, combo:scorecard.combo, moving:encounter.vehicles.filter(v=>v.moving&&!v.destroyed).length,
+  points:scorecard.points, combo:scorecard.combo, misses:scorecard.misses,
+  moving:encounter.vehicles.filter(v=>v.moving&&!v.destroyed).length,
   target:guidanceFor(encounter,flight), spawn:spawnForNextTarget(encounter), lastAward,
   nearbyTrees:tiles.get(Math.floor(flight.x/TILE)+':'+Math.floor(flight.z/TILE))?.hazards.length||0,
   beacons:beaconViews.filter(b=>b.visible).length,

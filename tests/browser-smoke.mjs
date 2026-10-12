@@ -92,6 +92,14 @@ try{
   assert.ok(await page.locator('#overlay').isVisible());
   await page.locator('#primary').click();
   assert.ok(await page.locator('#hud').isVisible());
+  await page.locator('#pause').click();
+  const preRedeploy=await page.evaluate(()=>window.__openSkySnapshot());
+  await page.locator('#redeploy').click();
+  const postRedeploy=await page.evaluate(()=>window.__openSkySnapshot());
+  assert.equal(postRedeploy.drones,preRedeploy.drones+1,'manual recovery costs one drone');
+  assert.equal(postRedeploy.hits,preRedeploy.hits,'manual recovery keeps progress');
+  assert.equal(postRedeploy.points,preRedeploy.points,'manual recovery keeps earned score');
+  assert.equal(postRedeploy.misses,preRedeploy.misses+1,'manual recovery breaks the combo');
   await page.evaluate(()=>window.dispatchEvent(new Event('blur')));
   assert.ok(await page.locator('#overlay').isVisible(),'app switch pauses the run');
   const suspended=await page.evaluate(()=>window.__openSkySnapshot());
@@ -101,6 +109,17 @@ try{
   assert.ok(await page.locator('#hud').isVisible(),'returning to game restores HUD');
   await mkdir(join(root,'artifacts'),{recursive:true});
   await page.screenshot({path:join(root,'artifacts','forest-encounter-webgl.png')});
+  await page.locator('#pause').click();
+  await page.locator('#restart-level').click();
+  assert.equal(await page.locator('#restart-level').innerText(),'CONFIRM RESTART');
+  assert.equal((await page.evaluate(()=>window.__openSkySnapshot())).drones,postRedeploy.drones,
+    'first restart tap cannot erase a run');
+  await page.locator('#restart-level').click();
+  const fresh=await page.evaluate(()=>window.__openSkySnapshot());
+  assert.equal(fresh.mode,'flying');
+  assert.equal(fresh.drones,1,'confirmed restart uses the original first drone');
+  assert.equal(fresh.points,0,'confirmed restart resets score');
+  assert.equal(fresh.hits,0,'confirmed restart resets destroyed props');
   // Legacy Canvas fallback must also provide sound control and basic lifecycle.
   const fallback=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:1.5,isMobile:true,hasTouch:true});
   fallback.on('pageerror',e=>errors.push('fallback: '+e.message));
