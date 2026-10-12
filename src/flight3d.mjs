@@ -127,13 +127,17 @@ export function stepFlight(f,input,dt) {
   // instead of continuously climbing. The intermediate up band still climbs.
   const reverseBlend=reverseIntent;
   const climbAssist=up*(19+24*pullback)*(1-reverseBlend);
-  const pitchSupport=Math.cos(f.pitch);
-  const supportedLift=(GRAVITY+climbAssist-down*2.8)*pitchSupport
-    +GRAVITY*(1-pitchSupport)*reverseBlend+2*reverseBlend;
+  const supportedLift=(GRAVITY+climbAssist-down*2.8)*Math.cos(f.pitch);
+  // A deep pullback commands BACKWARD travel with a small positive vertical
+  // rate instead of continuously adding climb acceleration. It also provides
+  // predictable assisted recovery when switching directly out of a dive.
+  // Smooth blending avoids the old instant vertical-velocity teleport.
+  const arcadeReverseHold=clamp((2.8-f.vy)*3.7,-40,48);
   // An aggressive down-swipe must produce an immediately recognizable arcade
-  // fall, while keeping the already-earned horizontal momentum.
+  // fall, while keeping already-earned horizontal momentum.
   const diveAssist=11.2*Math.max(0,f.throttle)*Math.sin(Math.max(0,f.pitch));
-  const verticalAcceleration=supportedLift-GRAVITY-diveAssist-.11*f.vy-.006*f.vy*Math.abs(f.vy);
+  const regularVertical=supportedLift-GRAVITY-diveAssist-.11*f.vy-.006*f.vy*Math.abs(f.vy);
+  const verticalAcceleration=lerp(regularVertical,arcadeReverseHold,reverseBlend);
   f.vy+=verticalAcceleration*dt;
   const dx=f.vx*dt,dz=f.vz*dt;
   f.x+=dx;f.z+=dz;f.y+=f.vy*dt;
