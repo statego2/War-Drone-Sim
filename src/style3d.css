@@ -121,3 +121,19 @@
   #target-compass {font-size:10px;padding:6px 7px;}
   #arcade-score {font-size:10px;}
 }
+
+/* Pause-only recovery actions: preserve the single-button launch and clean cockpit. */
+.pause-actions{display:none;gap:8px;flex-direction:column;margin-top:12px;}
+.panel.paused .pause-actions{display:flex;}
+.panel .pause-actions button{
+  display:block;text-align:center;
+  min-height:46px;padding:12px;
+  background:rgba(21,43,36,.80);
+  border:1px solid rgba(241,238,227,.43);
+  border-radius:7px;color:#f1eee3;
+  font-size:11px;letter-spacing:.9px;font-weight:800;
+  box-shadow:none;
+}
+.panel .pause-actions button:disabled{opacity:.4;cursor:not-allowed;}
+.panel .pause-actions #restart-level{color:#e4bb82;border-color:rgba(228,187,130,.3);}
+.panel .pause-actions button:focus-visible{outline:3px solid #e4bb82;outline-offset:2px;}
