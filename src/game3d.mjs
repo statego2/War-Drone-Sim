@@ -9,6 +9,7 @@ import { createImpactFX, impactEnvelope } from './impactfx3d.mjs';
 import { gestureAxes } from './touchflight.mjs';
 import { treeHazard, resolveTreeContact, chooseContact } from './hazards.mjs';
 import { beaconAppearance } from './targetreadability.mjs';
+import { outlineAppearance } from './targetoutline.mjs';
 import { createPrimitiveGeometryPool } from './geometrypool.mjs';
 import { createRenderBudget } from './renderbudget.mjs';
 import { pauseFlightState, resumeFlightState } from './flightlifecycle.mjs';
@@ -315,7 +316,7 @@ const targetTrim = new THREE.MeshStandardMaterial({ color: 0x343d32, roughness: 
 const targetRoof = new THREE.MeshStandardMaterial({ color: 0x85836a, roughness: .96 });
 const wreckPaint = new THREE.MeshStandardMaterial({ color: 0x30352e, roughness: 1 });
 const wreckTrim = new THREE.MeshStandardMaterial({ color: 0x49483d, roughness: 1 });
-const intactViews = [], wreckViews = [], smokeViews = [], beaconViews = [];
+const intactViews = [], wreckViews = [], smokeViews = [], beaconViews = [], outlineViews = [];
 const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
 // One tiny self-generated texture shared across all glints. It stays deliberately
 // modest, visible only in the active sector and never obscures the target body.
@@ -395,6 +396,25 @@ function buildTargets() {
     if (kind === 'tank') tankShape(root, targetPaint[target.id % targetPaint.length]);
     else if (kind === 'carrier') carrierShape(root, targetPaint[target.id % targetPaint.length]);
     else truckShape(root, targetPaint[target.id % targetPaint.length]);
+    // Thin surface-following red edges accent the hull and major volumes.
+    // Highlight actual model parts rather than enclosing the whole vehicle
+    // in a distracting box or hiding it behind a giant HUD reticle.
+    const edges=new THREE.Group();
+    const edgeMaterial=new THREE.LineBasicMaterial({
+      color:0xff484e,transparent:true,opacity:0,depthTest:true,depthWrite:false
+    });
+    const largeParts=root.children.filter(part=>part.isMesh && part.geometry.type==='BoxGeometry'
+      && part.geometry.parameters.width>2.8).slice(0,3);
+    for(const part of largeParts){
+      const line=new THREE.LineSegments(new THREE.EdgesGeometry(part.geometry,28),edgeMaterial);
+      line.position.copy(part.position);
+      line.rotation.copy(part.rotation);
+      line.scale.copy(part.scale).multiplyScalar(1.035);
+      edges.add(line);
+    }
+    edges.visible=false;
+    root.add(edges);
+    outlineViews.push({group:edges,material:edgeMaterial});
     encounterView.add(root);
     intactViews.push(root);
     const wreck = new THREE.Group();
@@ -428,6 +448,7 @@ function syncTargets() {
     wreckViews[i].visible=vehicle.destroyed;
     smokeViews[i].visible=vehicle.destroyed;
     beaconViews[i].visible=false;
+    outlineViews[i].group.visible=false;
     if (vehicle.destroyed) {
       // Freeze a moving target's wreck at the actual contact location.
       wreckViews[i].position.set(vehicle.x,vehicle.y-1.8,vehicle.z);
@@ -450,6 +471,10 @@ function moveEncounter() {
   encounterView.position.set(-flight.x,0,-flight.z);
   const sector=activeSectorIndex(encounter);
   for(const target of encounter.vehicles){
+    const outline=outlineViews[target.id];
+    const outlineState=outlineAppearance(target,flight,sector,encounter.clock,reduceMotion);
+    outline.group.visible=outlineState.visible && (mode==='flying'||mode==='home');
+    if(outline.group.visible)outline.material.opacity=outlineState.opacity;
     const beacon=beaconViews[target.id];
     const state=beaconAppearance(target,flight,sector,encounter.clock,reduceMotion);
     beacon.visible=state.visible && (mode==='flying'||mode==='home');
@@ -1006,6 +1031,7 @@ window.__openSkySnapshot = () => ({
   target:guidanceFor(encounter,flight), spawn:spawnForNextTarget(encounter), lastAward,
   nearbyTrees:tiles.get(Math.floor(flight.x/TILE)+':'+Math.floor(flight.z/TILE))?.hazards.length||0,
   beacons:beaconViews.filter(b=>b.visible).length,
+  redOutlines:outlineViews.filter(o=>o.group.visible).length,
   dpr:budget.dpr,graphicsReady,resumeMode,renderCalls:renderer.info.render.calls,
   geometries:renderer.info.memory.geometries,primitiveGeometries:primitives.stats.total,
   framePacing:budget.stats

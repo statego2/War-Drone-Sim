@@ -54,6 +54,8 @@ try{
   assert.equal(running.vehicles.length,16,'full forest level has sixteen persistent targets');
   assert.equal(running.total,16);
   assert.equal(running.moving,6,'six unoccupied fictional props patrol short arcade tracks');
+  assert.ok(running.redOutlines>=1 && running.redOutlines<=5,
+    'visible uncleared vehicles have a restrained red silhouette instead of a target-lock overlay');
   assert.ok(running.beacons>=1 && running.beacons<=5,
     'nearby uncleared targets get in-world glints without flooding the scene');
   assert.ok(running.nearbyTrees>0,'visually streamed near forest has physical obstacle candidates');
