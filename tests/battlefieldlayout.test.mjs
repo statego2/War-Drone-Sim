@@ -30,7 +30,8 @@ test('all fictional vehicles have a visible authored staging pad',()=>{
       const [z,offset]=LEVEL_SECTORS[i].targets[j];
       assert.equal(sites[j].z,z);
       assert.ok(Math.abs(sites[j].x-roadCenter(z)-offset)<.002);
-      assert.ok(sites[j].rx>=12 && sites[j].rz>=15);
+      assert.ok(sites[j].rx>=10 && sites[j].rx<=12 && sites[j].rz>=12 && sites[j].rz<=16,
+        'the narrower vehicle dirt staging area remains clearly visible');
     }
   }
 });

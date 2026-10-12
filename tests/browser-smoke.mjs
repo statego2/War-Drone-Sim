@@ -64,6 +64,7 @@ try{
   assert.equal(running.carrierVisors,5,'every carrier has a dark armoured visor');
   assert.equal(running.truckWindows,10,'every transport truck has split front windows');
   assert.equal(running.battlefieldPaths,6,'three forest pockets add six branching lateral routes');
+  assert.equal(running.softSoilBlend,true,'dirt trails and pads feather into the terrain on WebGL');
   assert.equal(running.stagingPads,22,'all vehicles and six side hubs have physical 3D staging surfaces');
   assert.equal(running.moving,6,'six unoccupied fictional props patrol short arcade tracks');
   assert.ok(running.redOutlines>=1 && running.redOutlines<=5,
