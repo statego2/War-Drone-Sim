@@ -31,6 +31,15 @@ Owner reported the first tank was very difficult to hit, reversing sent the dron
 - **Still NOT owner-approved on hardware**: how fast first tank can be hit; full reverse with little/no climb; 90–180° turn recovery; whether red halo clearly surrounds actual vehicle silhouette; visual quality/small-phone fps when tree lines and trail mesh render; sound satisfaction. Verify with the owner on the newest published SHA, then tune empirically. Do not promise realism or a fixed satisfaction percentage.
 - **Next practical action:** test in standalone iPhone Safari (not ChatGPT in-app browser), capture 20–30 seconds showing first vehicle approach, full-right turnaround, full-up reverse and full-down dive, plus a view of the widened first clearing. Record build SHA and screenshot/video. If still blocked, prioritize flight/camera and objective visibility over more assets.
 
+## 2026-10-12 — Owner gameplay feedback, implemented in v12–v16
+
+- **Flight agility (#96, merged)**: faster arcade turnback, stronger lateral authority, deep-up gesture commands backwards travel while approximately holding height; intermediate-up retains climb, steep-down builds gravity-led dive. New 30/60 FPS, reverse-altitude and orbit tests. Real iPhone subjective responsiveness not yet validated.
+- **Visible targets (#98, merged)**: bounded distance/sector-aware red mesh silhouette edges on intact vehicles. No real-world tracking/weapon control. Existing warm beacons remain. Visual readability on an actual phone remains to be judged.
+- **Arena beyond one road (#102, merged)**: 6 forked forest side routes and 22 dirt staging/hub pads across the 3 connected clearings; still 16 vehicles and the original one-second respawn.
+- **Visible build SHA (#105, merged)**: production `index.html` stamped by `scripts/stage-pages.mjs`; tiny always-visible BUILD identifier in screenshots prevents confusion with stale Safari cached builds. Test actual display on phone.
+- **Military-style vehicle visual detail (#106, merged)**: 6 tanks get improved barrel, five APCs get dark visor/roof detail and 5 transports get windshield/grille/cargo roof. Browser smoke checks all 16 models.
+- **New acceptance order:** confirm Pages deployment of latest main, play full route on actual iPhone using build stamp, evaluate one-finger turnaround/flat-height reverse/punchy dive, visibility and collision against first tank, aesthetics/sound at each site, and performance after many consecutive respawns. Record exact model/iOS/build and screenshot; iterate against concrete problems rather than claiming mobile acceptance from Chromium.
+
 ## Quality and release truth
 
 Desktop Chromium (software WebGL) automated checks and uploaded screenshots establish that a 3D forest, road, drone and UI render and the tested interactions execute. They **do not** establish iPhone Safari performance, 16-target human playability, fun, audio comfort, thermals, WebGL restoration on iOS, or the quality of collision feel.
