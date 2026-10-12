@@ -11,6 +11,7 @@ import { treeHazard, resolveTreeContact, chooseContact } from './hazards.mjs';
 import { beaconAppearance } from './targetreadability.mjs';
 import { createPrimitiveGeometryPool } from './geometrypool.mjs';
 import { createRenderBudget } from './renderbudget.mjs';
+import { pauseFlightState, resumeFlightState } from './flightlifecycle.mjs';
 
 // A floating-origin, streamed polygonal world. No real-drone targeting or hardware integration.
 const $ = id => document.getElementById(id);
@@ -135,6 +136,7 @@ const greenPalette = [0x213e32, 0x294d36, 0x375740, 0x305238, 0x466344, 0x2c4d3f
 const tiles = new Map();
 let flight = makeFlight(), mode = 'home', view = 'chase', cameraYaw = 0, cameraPitch = .05;
 let throttleMode = 'cruise', last = 0, lastSector = '';
+let resumeMode='flying',graphicsReady=true,contextCopy=null;
 let encounter = makeEncounter(), scorecard = makeScorecard(), lastAward = null,
     impactAge = 0, impactType = '', impactId = -1, roundBannerTime=0, roundBannerText='', advancedSector=false;
 let pointer = null;
@@ -670,14 +672,41 @@ window.addEventListener('keydown', e => {
   if (k === ' ' && !e.repeat && mode === 'flying') setPause();
 });
 window.addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
-window.addEventListener('blur', () => { pointer = null; keys.clear(); if(mode === 'flying') setPause(); });
+window.addEventListener('blur', () => {
+  pointer=null;keys.clear();
+  if(mode==='flying'||mode==='impact')setPause();
+  budget.reset();
+});
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
-    if (mode === 'flying') setPause();
+    if (mode === 'flying'||mode==='impact') setPause();
     sound.suspendOnHidden();
   }
   last = 0;
   budget.reset();
+});
+// Three.js restores GPU resources automatically. Our state machine keeps the
+// game safely paused until an actual restored-context event and user tap.
+canvas.addEventListener('webglcontextlost',event=>{
+  event.preventDefault();
+  graphicsReady=false;
+  if(mode==='flying'||mode==='impact')setPause();
+  contextCopy=overlay.querySelector('p')?.textContent||'';
+  if(overlay.querySelector('p'))overlay.querySelector('p').textContent=
+    'Η σύνδεση με τα γραφικά διακόπηκε. Η πτήση κρατήθηκε σε παύση.';
+  primary.disabled=true;
+  sound.setActive(false);
+  budget.reset();
+});
+canvas.addEventListener('webglcontextrestored',()=>{
+  graphicsReady=true;
+  primary.disabled=false;
+  if(contextCopy!==null && overlay.querySelector('p'))
+    overlay.querySelector('p').textContent=contextCopy;
+  contextCopy=null;
+  renderer.setPixelRatio(budget.dpr);
+  resize();
+  last=performance.now();
 });
 function toggleView() {
   view = view === 'chase' ? 'fpv' : 'chase';
@@ -773,8 +802,10 @@ function showLevelComplete() {
   primary.innerHTML='PLAY AGAIN <span>↗</span>';
 }
 function setPause() {
-  if (mode !== 'flying') return;
-  mode = 'paused'; pointer = null; keys.clear(); sound.setActive(false);
+  const next=pauseFlightState(mode);
+  if(!next)return;
+  resumeMode=next.resumeMode;
+  mode=next.mode;pointer=null;keys.clear();sound.setActive(false);budget.reset();
   hud.classList.add('hidden'); pauseButton.classList.add('hidden');
   viewButton.classList.add('hidden'); muteButton.classList.add('hidden');
    overlay.className = 'panel paused';
@@ -785,11 +816,16 @@ function setPause() {
 }
 pauseButton.addEventListener('click', setPause);
 primary.addEventListener('click', () => {
-  if (mode === 'paused') {
-    mode = 'flying'; overlay.className = 'panel hidden'; sound.unlock().then(() => sound.cue('start')); sound.setActive(true);
-    hud.classList.remove('hidden'); pauseButton.classList.remove('hidden');
-    viewButton.classList.remove('hidden'); muteButton.classList.remove('hidden');
-     last = performance.now();
+  if(!graphicsReady)return;
+  if(mode==='paused'){
+    const next=resumeFlightState(mode,resumeMode,graphicsReady);
+    if(!next)return;
+    mode=next.mode;overlay.className='panel hidden';
+    if(mode==='flying')sound.unlock().then(()=>sound.cue('start'));
+    sound.setActive(mode==='flying');
+    hud.classList.remove('hidden');pauseButton.classList.remove('hidden');
+    viewButton.classList.remove('hidden');muteButton.classList.remove('hidden');
+    budget.reset();last=performance.now();
   } else startFlight();
 });
 function inputState() {
@@ -853,6 +889,11 @@ function updateHUD() {
     flight.pitch>.95 && flight.vy<-4 ? 'STEEP DIVE' : '';
 }
 function frame(now) {
+  if(!graphicsReady){
+    last=now;
+    requestAnimationFrame(frame);
+    return;
+  }
   const dt = Math.min((now - last) / 1000 || .016, .1); last = now;
   if (mode === 'flying') {
     roundBannerTime=Math.max(0,roundBannerTime-dt);
@@ -935,7 +976,7 @@ window.__openSkySnapshot = () => ({
   target:guidanceFor(encounter,flight), spawn:spawnForNextTarget(encounter), lastAward,
   nearbyTrees:tiles.get(Math.floor(flight.x/TILE)+':'+Math.floor(flight.z/TILE))?.hazards.length||0,
   beacons:beaconViews.filter(b=>b.visible).length,
-  dpr:budget.dpr,renderCalls:renderer.info.render.calls,
+  dpr:budget.dpr,graphicsReady,resumeMode,renderCalls:renderer.info.render.calls,
   geometries:renderer.info.memory.geometries,primitiveGeometries:primitives.stats.total,
   framePacing:budget.stats
 });
