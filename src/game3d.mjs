@@ -86,6 +86,7 @@ const terrainTex = surfaceTexture('grass'), roadTex = surfaceTexture('road');
 const terrainMat = new THREE.MeshLambertMaterial({ vertexColors: true, map: terrainTex, side: THREE.FrontSide });
 const roadMat = new THREE.MeshLambertMaterial({ color: 0x5d615e, map: roadTex });
 const shoulderMat = new THREE.MeshLambertMaterial({ color: 0x82785f });
+const dirtTrailMat = new THREE.MeshLambertMaterial({color:0x756448,map:roadTex,polygonOffset:true,polygonOffsetFactor:-1});
 const stripeMat = new THREE.MeshBasicMaterial({ color: 0xb7aa83 });
 const leafMat = new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true });
 const barkMat = new THREE.MeshLambertMaterial({ color: 0x42352b });
@@ -211,6 +212,38 @@ function makeRoadStrip(cx, cz, halfWidth, offsetY, material, centerOffset = 0, d
   geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
   geometry.setIndex(inds); geometry.computeVertexNormals();
   return ownedMesh(geometry, material);
+}
+// Short off-road dirt approaches connect the road to wide vehicle clearings.
+ // Curved, terrain-following ribbons turn each sector into an arena rather
+ // than a straight line of cars. They are decorations, not a forced path.
+function makeClearingTrail(group,cx,cz,target) {
+  if(Math.abs(target.offset)<21 || Math.floor(target.z/TILE)!==cz ||
+     Math.floor(target.x/TILE)!==cx)return;
+  const startZ=target.z-37;
+  const startX=roadCenter(startZ)+Math.sign(target.offset)*7.1;
+  const endX=target.homeX,endZ=target.homeZ;
+  const vertices=[],indices=[],segments=14;
+  for(let j=0;j<=segments;j++){
+    const t=j/segments,e=t*t*(3-2*t);
+    const centerX=startX+(endX-startX)*e;
+    const centerZ=startZ+(endZ-startZ)*t;
+    const derivativeX=(endX-startX)*6*t*(1-t)/segments;
+    const derivativeZ=(endZ-startZ)/segments;
+    const inv=1/Math.hypot(derivativeX,derivativeZ);
+    const nx=derivativeZ*inv,nz=-derivativeX*inv;
+    const width=2.6*(.85+.15*Math.sin(Math.PI*t));
+    for(const side of [-1,1]){
+      const wx=centerX+nx*width*side,wz=centerZ+nz*width*side;
+      vertices.push(wx-cx*TILE,groundHeight(wx,wz)+.52,wz-cz*TILE);
+    }
+    if(j){const a=(j-1)*2,b=a+1,c=j*2,d=c+1;
+      indices.push(a,c,b,b,c,d);
+    }
+  }
+  const geometry=new THREE.BufferGeometry();
+  geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+  geometry.setIndex(indices);geometry.computeVertexNormals();
+  group.add(ownedMesh(geometry,dirtTrailMat));
 }
 function instanced(geo, mat, count, color = false) {
   const mesh = new THREE.InstancedMesh(geo, mat, count);
@@ -354,6 +387,11 @@ function tankShape(root, paint) {
   }
   addBox(root, 4.25, .72, 4.2, 0, 2.23, -.65, paint);
   addBox(root, 3.1, .35, 2.85, 0, 2.74, -.6, targetRoof);
+  // Readable low-poly barrel, rear vent and hatch make the silhouette a
+  // recognizable fictional tank instead of a featureless rectangular block.
+  addBox(root, .52, .46, 4.7, 0, 2.38, 3.08, targetTrim);
+  addBox(root, 1.15, .13, 1.0, -1.08, 2.96, -.88, targetTrim);
+  addBox(root, 1.55, .12, 1.15, .87, 2.99, -1.25, targetTrim);
 }
 function carrierShape(root, paint) {
   addBox(root, 6.05, 2.55, 9.7, 0, 1.72, 0, paint);
@@ -362,6 +400,8 @@ function carrierShape(root, paint) {
   for (const x of [-3.03, 3.03])
     for (const z of [-3.3, 0, 3.3]) wheel(root, x, z, 1.02, 1.05);
   addBox(root, 4.5, .16, .3, 0, 2.22, 4.94, targetTrim);
+  addBox(root, 1.4, .65, 1.4, 0, 3.9, -.5, targetTrim);
+  addBox(root, .35, .35, 2.4, 0, 3.9, 1.1, targetRoof);
 }
 function truckShape(root, paint) {
   // Separate boxy cab and elevated cargo bed make its long silhouette obvious.
@@ -370,6 +410,9 @@ function truckShape(root, paint) {
   addBox(root, 5.95, .28, 6.35, 0, 4.25, -2.05, targetRoof);
   addBox(root, 5.25, 2.25, 3.1, 0, 2.73, 3.8, paint);
   addBox(root, 4.0, .75, .18, 0, 3.27, 5.38, targetTrim);
+  addBox(root, 1.7, .45, .18, -1.6, 2.4, 5.48, lampMat);
+  addBox(root, 1.7, .45, .18, 1.6, 2.4, 5.48, lampMat);
+  addBox(root, 4.6, .22, .3, 0, 4.28, -.8, targetTrim);
   for (const x of [-2.87, 2.87])
     for (const z of [-3.65, -.95, 4.3]) wheel(root, x, z, .89, .94);
 }
@@ -519,6 +562,7 @@ function makeTile(cx, cz, near) {
     addScenicVehicle(group, cx, cz);
   }
   const hazards=addForest(group, cx, cz, near);
+  if(near)for(const vehicle of encounter.vehicles)makeClearingTrail(group,cx,cz,vehicle);
   scenery.decorateTile(group, cx, cz, near);
   addLake(group, cx, cz);
   scene.add(group);
