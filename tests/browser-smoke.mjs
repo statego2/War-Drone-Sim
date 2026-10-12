@@ -52,6 +52,7 @@ try{
   await page.screenshot({path:join(root,'artifacts','02-flight-opening.png')});
   const running=await page.evaluate(()=>window.__openSkySnapshot());
   assert.equal(running.vehicles.length,16,'full forest level has sixteen persistent targets');
+  assert.equal(running.scenicSites,3,'three decorative off-road camps accompany the wider encounter arenas');
   assert.equal(running.total,16);
   assert.equal(running.battlefieldPaths,6,'three forest pockets add six branching lateral routes');
   assert.equal(running.stagingPads,22,'all vehicles and six side hubs have physical 3D staging surfaces');
