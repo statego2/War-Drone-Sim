@@ -27,9 +27,12 @@ try{
   page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
   await page.goto(`http://127.0.0.1:${server.address().port}/`,{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.documentElement.dataset.openSkyReady==='true',null,{timeout:45000});
+  await mkdir(join(root,'artifacts'),{recursive:true});
+  await page.screenshot({path:join(root,'artifacts','01-home-portrait.png')});
   await page.locator('#primary').click();
   await page.waitForSelector('#hud:not(.hidden)');
   await page.waitForTimeout(900);
+  await page.screenshot({path:join(root,'artifacts','02-flight-opening.png')});
   const running=await page.evaluate(()=>window.__openSkySnapshot());
   assert.equal(running.vehicles.length,16,'full forest level has sixteen persistent targets');
   assert.equal(running.total,16);
@@ -90,6 +93,7 @@ try{
   assert.equal(await page.locator('#sound-toggle').innerText(),'MUTED');
   await page.locator('#pause').click();
   assert.ok(await page.locator('#overlay').isVisible());
+  await page.screenshot({path:join(root,'artifacts','03-pause-menu.png')});
   await page.locator('#primary').click();
   assert.ok(await page.locator('#hud').isVisible());
   await page.locator('#pause').click();
@@ -107,7 +111,6 @@ try{
   assert.equal(suspended.resumeMode,'flying');
   await page.locator('#primary').click();
   assert.ok(await page.locator('#hud').isVisible(),'returning to game restores HUD');
-  await mkdir(join(root,'artifacts'),{recursive:true});
   await page.screenshot({path:join(root,'artifacts','forest-encounter-webgl.png')});
   await page.locator('#pause').click();
   await page.locator('#restart-level').click();
@@ -120,6 +123,27 @@ try{
   assert.equal(fresh.drones,1,'confirmed restart uses the original first drone');
   assert.equal(fresh.points,0,'confirmed restart resets score');
   assert.equal(fresh.hits,0,'confirmed restart resets destroyed props');
+  // Narrow phones must keep all essential pause/redeploy/restart controls
+  // entirely inside the viewport, including minimum 44px touch hit areas.
+  await page.setViewportSize({width:320,height:568});
+  await page.locator('#pause').click();
+  const layout=await page.evaluate(()=>{
+    const ids=['primary','redeploy','restart-level'];
+    return ids.map(id=>{
+      const rect=document.getElementById(id).getBoundingClientRect();
+      return {id,x:rect.x,y:rect.y,width:rect.width,height:rect.height};
+    });
+  });
+  for(const button of layout){
+    assert.ok(button.width>=44 && button.height>=44,'essential buttons have accessible hit areas: '+button.id);
+    assert.ok(button.x>=0 && button.y>=0 && button.x+button.width<=321 &&
+      button.y+button.height<=569,'button fits narrow iPhone: '+JSON.stringify(button));
+  }
+  await page.screenshot({path:join(root,'artifacts','04-pause-compact.png')});
+  await page.locator('#primary').click();
+  await page.setViewportSize({width:844,height:390});
+  assert.equal(await page.locator('#landscape').isVisible(),true,'landscape displays portrait guidance');
+  await page.setViewportSize({width:390,height:844});
   // Legacy Canvas fallback must also provide sound control and basic lifecycle.
   const fallback=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:1.5,isMobile:true,hasTouch:true});
   fallback.on('pageerror',e=>errors.push('fallback: '+e.message));
