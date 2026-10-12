@@ -19,6 +19,9 @@ test('real GitHub Pages artifact includes pinned local renderer dependencies',as
       'modern game must not silently redirect the player to obsolete Canvas');
     assert.match(page,/id="boot-error"/);
     assert.match(page,/id="boot-retry"/);
+    const legacy=await readFile(join(destination,'legacy-canvas.html'),'utf8');
+    assert.match(legacy,/location\.replace\('\.\/index\.html'\)/,'stale legacy bookmarks return to 3D');
+    assert.match(page,/legacy-canvas\.html\?classic=1/,'old prototype still available by explicit opt-in');
     await unlink(join(destination,'vendor/three.core.min.js'));
     await assert.rejects(validatePages(destination),/three.core.min.js: MISSING/);
   }finally{await rm(destination,{recursive:true,force:true});}

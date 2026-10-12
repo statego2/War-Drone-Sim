@@ -6,6 +6,13 @@
   <meta name="theme-color" content="#142528">
   <title>War Drone Sim — Forest Run</title>
   <link rel="stylesheet" href="./src/style.css">
+  <script>
+    // Historical fallback redirects left a permanent V0.1 bookmark on iOS.
+    // Direct old URLs now return to the maintained game; ?classic=1 opts in.
+    if (new URLSearchParams(location.search).get('classic') !== '1') {
+      location.replace('./index.html');
+    }
+  </script>
 </head>
 <body>
   <main id="game" aria-label="War Drone Sim">
@@ -26,7 +33,7 @@
         <button id="primary" type="button">BEGIN FLIGHT <span>↗</span></button>
         <div class="controls">Σύρε οπουδήποτε: αριστερά / δεξιά + ύψος<br>Πληκτρολόγιο: WASD ή βελάκια</div>
       </div>
-      <div class="footer">PORTRAIT BROWSER PROTOTYPE · V0.1</div>
+      <div class="footer"><a href="./index.html" style="color:#f1eee3">ΠΑΙΞΕ ΤΗ ΝΕΑ 3D ΕΚΔΟΣΗ ↗</a></div>
     </section>
     <div id="landscape">Γύρισε το κινητό όρθιο για να παίξεις.</div>
   </main>
