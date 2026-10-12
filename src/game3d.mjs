@@ -381,6 +381,12 @@ function syncTargets() {
     intactViews[i].visible=!vehicle.destroyed;
     wreckViews[i].visible=vehicle.destroyed;
     smokeViews[i].visible=vehicle.destroyed;
+    if (vehicle.destroyed) {
+      // Freeze a moving target's wreck at the actual contact location.
+      wreckViews[i].position.set(vehicle.x,vehicle.y-1.8,vehicle.z);
+      wreckViews[i].rotation.y=intactViews[i].rotation.y;
+      smokeViews[i].position.set(vehicle.x,vehicle.y+5,vehicle.z);
+    }
   });
   const sector=activeSectorIndex(encounter);
   const local=encounter.vehicles.filter(v=>v.sector===sector);
