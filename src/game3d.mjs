@@ -5,6 +5,7 @@ import { createScenery } from './scenery3d.mjs';
 import { createClouds } from './atmosphere3d.mjs';
 import { makeEncounter, updateEncounter, spawnForNextTarget, resolveContact, applyContact, nextDrone, LEVEL_SECTORS, LEVEL_TARGETS, clearingRadius, activeSectorIndex, sectorProgress, levelComplete } from './encounter.mjs';
 import {battlefieldLayout} from './battlefieldlayout.mjs';
+import {slopedHullSpec} from './vehiclemesh.mjs';
 import { makeScorecard, registerResult, guidanceFor } from './arcadeflow.mjs';
 import { createImpactFX, impactEnvelope } from './impactfx3d.mjs';
 import { gestureAxes } from './touchflight.mjs';
@@ -421,6 +422,27 @@ const targetPaint = [0x586247, 0x657255, 0x77755b].map(color =>
   new THREE.MeshStandardMaterial({ color, roughness: .91, metalness: .035 }));
 const targetTrim = new THREE.MeshStandardMaterial({ color: 0x343d32, roughness: .97 });
 const targetRoof = new THREE.MeshStandardMaterial({ color: 0x85836a, roughness: .96 });
+const armourMeshes=new Map();
+function addArmouredHull(parent,w,h,d,x,bottomY,z,material,topW,topD,detail){
+  const key=[w,h,d,topW,topD].join('/');
+  let geometry=armourMeshes.get(key);
+  if(!geometry){
+    const spec=slopedHullSpec(w,h,d,topW,topD);
+    const indexed=new THREE.BufferGeometry();
+    indexed.setAttribute('position',new THREE.Float32BufferAttribute(spec.positions,3));
+    indexed.setIndex(spec.indices);
+    geometry=indexed.toNonIndexed();
+    geometry.computeVertexNormals();
+    geometry.userData.sharedPrimitive=true;
+    indexed.dispose();
+    armourMeshes.set(key,geometry);
+  }
+  const mesh=new THREE.Mesh(geometry,material);
+  mesh.position.set(x,bottomY,z);
+  mesh.userData.visualDetail=detail;
+  parent.add(mesh);
+  return mesh;
+}
 const targetDarkGlass=new THREE.MeshStandardMaterial({color:0x263b39,roughness:.24,metalness:.16});
 const targetSteel=new THREE.MeshStandardMaterial({color:0x51584c,roughness:.87,metalness:.16});
 const wreckPaint = new THREE.MeshStandardMaterial({ color: 0x30352e, roughness: 1 });
@@ -457,7 +479,7 @@ function wheel(parent, x, z, radius, y = .9) {
 }
 function tankShape(root, paint) {
   // Low tracked hull + broad, short turret: legible from the chase camera.
-  addBox(root, 5.1, 1.45, 8.9, 0, 1.14, 0, paint);
+  addArmouredHull(root,5.1,1.45,8.9,0,.415,0,paint,.83,.77,'tank-sloped-hull');
   for (const x of [-2.55, 2.55]) {
     addBox(root, 1.15, 1.45, 9.3, x, .88, 0, targetTrim);
     for (const z of [-3.25, -1.6, 0, 1.6, 3.25]) wheel(root, x + Math.sign(x) * .49, z, .54, .77);
@@ -473,7 +495,7 @@ function tankShape(root, paint) {
   addBox(root, 1.55, .12, 1.15, .87, 2.99, -1.25, targetTrim);
 }
 function carrierShape(root, paint) {
-  addBox(root, 6.05, 2.55, 9.7, 0, 1.72, 0, paint);
+  addArmouredHull(root,6.05,2.55,9.7,0,.445,0,paint,.88,.80,'carrier-sloped-hull');
   addBox(root, 5.0, .6, 7.2, 0, 3.3, -.3, targetRoof);
   addBox(root, 5.2, .9, 2.4, 0, 2.95, 3.1, paint);
   for (const x of [-3.03, 3.03])
@@ -491,7 +513,7 @@ function carrierShape(root, paint) {
 function truckShape(root, paint) {
   // Separate boxy cab and elevated cargo bed make its long silhouette obvious.
   addBox(root, 5.45, .75, 11.1, 0, 1.35, 0, targetTrim);
-  addBox(root, 5.8, 2.55, 6.0, 0, 2.83, -2.05, paint);
+  addArmouredHull(root,5.8,2.55,6.0,0,1.555,-2.05,paint,.91,.88,'truck-sloped-cargo');
   addBox(root, 5.95, .28, 6.35, 0, 4.25, -2.05, targetRoof);
   addBox(root, 5.25, 2.25, 3.1, 0, 2.73, 3.8, paint);
   addBox(root, 4.0, .75, .18, 0, 3.27, 5.38, targetTrim);
@@ -1228,6 +1250,10 @@ window.__openSkySnapshot = () => ({
   scenicSites:FOREST_SITES.length,
   dpr:budget.dpr,graphicsReady,resumeMode,renderCalls:renderer.info.render.calls,
   geometries:renderer.info.memory.geometries,primitiveGeometries:primitives.stats.total,
+  slopedHullGeometries:armourMeshes.size,
+  tankSlopedHulls:intactViews.filter(group=>group.children.some(m=>m.userData.visualDetail==='tank-sloped-hull')).length,
+  carrierSlopedHulls:intactViews.filter(group=>group.children.some(m=>m.userData.visualDetail==='carrier-sloped-hull')).length,
+  truckSlopedCargos:intactViews.filter(group=>group.children.some(m=>m.userData.visualDetail==='truck-sloped-cargo')).length,
   framePacing:budget.stats
 });
 document.documentElement.dataset.openSkyReady = 'true';
