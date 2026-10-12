@@ -58,7 +58,7 @@ export function spawnForNextTarget(encounter) {
   const live=encounter.vehicles.find(v=>v.sector===sector&&!v.destroyed);
   const z=Math.max(LEVEL_SECTORS[sector].spawnZ, (live?.z ?? LEVEL_SECTORS[sector].spawnZ+110)-110);
   const x=roadCenter(z);
-  return { x, y:groundHeight(x,z)+32, z, sector };
+  return { x, y:groundHeight(x,z)+28, z, sector };
 }
 
 export function activeSectorIndex(encounter) {
