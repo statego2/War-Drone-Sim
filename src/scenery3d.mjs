@@ -29,7 +29,7 @@ export function createScenery(THREE, { TILE, hash, groundHeight, roadCenter, lak
   function instanced(group, geometry, material, items, builder) {
     if (!items.length) return;
     const result = new THREE.InstancedMesh(geometry,material,items.length);
-    result.frustumCulled = false;
+    result.frustumCulled = true;
     const tmp = new THREE.Object3D();
     items.forEach((item,index)=>{
       tmp.position.set(item.x,item.y,item.z);
