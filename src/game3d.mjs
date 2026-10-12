@@ -8,6 +8,7 @@ import { makeScorecard, registerResult, guidanceFor } from './arcadeflow.mjs';
 import { createImpactFX, impactEnvelope } from './impactfx3d.mjs';
 import { gestureAxes } from './touchflight.mjs';
 import { treeHazard, resolveTreeContact, chooseContact } from './hazards.mjs';
+import { beaconAppearance } from './targetreadability.mjs';
 
 // A floating-origin, streamed polygonal world. No real-drone targeting or hardware integration.
 const $ = id => document.getElementById(id);
@@ -299,7 +300,21 @@ const targetTrim = new THREE.MeshStandardMaterial({ color: 0x343d32, roughness: 
 const targetRoof = new THREE.MeshStandardMaterial({ color: 0x85836a, roughness: .96 });
 const wreckPaint = new THREE.MeshStandardMaterial({ color: 0x30352e, roughness: 1 });
 const wreckTrim = new THREE.MeshStandardMaterial({ color: 0x49483d, roughness: 1 });
-const intactViews = [], wreckViews = [], smokeViews = [];
+const intactViews = [], wreckViews = [], smokeViews = [], beaconViews = [];
+const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
+// One tiny self-generated texture shared across all glints. It stays deliberately
+// modest, visible only in the active sector and never obscures the target body.
+const beaconCanvas=document.createElement('canvas');
+beaconCanvas.width=beaconCanvas.height=64;
+const beaconCtx=beaconCanvas.getContext('2d');
+const beaconGradient=beaconCtx.createRadialGradient(32,32,1,32,32,31);
+beaconGradient.addColorStop(0,'rgba(255,248,209,1)');
+beaconGradient.addColorStop(.18,'rgba(255,223,161,.90)');
+beaconGradient.addColorStop(.45,'rgba(229,185,118,.28)');
+beaconGradient.addColorStop(1,'rgba(229,185,118,0)');
+beaconCtx.fillStyle=beaconGradient;beaconCtx.fillRect(0,0,64,64);
+const beaconTexture=new THREE.CanvasTexture(beaconCanvas);
+beaconTexture.colorSpace=THREE.SRGBColorSpace;
 const smokeGeo = new THREE.IcosahedronGeometry(1, 1);
 const impactFX = createImpactFX(THREE, encounterView);
 function wheel(parent, x, z, radius, y = .9) {
@@ -380,6 +395,15 @@ function buildTargets() {
     smoke.scale.set(2.8, 5, 2.8);
     encounterView.add(smoke);
     smokeViews.push(smoke);
+    const beacon=new THREE.Sprite(new THREE.SpriteMaterial({
+      map:beaconTexture, color:0xffe2aa, transparent:true, opacity:0,
+      depthWrite:false, depthTest:true, blending:THREE.NormalBlending
+    }));
+    beacon.position.set(target.x,target.y+9,target.z);
+    beacon.scale.set(7,7,1);
+    beacon.visible=false;
+    encounterView.add(beacon);
+    beaconViews.push(beacon);
   }
   syncTargets();
 }
@@ -388,6 +412,7 @@ function syncTargets() {
     intactViews[i].visible=!vehicle.destroyed;
     wreckViews[i].visible=vehicle.destroyed;
     smokeViews[i].visible=vehicle.destroyed;
+    beaconViews[i].visible=false;
     if (vehicle.destroyed) {
       // Freeze a moving target's wreck at the actual contact location.
       wreckViews[i].position.set(vehicle.x,vehicle.y-1.8,vehicle.z);
@@ -408,6 +433,16 @@ function syncTargets() {
 buildTargets();
 function moveEncounter() {
   encounterView.position.set(-flight.x,0,-flight.z);
+  const sector=activeSectorIndex(encounter);
+  for(const target of encounter.vehicles){
+    const beacon=beaconViews[target.id];
+    const state=beaconAppearance(target,flight,sector,encounter.clock,reduceMotion);
+    beacon.visible=state.visible && (mode==='flying'||mode==='home');
+    if(!beacon.visible)continue;
+    beacon.position.set(target.x,target.y+9,target.z);
+    beacon.scale.set(state.size,state.size,1);
+    beacon.material.opacity=state.opacity;
+  }
   // Keep moving intact meshes and hit feedback aligned with their pure game state.
   for (const target of encounter.vehicles) {
     if (target.destroyed || !target.moving) continue;
@@ -893,7 +928,8 @@ window.__openSkySnapshot = () => ({
   , hits:encounter.hits, drones:encounter.drones, sector:activeSectorIndex(encounter), total:LEVEL_TARGETS, vehicles:encounter.vehicles.map(v=>v.destroyed),
   points:scorecard.points, combo:scorecard.combo, moving:encounter.vehicles.filter(v=>v.moving&&!v.destroyed).length,
   target:guidanceFor(encounter,flight), spawn:spawnForNextTarget(encounter), lastAward,
-  nearbyTrees:tiles.get(Math.floor(flight.x/TILE)+':'+Math.floor(flight.z/TILE))?.hazards.length||0
+  nearbyTrees:tiles.get(Math.floor(flight.x/TILE)+':'+Math.floor(flight.z/TILE))?.hazards.length||0,
+  beacons:beaconViews.filter(b=>b.visible).length
 });
 document.documentElement.dataset.openSkyReady = 'true';
 requestAnimationFrame(frame);
