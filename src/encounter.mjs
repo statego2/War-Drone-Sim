@@ -22,14 +22,44 @@ export function clearingRadius(z) {
 }
 export function makeEncounter() {
   let id=0;
-  return { drones:1, hits:0, round:1, vehicles:LEVEL_SECTORS.flatMap((sector,sectorIndex)=>
+  return { drones:1, hits:0, round:1, clock:0, vehicles:LEVEL_SECTORS.flatMap((sector,sectorIndex)=>
     sector.targets.map(([z,offset,kind])=>{
       const x=roadCenter(z)+offset;
-      return { id:id++, sector:sectorIndex, kind, x, z,
+      const targetId=id++;
+      return { id:targetId, sector:sectorIndex, kind, x, z,
+        homeX:x, homeZ:z, offset, moving:[1,4,6,9,11,14].includes(targetId),
+        previousX:x, previousY:groundHeight(x,z)+2.2, previousZ:z,
         y:groundHeight(x,z)+2.2, destroyed:false };
     })
   ) };
 }
+// Authored motion is deliberately slow and bounded; all props are unmanned fictional
+// game objects. Motion is deterministic, and destroyed wrecks stop immediately.
+export function updateEncounter(encounter, dt) {
+  encounter.clock += Math.max(0, Math.min(Number.isFinite(dt) ? dt : 0, .1));
+  for (const vehicle of encounter.vehicles) {
+    vehicle.previousX=vehicle.x;
+    vehicle.previousY=vehicle.y;
+    vehicle.previousZ=vehicle.z;
+    if (!vehicle.moving || vehicle.destroyed) continue;
+    const time=encounter.clock;
+    const speed=.40+vehicle.id*.02;
+    vehicle.z=vehicle.homeZ+10*Math.sin(time*speed);
+    vehicle.x=roadCenter(vehicle.z)+vehicle.offset+
+      3.5*Math.sin(time*(speed+.17));
+    vehicle.y=groundHeight(vehicle.x,vehicle.z)+2.2;
+  }
+  return encounter;
+}
+
+export function spawnForNextTarget(encounter) {
+  const sector=activeSectorIndex(encounter);
+  const live=encounter.vehicles.find(v=>v.sector===sector&&!v.destroyed);
+  const z=Math.max(LEVEL_SECTORS[sector].spawnZ, (live?.z ?? LEVEL_SECTORS[sector].spawnZ+110)-110);
+  const x=roadCenter(z);
+  return { x, y:groundHeight(x,z)+32, z, sector };
+}
+
 export function activeSectorIndex(encounter) {
   const remaining=encounter.vehicles.find(v=>!v.destroyed);
   return remaining ? remaining.sector : LEVEL_SECTORS.length-1;
@@ -48,13 +78,18 @@ export function resolveContact(encounter, from, to, groundContact = false) {
   let best = null;
   for (const vehicle of encounter.vehicles) {
     if (vehicle.destroyed) continue;
-    const dx = to.x - from.x, dy = to.y - from.y, dz = to.z - from.z;
-    const length2 = dx*dx + dy*dy + dz*dz;
-    const t = length2 ? Math.max(0, Math.min(1,
-      ((vehicle.x-from.x)*dx + (vehicle.y-from.y)*dy + (vehicle.z-from.z)*dz)/length2)) : 0;
-    const px = from.x + t*dx - vehicle.x;
-    const py = from.y + t*dy - vehicle.y;
-    const pz = from.z + t*dz - vehicle.z;
+    // Use the moving target's own segment as well as the drone segment.
+    // Relative sweep catches crossing paths even when the drone itself hardly moves.
+    const startX=from.x-(vehicle.previousX??vehicle.x);
+    const startY=from.y-(vehicle.previousY??vehicle.y);
+    const startZ=from.z-(vehicle.previousZ??vehicle.z);
+    const dx=to.x-vehicle.x-startX;
+    const dy=to.y-vehicle.y-startY;
+    const dz=to.z-vehicle.z-startZ;
+    const length2=dx*dx+dy*dy+dz*dz;
+    const t=length2?Math.max(0,Math.min(1,
+      -(startX*dx+startY*dy+startZ*dz)/length2)):0;
+    const px=startX+t*dx,py=startY+t*dy,pz=startZ+t*dz;
     const distance2 = px*px + py*py + pz*pz;
     if (distance2 < 7.8*7.8 && (!best || t < best.t)) best = { type:'vehicle', id:vehicle.id, t };
   }
