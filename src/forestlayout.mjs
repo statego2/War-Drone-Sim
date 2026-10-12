@@ -17,9 +17,20 @@ export function scenicTrailClearance(x,z) {
     if(Math.abs(z-site.z)>94)continue;
     const start=roadCenter(site.z);
     if(Math.abs(x-start)>170)continue;
-    const t=clamp((x-start)*site.side/106,0,1);
-    const p=sideTrailPoint(site,t),end=sideTrailPoint(site,1);
-    if(Math.hypot(x-p.x,z-p.z)<11 || Math.hypot(x-end.x,z-end.z)<31)return true;
+    const end=sideTrailPoint(site,1);
+    if(Math.hypot(x-end.x,z-end.z)<31)return true;
+    // Measure distance to the actual curved trail, not an approximate inverse
+    // mapping of its X coordinate; that approximation left trees on the bend.
+    let previous=sideTrailPoint(site,0);
+    for(let i=1;i<=12;i++){
+      const current=sideTrailPoint(site,i/12);
+      const dx=current.x-previous.x,dz=current.z-previous.z;
+      const projection=clamp(((x-previous.x)*dx+(z-previous.z)*dz)/
+        (dx*dx+dz*dz),0,1);
+      if(Math.hypot(x-(previous.x+projection*dx),z-(previous.z+projection*dz))<11)
+        return true;
+      previous=current;
+    }
   }
   return false;
 }
