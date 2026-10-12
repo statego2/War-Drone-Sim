@@ -56,6 +56,9 @@ try{
   assert.equal(running.vehicles.length,16,'full forest level has sixteen persistent targets');
   assert.equal(running.scenicSites,3,'three decorative off-road camps accompany the wider encounter arenas');
   assert.equal(running.total,16);
+  assert.equal(running.tankCannons,6,'every tank has a distinct visible turret cannon');
+  assert.equal(running.carrierVisors,5,'every carrier has a dark armoured visor');
+  assert.equal(running.truckWindows,10,'every transport truck has split front windows');
   assert.equal(running.battlefieldPaths,6,'three forest pockets add six branching lateral routes');
   assert.equal(running.stagingPads,22,'all vehicles and six side hubs have physical 3D staging surfaces');
   assert.equal(running.moving,6,'six unoccupied fictional props patrol short arcade tracks');

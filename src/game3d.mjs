@@ -421,6 +421,8 @@ const targetPaint = [0x586247, 0x657255, 0x77755b].map(color =>
   new THREE.MeshStandardMaterial({ color, roughness: .91, metalness: .035 }));
 const targetTrim = new THREE.MeshStandardMaterial({ color: 0x343d32, roughness: .97 });
 const targetRoof = new THREE.MeshStandardMaterial({ color: 0x85836a, roughness: .96 });
+const targetDarkGlass=new THREE.MeshStandardMaterial({color:0x263b39,roughness:.24,metalness:.16});
+const targetSteel=new THREE.MeshStandardMaterial({color:0x51584c,roughness:.87,metalness:.16});
 const wreckPaint = new THREE.MeshStandardMaterial({ color: 0x30352e, roughness: 1 });
 const wreckTrim = new THREE.MeshStandardMaterial({ color: 0x49483d, roughness: 1 });
 const intactViews = [], wreckViews = [], smokeViews = [], beaconViews = [], outlineViews = [];
@@ -464,7 +466,9 @@ function tankShape(root, paint) {
   addBox(root, 3.1, .35, 2.85, 0, 2.74, -.6, targetRoof);
   // Readable low-poly barrel, rear vent and hatch make the silhouette a
   // recognizable fictional tank instead of a featureless rectangular block.
-  addBox(root, .52, .46, 4.7, 0, 2.38, 3.08, targetTrim);
+  const cannon=addBox(root,.52,.46,4.7,0,2.38,3.08,targetTrim);
+  cannon.userData.visualDetail='tank-cannon';
+  addBox(root,.68,.55,.45,0,2.38,5.55,targetSteel);
   addBox(root, 1.15, .13, 1.0, -1.08, 2.96, -.88, targetTrim);
   addBox(root, 1.55, .12, 1.15, .87, 2.99, -1.25, targetTrim);
 }
@@ -477,6 +481,12 @@ function carrierShape(root, paint) {
   addBox(root, 4.5, .16, .3, 0, 2.22, 4.94, targetTrim);
   addBox(root, 1.4, .65, 1.4, 0, 3.9, -.5, targetTrim);
   addBox(root, .35, .35, 2.4, 0, 3.9, 1.1, targetRoof);
+  const visor=addBox(root,4.55,.73,.16,0,3.05,4.35,targetDarkGlass);
+  visor.userData.visualDetail='carrier-visor';
+  for(const x of [-2.3,2.3]){
+    addBox(root,.58,.28,.2,x,1.72,4.91,lampMat);
+    addBox(root,.64,.47,2.4,x,3.45,-1.55,targetSteel);
+  }
 }
 function truckShape(root, paint) {
   // Separate boxy cab and elevated cargo bed make its long silhouette obvious.
@@ -490,6 +500,12 @@ function truckShape(root, paint) {
   addBox(root, 4.6, .22, .3, 0, 4.28, -.8, targetTrim);
   for (const x of [-2.87, 2.87])
     for (const z of [-3.65, -.95, 4.3]) wheel(root, x, z, .89, .94);
+  for(const x of [-1.4,1.4]){
+    const glass=addBox(root,2.05,.98,.14,x,3.28,5.39,targetDarkGlass);
+    glass.userData.visualDetail='truck-windshield';
+  }
+  for(let i=0;i<4;i++)addBox(root,3.8,.07,.14,0,1.93+i*.16,5.57,targetTrim);
+  for(const z of [-3.95,-1.6,.8])addBox(root,5.7,.25,.42,0,4.37,z,targetRoof);
 }
 function wreckShape(root, kind) {
   if (kind === 'tank') {
@@ -1205,6 +1221,9 @@ window.__openSkySnapshot = () => ({
   nearbyTrees:tiles.get(Math.floor(flight.x/TILE)+':'+Math.floor(flight.z/TILE))?.hazards.length||0,
   battlefieldPaths:battlefield.trails.length,stagingPads:battlefield.pads.length,
   beacons:beaconViews.filter(b=>b.visible).length,
+  tankCannons:intactViews.flatMap(v=>v.children).filter(m=>m.userData?.visualDetail==='tank-cannon').length,
+  carrierVisors:intactViews.flatMap(v=>v.children).filter(m=>m.userData?.visualDetail==='carrier-visor').length,
+  truckWindows:intactViews.flatMap(v=>v.children).filter(m=>m.userData?.visualDetail==='truck-windshield').length,
   redOutlines:outlineViews.filter(o=>o.group.visible).length,
   scenicSites:FOREST_SITES.length,
   dpr:budget.dpr,graphicsReady,resumeMode,renderCalls:renderer.info.render.calls,
