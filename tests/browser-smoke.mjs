@@ -22,7 +22,13 @@ let browser;
 try{
   browser=await chromium.launch({headless:true,args:['--enable-webgl','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
   const page=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:1.5,isMobile:true,hasTouch:true});
-  const errors=[];
+  const errors=[],externalRequests=[];
+  page.on('request',req=>{
+    if(/^https?:/.test(req.url()) && !req.url().includes('127.0.0.1'))
+      externalRequests.push(req.url());
+  });
+  // Test boot is entirely self-hosted, even when a popular CDN is unavailable.
+  await page.route('https://cdn.jsdelivr.net/**',route=>route.abort());
   page.on('pageerror',e=>errors.push(e.message));
   page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
   await page.goto(`http://127.0.0.1:${server.address().port}/`,{waitUntil:'domcontentloaded'});
@@ -157,6 +163,7 @@ try{
   await fallback.locator('#primary').click();
   assert.ok(await fallback.locator('#hud').isVisible());
   await fallback.close();
+  assert.deepEqual(externalRequests,[],'3D build has no third-party runtime CDN dependencies');
   assert.deepEqual(errors,[],'no JavaScript page errors');
   console.log('PASS: one-finger no-mode flight, brake/hover gesture, reverse, diagonals, dive, mute and pause');
 }finally{

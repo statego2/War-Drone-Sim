@@ -67,3 +67,9 @@
 | €500–1500 | Outsource/co-commission original cohesive assets, UI/audio polish and device QA; never buy indiscriminately |
 
 **Recommendation:** use the €0 path until G1 and performance benchmark. Spending is a gate, not a prerequisite.
+
+## Runtime source dependency — Three.js r180 (2026-10-12)
+- `vendor/three.module.min.js` and `vendor/three.core.min.js`: unchanged official Three.js r180 minified ESM build, copyright Three.js Authors, SPDX MIT.
+- License retained verbatim as `vendor/THREE_LICENSE.txt`.
+- Upstream immutable tag: https://github.com/mrdoob/three.js/tree/r180/build
+- Purpose: self-host renderer and avoid hard runtime dependency on a third-party CDN. Not evidence of full offline/PWA support.
