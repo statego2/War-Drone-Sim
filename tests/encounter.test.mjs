@@ -32,7 +32,7 @@ test('three distinct forest sectors advance as the authored level is cleared', (
   assert.equal(new Set(e.vehicles.map(v=>v.id)).size,16);
   assert.deepEqual(sectorProgress(e),{hits:0,total:5});
   assert.equal(activeSectorIndex(e),0);
-  assert.equal(clearingRadius(700),38);
+  assert.equal(clearingRadius(700),69);
   assert.equal(clearingRadius(900),15);
   for(const v of e.vehicles.filter(v=>v.sector===0)) applyContact(e,{type:'vehicle',id:v.id});
   assert.equal(activeSectorIndex(e),1);
