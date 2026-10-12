@@ -56,6 +56,10 @@ try{
   assert.equal(running.vehicles.length,16,'full forest level has sixteen persistent targets');
   assert.equal(running.scenicSites,3,'three decorative off-road camps accompany the wider encounter arenas');
   assert.equal(running.total,16);
+  assert.equal(running.tankSlopedHulls,6,'each tank has a low-poly sloped body');
+  assert.equal(running.carrierSlopedHulls,5,'each carrier has angled armour sides');
+  assert.equal(running.truckSlopedCargos,5,'each truck has a faceted military cargo body');
+  assert.equal(running.slopedHullGeometries,3,'repeated models share exactly three armoured GPU hull geometries');
   assert.equal(running.tankCannons,6,'every tank has a distinct visible turret cannon');
   assert.equal(running.carrierVisors,5,'every carrier has a dark armoured visor');
   assert.equal(running.truckWindows,10,'every transport truck has split front windows');
