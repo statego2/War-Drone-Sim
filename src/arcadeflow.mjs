@@ -41,8 +41,10 @@ export function guidanceFor(encounter, flight) {
   for (const v of remaining) {
     const dx = v.x - flight.x, dz = v.z - flight.z;
     const distance = Math.hypot(dx, dz);
-    const angle = Math.atan2(Math.sin(Math.atan2(dx, dz) - flight.heading),
-                             Math.cos(Math.atan2(dx, dz) - flight.heading));
+    // In the existing +Z chase-camera frame, screen-right is world -X.
+    // Mirror the mathematical heading delta to match the player's gesture.
+    const angle = -Math.atan2(Math.sin(Math.atan2(dx, dz) - flight.heading),
+                              Math.cos(Math.atan2(dx, dz) - flight.heading));
     const penalty = Math.abs(angle) > 1.45 ? 110 : 0;
     const rank = distance + penalty + Math.abs(angle) * 28;
     if (rank < best) { chosen = { v, angle, distance }; best = rank; }
