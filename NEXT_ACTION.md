@@ -2,11 +2,11 @@
 
 **Updated 2026-10-12.** Source of truth: `main`. Hosted portrait build: https://statego2.github.io/War-Drone-Sim/
 
-## In review — encounter clarity (2026-10-12)
+## Landed in main — encounter clarity (2026-10-12)
 
-- Branch `feat/encounter-clarity-20261012` implements a small GP-03 / CD-02 / CD-06 presentation slice: three original fictional matte olive tank/carrier/truck silhouettes with three distinct persistent wrecks, three progress marks, a shorter one-tap FLY home and approved palette accents. The encounter positions, swept collision volumes, one-finger physics, audio and 0.98-second respawn timing are unchanged.
-- Local `node --check` passed for the edited `src/game3d.mjs`. [PR #84](https://github.com/statego2/War-Drone-Sim/pull/84) passed Node logic/syntax and desktop Chromium interaction smoke on feature SHA `6d9defb` ([CI run 38259027437](https://github.com/statego2/War-Drone-Sim/actions/runs/38259027437)). No real iPhone Safari test, portrait screenshot review or owner fun acceptance is claimed.
-- Next unblocked action: inspect the PR screenshot at 390×844 and a three-hit run; tune target visibility and HUD if needed. Owner iPhone pass should check all three vehicle silhouettes, target choice, hit/wreck clarity, controls and uninterrupted retry. Preserve the GP-00 / GP-04 gates before adding content.
+- **Merged PR #84** into `main` as `56ecad0`. This small GP-03 / CD-02 / CD-06 presentation slice implements: three original fictional matte olive tank/carrier/truck silhouettes with three distinct persistent wrecks, three progress marks, a shorter one-tap FLY home and approved palette accents. The encounter positions, swept collision volumes, one-finger physics, audio and 0.98-second respawn timing are unchanged.
+- Local `node --check` passed for the edited `src/game3d.mjs`. [PR #84](https://github.com/statego2/War-Drone-Sim/pull/84) passed Node logic/syntax and desktop Chromium interaction smoke on feature SHA `6d9defb` ([CI run 38259027437](https://github.com/statego2/War-Drone-Sim/actions/runs/38259027437)). The GitHub Pages deployment for `56ecad0` passed ([run 38259310822](https://github.com/statego2/War-Drone-Sim/actions/runs/38259310822)). No real iPhone Safari test, portrait screenshot review or owner fun acceptance is claimed.
+- Next unblocked action: inspect the deployed build at 390×844 and a three-hit run; tune target visibility and HUD if needed. Owner iPhone pass should check all three vehicle silhouettes, target choice, hit/wreck clarity, controls and uninterrupted retry. Preserve the GP-00 / GP-04 gates before adding content.
 
 ## Landed in main
 
