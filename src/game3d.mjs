@@ -317,17 +317,24 @@ const wreckPaint = new THREE.MeshStandardMaterial({ color: 0x30352e, roughness: 
 const wreckTrim = new THREE.MeshStandardMaterial({ color: 0x49483d, roughness: 1 });
 const intactViews = [], wreckViews = [], smokeViews = [], beaconViews = [];
 const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
-// One tiny self-generated texture shared across all glints. It stays deliberately
-// modest, visible only in the active sector and never obscures the target body.
+// A single, reusable soft RED silhouette ring, drawn procedurally so there
+// are no network assets or mesh-heavy edge duplicates. It remains behind
+// trees/terrain (depth-tested) and is drawn ONLY for surviving vehicles in
+// the current forest clearing. Its empty center leaves the model visible.
 const beaconCanvas=document.createElement('canvas');
-beaconCanvas.width=beaconCanvas.height=64;
+beaconCanvas.width=beaconCanvas.height=128;
 const beaconCtx=beaconCanvas.getContext('2d');
-const beaconGradient=beaconCtx.createRadialGradient(32,32,1,32,32,31);
-beaconGradient.addColorStop(0,'rgba(255,248,209,1)');
-beaconGradient.addColorStop(.18,'rgba(255,223,161,.90)');
-beaconGradient.addColorStop(.45,'rgba(229,185,118,.28)');
-beaconGradient.addColorStop(1,'rgba(229,185,118,0)');
-beaconCtx.fillStyle=beaconGradient;beaconCtx.fillRect(0,0,64,64);
+const rim=beaconCtx.createImageData(128,128);
+for(let y=0;y<128;y++)for(let x=0;x<128;x++){
+  const u=(x-63.5)/61, v=(y-63.5)/57;
+  const radial=Math.hypot(u,v);
+  const core=Math.exp(-Math.pow((radial-.84)/.09,2));
+  const bloom=Math.exp(-Math.pow((radial-.84)/.18,2));
+  const alpha=Math.max(0,Math.min(255,255*(core*.78+bloom*.28)));
+  const i=(y*128+x)*4;
+  rim.data[i]=255;rim.data[i+1]=54;rim.data[i+2]=44;rim.data[i+3]=Math.round(alpha);
+}
+beaconCtx.putImageData(rim,0,0);
 const beaconTexture=new THREE.CanvasTexture(beaconCanvas);
 beaconTexture.colorSpace=THREE.SRGBColorSpace;
 const smokeGeo = new THREE.IcosahedronGeometry(1, 1);
@@ -411,11 +418,11 @@ function buildTargets() {
     encounterView.add(smoke);
     smokeViews.push(smoke);
     const beacon=new THREE.Sprite(new THREE.SpriteMaterial({
-      map:beaconTexture, color:0xffe2aa, transparent:true, opacity:0,
+      map:beaconTexture, color:0xffffff, transparent:true, opacity:0,
       depthWrite:false, depthTest:true, blending:THREE.NormalBlending
     }));
-    beacon.position.set(target.x,target.y+9,target.z);
-    beacon.scale.set(7,7,1);
+    beacon.position.set(target.x,target.y+2.0,target.z);
+    beacon.scale.set(17,14,1);
     beacon.visible=false;
     encounterView.add(beacon);
     beaconViews.push(beacon);
@@ -454,8 +461,8 @@ function moveEncounter() {
     const state=beaconAppearance(target,flight,sector,encounter.clock,reduceMotion);
     beacon.visible=state.visible && (mode==='flying'||mode==='home');
     if(!beacon.visible)continue;
-    beacon.position.set(target.x,target.y+9,target.z);
-    beacon.scale.set(state.size,state.size,1);
+    beacon.position.set(target.x,target.y+2,target.z);
+    beacon.scale.set(state.size,state.size*.78,1);
     beacon.material.opacity=state.opacity;
   }
   // Keep moving intact meshes and hit feedback aligned with their pure game state.
