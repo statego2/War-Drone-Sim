@@ -15,9 +15,14 @@
 - The [latest PR check](https://github.com/statego2/War-Drone-Sim/actions/runs/38278169100) passed **Node logic/unit tests and desktop Chromium portrait smoke**. A previous intermediate commit exposed an overly specific overshoot test; the test was corrected to model overshooting *all* remaining clearing targets. Final run passed both jobs.
 - This is **implementation and desktop regression evidence**, not verification of real iPhone feel, sustained phone FPS or audio comfort. Never conflate PR code with shipped Pages until merge/deploy finishes.
 
+## Forest hazards v3 — PR #87
+
+- [PR #87](https://github.com/statego2/War-Drone-Sim/pull/87) adds forgiving swept tree contacts from actually drawn local trees, deterministic hazard arbitration, a dedicated collision warning, and unit/browser regression tests.
+- Real-phone fairness, frame pacing, visual readability and feel remain unverified. See [hazard technical notes](docs/33_FOREST_HAZARDS_V3.md).
+
 ## Next actions
 
-1. Merge PR #86 if CI remains green; verify Pages deployment on the merge SHA. Inspect the updated 3D portrait build at 390×844 in WebGL, including moving target visuals, wreck position and guidance legibility.
+1. PR #86 merged as abb0c149; Pages and main CI passed. Check PR #87 browser CI, merge only after it passes, and verify Pages again. Inspect the 3D portrait build at 390×844 in a WebGL browser, particularly tree contact fairness, moving props, wreck placement and navigation.
 2. Play the **entire 16-target route** on iPhone portrait, including a moving target and a missed/overshot target: first approach, three clearing transitions, checkpoint spawn, wreck persistence, sector counter, final clear and replay. Also test one-finger climb/brake/reverse, diagonals, dives, ground impact, pause/mute/resume, and app switching.
 3. Record concrete observations, then tune pacing, sightlines, target spacing, controls, sound and visual feedback. Treat G1 fun and G2 phone performance as open until owner playtest evidence supports them. The linked [gameplay plan](docs/27_GAMEPLAY_FOCUS_PLAN.md) and [approved creative direction](docs/29_APPROVED_CREATIVE_DIRECTION_V2.md) set priorities.
 
