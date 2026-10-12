@@ -1,4 +1,6 @@
 # Gameplay Focus Rebaseline — Forest Encounter (web-first)
+> **Owner correction, 2026-10-12:** The three-vehicle clearing below was a greybox experiment, not the final scope. The owner explicitly requests a complete playable forest level. The current implementation experiment uses three connected clearings with 5 + 5 + 6 fictional empty vehicles, checkpoint respawns near the earliest uncleared area, persistent wrecks, a level-complete result and replay. It retains one-finger flight and about one-second retry. The old 3/3 counts and proposed sequencing below are historical where they conflict with this correction. Real iPhone fun/performance acceptance remains open.
+
 **Date:** 2026-10-08 · **Status:** active gameplay sequencing proposal, tracked by [Issue #68](https://github.com/statego2/War-Drone-Sim/issues/68).  
 **Product owner intent:** a fast, compact **portrait browser arcade encounter**: launch an agile fictional drone into a forest, see several clearly visible unoccupied fictional vehicles, choose one, execute a committed dive/contact, get an exceptionally clear short visual/audio payoff, and continue automatically with another drone in about one second. The flight and impact must themselves feel rewarding.
 
