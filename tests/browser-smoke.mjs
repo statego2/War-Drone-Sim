@@ -92,6 +92,13 @@ try{
   assert.ok(await page.locator('#overlay').isVisible());
   await page.locator('#primary').click();
   assert.ok(await page.locator('#hud').isVisible());
+  await page.evaluate(()=>window.dispatchEvent(new Event('blur')));
+  assert.ok(await page.locator('#overlay').isVisible(),'app switch pauses the run');
+  const suspended=await page.evaluate(()=>window.__openSkySnapshot());
+  assert.equal(suspended.mode,'paused');
+  assert.equal(suspended.resumeMode,'flying');
+  await page.locator('#primary').click();
+  assert.ok(await page.locator('#hud').isVisible(),'returning to game restores HUD');
   await mkdir(join(root,'artifacts'),{recursive:true});
   await page.screenshot({path:join(root,'artifacts','forest-encounter-webgl.png')});
   // Legacy Canvas fallback must also provide sound control and basic lifecycle.
