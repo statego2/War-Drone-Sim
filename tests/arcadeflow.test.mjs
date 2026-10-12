@@ -52,7 +52,8 @@ test('guidance follows surviving sector targets and points behind after overshoo
   assert.equal(g.direction,'AHEAD');
   for(const v of e.vehicles.filter(v=>v.sector===0))applyContact(e,{type:'vehicle',id:v.id});
   const second=e.vehicles.find(v=>v.sector===1);
-  g=guidanceFor(e,{x:second.x,y:second.y+30,z:second.z+120,heading:0});
+  // Overshoot the entire clearing: every remaining prop is genuinely behind.
+  g=guidanceFor(e,{x:second.x,y:second.y+30,z:second.z+260,heading:0});
   assert.equal(g.sector,1);
   assert.equal(g.direction,'BEHIND');
 });
