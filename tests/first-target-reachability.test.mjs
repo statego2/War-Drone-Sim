@@ -42,7 +42,7 @@ test('the first tank is reachable from real checkpoint by ordinary continuous sw
         const result=runFirstApproach({diveDelayFrames,diveStrength,steerGain});
         if(result.hitTime!==null)results.push({...result,diveDelayFrames,diveStrength,steerGain});
       }
-  assert.ok(results.length>=8,
+  assert.ok(results.length>=15,
     'at least one simple, sustained one-finger dive/side gesture must strike the FIRST tank');
   const fastest=results.sort((a,b)=>a.hitTime-b.hitTime)[0];
   assert.ok(fastest.hitTime<4.2,'initial tank must be reachable in a short arcade flight');
