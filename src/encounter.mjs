@@ -6,19 +6,19 @@ import { groundHeight, roadCenter } from './flight3d.mjs';
 // All vehicles are fictional, empty props. Positions are game-space composition.
 export const LEVEL_SECTORS = Object.freeze([
   { name:'PINE APPROACH', spawnZ:55, targets:[
-    [225,-12,'tank'],[264,11,'truck'],[303,-7,'carrier'],[345,14,'tank'],[383,0,'truck']
+    [225,-12,'tank'],[264,30,'truck'],[303,-33,'carrier'],[345,26,'tank'],[383,-25,'truck']
   ] },
   { name:'FOREST BEND', spawnZ:475, targets:[
-    [615,14,'carrier'],[657,-15,'tank'],[700,8,'truck'],[744,-12,'carrier'],[786,13,'tank']
+    [615,28,'carrier'],[657,-31,'tank'],[700,33,'truck'],[744,-27,'carrier'],[786,17,'tank']
   ] },
   { name:'FINAL CLEARING', spawnZ:890, targets:[
-    [1045,-17,'truck'],[1074,14,'carrier'],[1107,-14,'tank'],
-    [1143,16,'truck'],[1174,-12,'carrier'],[1212,14,'tank']
+    [1045,-30,'truck'],[1074,31,'carrier'],[1107,-27,'tank'],
+    [1143,36,'truck'],[1174,-32,'carrier'],[1212,17,'tank']
   ] }
 ]);
 export const LEVEL_TARGETS = LEVEL_SECTORS.reduce((sum,sector)=>sum+sector.targets.length,0);
 export function clearingRadius(z) {
-  return (z>185 && z<415) || (z>575 && z<825) || (z>1005 && z<1250) ? 38 : 15;
+  return (z>185 && z<415) || (z>575 && z<825) || (z>1005 && z<1250) ? 69 : 15;
 }
 export function makeEncounter() {
   let id=0;
