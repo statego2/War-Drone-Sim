@@ -20,6 +20,12 @@
 - [PR #87](https://github.com/statego2/War-Drone-Sim/pull/87) **merged as 4e1adffd** with forgiving swept tree contacts from actually drawn local trees, deterministic hazard arbitration, a dedicated collision warning, full 16-hit scripted playthrough, and unit/browser regression tests. The final PR SHA `6489e520` passed Node logic and portrait Chromium browser smoke ([CI run 38279196320](https://github.com/statego2/War-Drone-Sim/actions/runs/38279196320)).
 - Real-phone fairness, frame pacing, visual readability and feel remain unverified. See [hazard technical notes](docs/33_FOREST_HAZARDS_V3.md).
 
+## October 12 follow-up — Forest v4 and Mobile Render Budget v5
+
+- [PR #88](https://github.com/statego2/War-Drone-Sim/pull/88) merged as `ac5e0138`: subdued warm objective glints above nearby intact vehicle props in the active sector, hidden beyond range and after destruction, with reduced-motion handling. Node and Chromium PR checks passed. The visual design still needs real iPhone review.
+- [PR #89](https://github.com/statego2/War-Drone-Sim/pull/89) proposes geometry reuse for target/roadside primitives, instanced-mesh frustum culling and a sample-window adaptive-resolution controller. Testable pure modules + desktop browser diagnostics are included, but no device FPS claim is made.
+- Performance verification criteria: same iPhone/Safari, compare baseline vs new commit, capture browser FPS distribution (p50/p95), target readability, crashes and memory/heat after 10–15 drone retries. If foliage vanishes unexpectedly, revert culling; if adaptive DPR flickers, broaden the cooldown/thresholds.
+
 ## Next actions
 
 1. PR #86 merged as abb0c149 with successful Pages/main CI. PR #87 merged as 4e1adffd; verify its GitHub Pages deployment and main CI, then inspect the 3D portrait build at 390×844 with WebGL. Check tree-contact fairness, moving props, wreck placement and navigation.
