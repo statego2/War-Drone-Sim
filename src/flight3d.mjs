@@ -40,7 +40,7 @@ export function groundHeight(x, z) {
 // Use smooth attitude, vector velocity, gravity, momentum and drag. The main
 // controller remains one-finger: horizontal = bank and strafe with a guided turn,
 // vertical = climb/dive; combine both freely for diagonal movements.
-export const TURN_RATE = 1.34;
+export const TURN_RATE = 1.70; // stronger arcade orbit: fast target re-approach
 const GRAVITY = 9.81;
 const MAX_DIVE_PITCH = 1.45; // ~83°, recoverable cinematic nose-down attitude
 const MAX_PULLBACK_PITCH = 1.16; // ~66° nose up, non-inverted arcade reverse
@@ -79,7 +79,7 @@ export function stepFlight(f,input,dt) {
   const turnAuthority=Math.min(1,Math.abs(f.throttle)*1.5)*(1-.72*brakeIntent);
   // Preserve camera-right strafing while backing up: do not let full
   // pullback also spin the craft around and invert diagonal controls.
-  f.yawRate=lerp(f.yawRate,-steer*TURN_RATE*.72*turnAuthority*(1-.9*pullback),1-Math.exp(-10*dt));
+  f.yawRate=lerp(f.yawRate,-steer*TURN_RATE*.90*turnAuthority*(1-.9*pullback),1-Math.exp(-12*dt));
   f.heading=Math.atan2(Math.sin(f.heading+f.yawRate*dt),Math.cos(f.heading+f.yawRate*dt));
   f.bank=lerp(f.bank,-steer*.38,1-Math.exp(-7*dt));
   f.throttle=clamp(f.throttle,-.6,1);
@@ -112,7 +112,7 @@ export function stepFlight(f,input,dt) {
   // Extra lateral authority at full pullback keeps reversed diagonals fun
   // rather than letting backward momentum cancel the sideways gesture.
   // Faster sideways corrections, including when braking/reversing.
-  const lateralAcceleration=-across*lerp(3.5,2.4,tilt)-steer*(34+18*brakeIntent)*(1+.3*reverseIntent);
+  const lateralAcceleration=-across*lerp(3.9,2.4,tilt)-steer*(40+18*brakeIntent)*(1+.3*reverseIntent);
   f.vx+=(fx*forwardAcceleration+rx*lateralAcceleration)*dt;
   f.vz+=(fz*forwardAcceleration+rz*lateralAcceleration)*dt;
 
@@ -121,9 +121,23 @@ export function stepFlight(f,input,dt) {
   // Small/positive vertical gestures get forgiving assisted lift.
   // At very high nose-up attitudes the arcade lift assist compensates
   // for the lost vertical component so climb and dive recovery stay viable.
-  const supportedLift=(GRAVITY+up*(19+24*pullback)-down*2.8)*Math.cos(f.pitch);
-  const diveAssist=6.3*Math.max(0,f.throttle)*Math.sin(Math.max(0,f.pitch));
-  const verticalAcceleration=supportedLift-GRAVITY-diveAssist-.11*f.vy-.006*f.vy*Math.abs(f.vy);
+  // Distinguish climb from backing up. Previously full-up held the craft at
+  // a steep pitch while applying strong vertical assistance, so reversing
+  // carried the player above the targets. Deep pullback now stabilizes height
+  // instead of continuously climbing. The intermediate up band still climbs.
+  const reverseBlend=reverseIntent;
+  const climbAssist=up*(19+24*pullback)*(1-reverseBlend);
+  const supportedLift=(GRAVITY+climbAssist-down*2.8)*Math.cos(f.pitch);
+  // A deep pullback commands BACKWARD travel with a small positive vertical
+  // rate instead of continuously adding climb acceleration. It also provides
+  // predictable assisted recovery when switching directly out of a dive.
+  // Smooth blending avoids the old instant vertical-velocity teleport.
+  const arcadeReverseHold=clamp((2.8-f.vy)*3.7,-40,48);
+  // An aggressive down-swipe must produce an immediately recognizable arcade
+  // fall, while keeping already-earned horizontal momentum.
+  const diveAssist=11.2*Math.max(0,f.throttle)*Math.sin(Math.max(0,f.pitch));
+  const regularVertical=supportedLift-GRAVITY-diveAssist-.11*f.vy-.006*f.vy*Math.abs(f.vy);
+  const verticalAcceleration=lerp(regularVertical,arcadeReverseHold,reverseBlend);
   f.vy+=verticalAcceleration*dt;
   const dx=f.vx*dt,dz=f.vz*dt;
   f.x+=dx;f.z+=dz;f.y+=f.vy*dt;

@@ -19,7 +19,9 @@ test('seamless ground height at streamed tile edges', () => {
 });
 test('free flight has no arbitrary altitude limit or forced mission timer', () => {
   const f=makeFlight(), initial=f.y;
-  for(let i=0;i<2200;i++) stepFlight(f,{x:0,y:1},.05);
+  // Intermediate thumb-up commands deliberate climb. Full up is now reverse
+  // with height assist, deliberately not a multi-kilometre climb command.
+  for(let i=0;i<2200;i++) stepFlight(f,{x:0,y:.5},.05);
   assert.ok(f.y > initial + 2000, 'flight climbs beyond 2km');
   assert.equal(f.groundContact,false);
   assert.ok(f.time > 100);
@@ -166,7 +168,9 @@ test('true lateral HOVER strafing does not force yaw and diagonal gestures combi
     const x=f.x,y=f.y;
     for(let i=0;i<120;i++)stepFlight(f,input,1/60);
     assert.ok(side*(f.x-x)>18,'diagonal drag must translate laterally');
-    assert.ok(vertical*(f.y-y)>8,'diagonal drag must also translate vertically');
+    if(vertical>0)assert.ok(Math.abs(f.y-y)<14,
+      'deep-up diagonal reverses near a stable altitude instead of flying skyward');
+    else assert.ok(f.y<y-8,'deep-down diagonal descends decisively');
     assert.ok(Math.abs(f.bank)>.3,'lateral travel must have visible bank');
   }
 });
