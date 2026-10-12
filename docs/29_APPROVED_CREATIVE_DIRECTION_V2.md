@@ -1,5 +1,7 @@
 # War Drone Sim — Creative Direction 2.0 (APPROVED)
 
+> **Scope update, 2026-10-12:** The owner explicitly corrected the earlier three-target greybox assumption. The approved tank/carrier/truck visual language now repeats across a full 16-target forest level in three clearings; the specific count of three targets in this earlier art plan is superseded. The mobile readability, fictional props and restrained feedback principles still apply.
+
 **Owner decision:** 2026-10-08 · **Status:** ART DIRECTION APPROVED / IMPLEMENTATION NOT YET ACCEPTED · **Platform:** portrait iPhone-first Three.js/WebGL browser game.  
 **Official creative north star:** **Beauty in flight. Precision in motion. Spectacle in impact.**  
 **Experience contract:** One-finger fast flight → see and choose among 3 fictional empty vehicle silhouettes → satisfying brief non-graphic impact → automatic controllable drone in approximately one second. **No new mode, simulator dashboard, tactical targeting, or gameplay rewrite.**

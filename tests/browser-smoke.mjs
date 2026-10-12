@@ -31,7 +31,9 @@ try{
   await page.waitForSelector('#hud:not(.hidden)');
   await page.waitForTimeout(900);
   const running=await page.evaluate(()=>window.__openSkySnapshot());
-  assert.equal(running.vehicles.length,3);
+  assert.equal(running.vehicles.length,16,'full forest level has sixteen persistent targets');
+  assert.equal(running.total,16);
+  assert.equal(await page.locator('#progress span:not(.hidden)').count(),5,'entry clearing has five goals');
   assert.ok(running.speed>43,'neutral flight maintains automatic forward cruise');
   assert.equal(await page.locator('#boost').count(),0,'one-finger flight must not show a speed-mode button');
   // A modest thumb movement should reach the intermediate near-hover band.

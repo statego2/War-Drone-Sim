@@ -13,7 +13,7 @@ We are **not** building a real-world training tool, tactical navigation system, 
 
 ## Play the browser prototype
 
-**[Play Forest Encounter](https://statego2.github.io/War-Drone-Sim/)** in a portrait phone browser. The 3D forest contains three fictional empty vehicles. Drag in any direction to bank/strafe, climb and combine diagonal movement; a full downward drag builds a fast momentum-preserving dive. Vehicle contact leaves persistent wreckage, while ground contact immediately gives another drone. A new round starts after three hits.
+**[Play Forest Encounter](https://statego2.github.io/War-Drone-Sim/)** in a portrait phone browser. The first forest level now contains sixteen fictional empty vehicles across three connected clearings. Drag in any direction to bank/strafe, climb and combine diagonal movement; a full downward drag builds a fast momentum-preserving dive. Vehicle contact leaves persistent wreckage, while ground contact immediately gives another drone. The next drone appears after each impact; clearing all sixteen ends the level and offers a replay.
 
 - `legacy-canvas.html`: preserved original v0.1 preview and fallback if WebGL is unavailable.
 - Run `python3 -m http.server 8765` and visit `http://localhost:8765/` from a checkout; `npm test` checks the deterministic model.
@@ -22,7 +22,7 @@ We are **not** building a real-world training tool, tactical navigation system, 
 
 ## Active web-first gameplay plan
 
-**Current gameplay execution priority:** [Gameplay Focus Rebaseline](docs/27_GAMEPLAY_FOCUS_PLAN.md) · [Live coordination issue #68](https://github.com/statego2/War-Drone-Sim/issues/68). This is a small, evidence-driven queue for high-speed flight feel, steep dive, satisfying impact, three-vehicle choice, ~1s auto-respawn and real portrait iPhone verification; **not** racing/free-flight modes or an expansion of the original Unity schedule. Legacy 55-task WBS remains historical until separately reconciled.
+**Current gameplay execution priority:** [Gameplay Focus Rebaseline](docs/27_GAMEPLAY_FOCUS_PLAN.md) · [Live coordination issue #68](https://github.com/statego2/War-Drone-Sim/issues/68). This is a small, evidence-driven queue for high-speed flight feel, steep dive, satisfying impact, sixteen targets across a complete level, ~1s auto-respawn and real portrait iPhone verification; **not** racing/free-flight modes or an expansion of the original Unity schedule. Legacy 55-task WBS remains historical until separately reconciled.
 
 ## Approved creative direction — design plan, not shipped art
 
@@ -40,7 +40,7 @@ Visual redesign is **not yet implemented** in the playable build; phone proof an
 - The root `index.html` now contains the 3D encounter. Phone feel and performance have not been verified.
 - **Prototype runtime:** Three.js WebGL world, an isolated arcade flight and encounter model, with a legacy Canvas fallback.
 - **Primary target:** portrait phone browser. Native packages are no longer the first delivery path.
-- **Next gate:** play a full three-vehicle encounter on iPhone Safari, tune speed/dive/contact/feedback and record real device performance. No premium assets or monetization before testing.
+- **Next gate:** play the full forest level on iPhone Safari, tune speed/dive/contact/feedback and record real device performance. No premium assets or monetization before testing.
 
 ## Documentation
 

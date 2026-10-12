@@ -2,6 +2,12 @@
 
 **Updated 2026-10-12.** Source of truth: `main`. Hosted portrait build: https://statego2.github.io/War-Drone-Sim/
 
+## In review — complete forest level (2026-10-12)
+
+- Owner correction: three vehicles were a greybox planning assumption; the requested product is a **whole playable level**. Branch `feat/forest-level-01-20261012` builds 16 targets across three connected forest clearings (5/5/6), checkpoint respawns at the earliest uncleared area, persistent wrecks, sector HUD, level-clear/replay and best drone count. No five-drone life limit.
+- The prior 3-target encounter, one-finger flight, collision logic, audio and rapid respawn serve as the foundation. The new target count and completion replace the old three-hit reset; detailed spatial layout and fun remain an experiment pending the owner's iPhone playtest.
+- Local Node syntax and encounter model checks passed. Browser CI and portrait/real-device assessment are pending until the PR runs; do not claim iPhone FPS or fun acceptance.
+
 ## Landed in main — encounter clarity (2026-10-12)
 
 - **Merged PR #84** into `main` as `56ecad0`. This small GP-03 / CD-02 / CD-06 presentation slice implements: three original fictional matte olive tank/carrier/truck silhouettes with three distinct persistent wrecks, three progress marks, a shorter one-tap FLY home and approved palette accents. The encounter positions, swept collision volumes, one-finger physics, audio and 0.98-second respawn timing are unchanged.
