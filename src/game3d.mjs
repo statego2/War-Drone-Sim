@@ -3,7 +3,8 @@ import { TILE, clamp, hash, roadCenter, groundHeight, makeFlight, advanceFlight,
 import { createFlightAudio } from './audio3d.mjs';
 import { createScenery } from './scenery3d.mjs';
 import { createClouds } from './atmosphere3d.mjs';
-import { makeEncounter, resolveContact, applyContact, nextDrone, LEVEL_SECTORS, LEVEL_TARGETS, clearingRadius, activeSectorIndex, sectorProgress, levelComplete } from './encounter.mjs';
+import { makeEncounter, updateEncounter, spawnForNextTarget, resolveContact, applyContact, nextDrone, LEVEL_SECTORS, LEVEL_TARGETS, clearingRadius, activeSectorIndex, sectorProgress, levelComplete } from './encounter.mjs';
+import { makeScorecard, registerResult, guidanceFor } from './arcadeflow.mjs';
 import { createImpactFX, impactEnvelope } from './impactfx3d.mjs';
 import { gestureAxes } from './touchflight.mjs';
 
@@ -126,7 +127,8 @@ const greenPalette = [0x213e32, 0x294d36, 0x375740, 0x305238, 0x466344, 0x2c4d3f
 const tiles = new Map();
 let flight = makeFlight(), mode = 'home', view = 'chase', cameraYaw = 0, cameraPitch = .05;
 let throttleMode = 'cruise', last = 0, lastSector = '', frameCount = 0, smoothMs = 17;
-let encounter = makeEncounter(), impactAge = 0, impactType = '', impactId = -1, roundBannerTime=0, roundBannerText='', advancedSector=false;
+let encounter = makeEncounter(), scorecard = makeScorecard(), lastAward = null,
+    impactAge = 0, impactType = '', impactId = -1, roundBannerTime=0, roundBannerText='', advancedSector=false;
 let pointer = null;
 const keys = new Set();
 
@@ -354,8 +356,8 @@ function buildTargets() {
     root.position.set(target.x, target.y - 1.8, target.z);
     root.rotation.y = .22 * (target.id - 1);
     if (kind === 'tank') tankShape(root, targetPaint[target.id % targetPaint.length]);
-    else if (kind === 'carrier') carrierShape(root, targetPaint[target.id]);
-    else truckShape(root, targetPaint[target.id]);
+    else if (kind === 'carrier') carrierShape(root, targetPaint[target.id % targetPaint.length]);
+    else truckShape(root, targetPaint[target.id % targetPaint.length]);
     encounterView.add(root);
     intactViews.push(root);
     const wreck = new THREE.Group();
@@ -391,7 +393,16 @@ function syncTargets() {
     `${sectorProgress(encounter,sector).hits} από ${local.length} οχήματα στην περιοχή ${sector+1}`);
 }
 buildTargets();
-function moveEncounter() { encounterView.position.set(-flight.x,0,-flight.z); }
+function moveEncounter() {
+  encounterView.position.set(-flight.x,0,-flight.z);
+  // Keep moving intact meshes and hit feedback aligned with their pure game state.
+  for (const target of encounter.vehicles) {
+    if (target.destroyed || !target.moving) continue;
+    const visual=intactViews[target.id];
+    visual.position.set(target.x,target.y-1.8,target.z);
+    visual.rotation.y=.22*(target.id-1)+.12*Math.sin(encounter.clock*.8+target.id);
+  }
+}
 function addScenicVehicle(group, cx, cz) {
   if ((cz + 3000) % 3 !== 1 || cz * TILE < 1500) return;
   const z = cz * TILE + TILE * .58, x = roadCenter(z);
@@ -606,7 +617,8 @@ muteButton.addEventListener('click', () => {
 });
 function startFlight() {
   sound.unlock().then(() => sound.cue('start')); sound.setActive(true);
-  encounter = makeEncounter(); syncTargets(); roundBannerTime=0; roundBannerText='';
+  encounter = makeEncounter(); scorecard = makeScorecard(); lastAward=null;
+  syncTargets(); roundBannerTime=0; roundBannerText='';
   spawnDrone(); mode = 'flying'; view = 'chase'; pointer = null;
   cameraYaw = flight.heading; cameraPitch=.05; throttleMode='cruise';
   drone.visible = true; viewButton.textContent = 'FPV';
@@ -619,9 +631,10 @@ function startFlight() {
 }
 function spawnDrone() {
   flight = makeFlight();
-  flight.z = LEVEL_SECTORS[activeSectorIndex(encounter)].spawnZ + ((encounter.drones-1)%3)*9;
-  flight.x = roadCenter(flight.z);
-  flight.y = groundHeight(flight.x,flight.z) + 32 + ((encounter.drones-1)%2)*5;
+  const checkpoint=spawnForNextTarget(encounter);
+  flight.z=checkpoint.z;
+  flight.x=checkpoint.x;
+  flight.y=checkpoint.y+((encounter.drones-1)%2)*5;
   flight.heading = .10;
   flight.vx = Math.sin(flight.heading)*43;flight.vz = Math.cos(flight.heading)*43;
   flight.vy = 0;flight.throttle = .72;
@@ -646,19 +659,20 @@ function endFlight(contact) {
   } else {
     impactFX.start('ground',{ x:flight.x, y:groundHeight(flight.x,flight.z), z:flight.z });
   }
+  lastAward=registerResult(scorecard,contact.type==='vehicle',flight);
   sound.setActive(false);
   sound.impact(contact.type==='vehicle', {
     chain: contact.type==='vehicle' ? sectorProgress(encounter,encounter.vehicles[contact.id].sector).hits : 0,
     finale: contact.type==='vehicle' && (advancedSector || levelComplete(encounter))
   });
-  warning.textContent=contact.type==='vehicle' ? 'DIRECT HIT' : 'GROUND IMPACT';
+  warning.textContent=lastAward.label + (lastAward.points ? '  +' + lastAward.points : '');
   drone.visible=false;
 }
 function showLevelComplete() {
   mode='complete'; pointer=null; keys.clear(); sound.setActive(false);
   hud.classList.add('hidden'); pauseButton.classList.add('hidden');
   viewButton.classList.add('hidden'); muteButton.classList.add('hidden');
-  let best=null;
+  let best=null,bestScore=scorecard.points;
   try {
     const saved=Number(localStorage.getItem('warDroneBestLevel'));
     best=saved>=LEVEL_TARGETS?saved:null;
@@ -666,12 +680,15 @@ function showLevelComplete() {
       best=encounter.drones;
       localStorage.setItem('warDroneBestLevel',String(best));
     }
+    const savedScore=Number(localStorage.getItem('warDroneBestScore'));
+    bestScore=Math.max(scorecard.points,Number.isFinite(savedScore)?savedScore:0);
+    localStorage.setItem('warDroneBestScore',String(bestScore));
   } catch { best=encounter.drones; }
   overlay.className='panel result';
   overlay.querySelector('.kicker').textContent='FOREST LEVEL · COMPLETE';
   overlay.querySelector('h1').innerHTML='LEVEL<br><em>CLEAR</em>';
   overlay.querySelector('p').textContent=
-    `${LEVEL_TARGETS}/${LEVEL_TARGETS} οχήματα · ${encounter.drones} drones · καλύτερο ${best}. Πέτα ξανά για καθαρότερη διαδρομή.`;
+    `${LEVEL_TARGETS}/${LEVEL_TARGETS} οχήματα · ${scorecard.points.toLocaleString('en-US')} PTS (BEST ${bestScore.toLocaleString('en-US')}) · ${encounter.drones} drones (BEST ${best}) · ${scorecard.diveHits} DIVE HITS. Πέτα ξανά για καλύτερη διαδρομή.`;
   primary.innerHTML='PLAY AGAIN <span>↗</span>';
 }
 function setPause() {
@@ -733,6 +750,15 @@ function updateCamera(dt) {
 
 function updateHUD() {
   distanceEl.textContent = `${encounter.hits}/${LEVEL_TARGETS} · DRONE ${encounter.drones}`;
+  const scoreEl=$('arcade-score');
+  if(scoreEl) scoreEl.textContent=`${scorecard.points.toLocaleString('en-US')} PTS`+
+    (scorecard.combo>=2?` · ×${scorecard.combo} COMBO`:'');
+  const compass=$('target-compass');
+  if(compass) {
+    const guide=guidanceFor(encounter,flight);
+    compass.textContent=guide?`${guide.arrow} ${guide.kind} · ${guide.distance} M`:'CLEAR';
+    compass.dataset.direction=guide?.direction||'CLEAR';
+  }
   $('round-label').textContent = `SECTOR ${activeSectorIndex(encounter)+1}/${LEVEL_SECTORS.length}`;
   altitudeEl.textContent = Math.round(Math.max(0, flight.y - groundHeight(flight.x, flight.z))) + ' M AGL';
   const totalSpeed=Math.hypot(flight.vx,flight.vy,flight.vz);
@@ -756,6 +782,7 @@ function frame(now) {
     throttleMode=command.y<-.75?'fast':'gesture';
     const previous={x:flight.x,y:flight.y,z:flight.z};
     advanceFlight(flight, command, dt);
+    updateEncounter(encounter,dt);
     const contact=resolveContact(encounter,previous,flight,flight.groundContact);
     if(contact)endFlight(contact);
     rebuildTiles(); moveTiles(); updateFarLand(); updateHUD();
@@ -828,7 +855,9 @@ window.__openSkySnapshot = () => ({
   cameraYaw, cameraPitch, throttleMode, gesture: inputState(), speed:flight.speed,
   vx:flight.vx,vy:flight.vy,vz:flight.vz,pitch:flight.pitch,bank:flight.bank,sideRate:flight.sideRate,pullback:flight.pullback||0,brakeIntent:flight.brakeIntent||0,reverseIntent:flight.reverseIntent||0,
   ground: groundHeight(flight.x, flight.z), mode, audioEnabled: sound.enabled
-  , hits:encounter.hits, drones:encounter.drones, sector:activeSectorIndex(encounter), total:LEVEL_TARGETS, vehicles:encounter.vehicles.map(v=>v.destroyed)
+  , hits:encounter.hits, drones:encounter.drones, sector:activeSectorIndex(encounter), total:LEVEL_TARGETS, vehicles:encounter.vehicles.map(v=>v.destroyed),
+  points:scorecard.points, combo:scorecard.combo, moving:encounter.vehicles.filter(v=>v.moving&&!v.destroyed).length,
+  target:guidanceFor(encounter,flight), spawn:spawnForNextTarget(encounter), lastAward
 });
 document.documentElement.dataset.openSkyReady = 'true';
 requestAnimationFrame(frame);
