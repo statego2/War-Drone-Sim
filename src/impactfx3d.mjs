@@ -1,6 +1,12 @@
 // Bounded, reusable arcade impact feedback. Fictional encounter effects only.
 // A small procedural pool avoids textures, asset downloads and per-hit geometry allocation.
 const clamp01 = v => Math.max(0, Math.min(1, v));
+// Art-directed reward palette, independent of WebGL so it can be tested.
+export function impactPalette(kind='vehicle'){
+  return kind==='vehicle'?
+    {core:0xfff3c4,outer:0xff8d36,shock:0xffc46c,smoke:0x4a4841}:
+    {core:0xb6a48a,outer:0x837862,shock:0x9c917a,smoke:0x797667};
+}
 
 export function impactEnvelope(age, kind = 'vehicle') {
   const t = Math.max(0, age);
@@ -22,11 +28,30 @@ export function createImpactFX(THREE, parent) {
   root.visible = false;
   parent.add(root);
 
-  const coreMaterial = new THREE.MeshBasicMaterial({
-    color: 0xffe9a3, transparent: true, opacity: 0, depthWrite: false
+  // Shared transparent radial texture eliminates the two enormous faceted
+  // icosahedrons from the center of every hit. Soft, layered bloom feels
+  // brighter while remaining gentle on small mobile screens.
+  const glowCanvas=document.createElement('canvas');
+  glowCanvas.width=glowCanvas.height=128;
+  const gc=glowCanvas.getContext('2d');
+  const glow=gc.createRadialGradient(64,64,0,64,64,63);
+  glow.addColorStop(0,'rgba(255,255,248,1)');
+  glow.addColorStop(.11,'rgba(255,245,202,.96)');
+  glow.addColorStop(.32,'rgba(255,185,94,.70)');
+  glow.addColorStop(.60,'rgba(235,112,48,.25)');
+  glow.addColorStop(1,'rgba(220,78,35,0)');
+  gc.fillStyle=glow;gc.fillRect(0,0,128,128);
+  const glowTexture=new THREE.CanvasTexture(glowCanvas);
+  glowTexture.colorSpace=THREE.SRGBColorSpace;
+  const coreMaterial = new THREE.SpriteMaterial({
+    map:glowTexture, color:0xfff3c4,transparent:true,
+    opacity:0,depthWrite:false,depthTest:true,
+    blending:THREE.AdditiveBlending
   });
-  const outerMaterial = new THREE.MeshBasicMaterial({
-    color: 0xff8d33, transparent: true, opacity: 0, depthWrite: false
+  const outerMaterial = new THREE.SpriteMaterial({
+    map:glowTexture,color:0xff8d36,transparent:true,
+    opacity:0,depthWrite:false,depthTest:true,
+    blending:THREE.AdditiveBlending
   });
   const shockMaterial = new THREE.MeshBasicMaterial({
     color: 0xffc46c, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide
@@ -41,11 +66,10 @@ export function createImpactFX(THREE, parent) {
     color: 0x4a4841, transparent: true, opacity: 0, depthWrite: false
   });
 
-  const coreGeometry = new THREE.IcosahedronGeometry(1, 2);
-  const core = new THREE.Mesh(coreGeometry, coreMaterial);
+  const core = new THREE.Sprite(coreMaterial);
   core.position.y = 3.3;
   root.add(core);
-  const outer = new THREE.Mesh(coreGeometry, outerMaterial);
+  const outer = new THREE.Sprite(outerMaterial);
   outer.position.y = 2.3;
   root.add(outer);
 
@@ -74,10 +98,11 @@ export function createImpactFX(THREE, parent) {
     type = kind === 'vehicle' ? 'vehicle' : 'ground';
     root.position.set(position.x, position.y, position.z);
     const dust = type === 'ground';
-    coreMaterial.color.setHex(dust ? 0xa59a7d : 0xffe9a3);
-    outerMaterial.color.setHex(dust ? 0x716b58 : 0xff8d33);
-    shockMaterial.color.setHex(dust ? 0x948a74 : 0xffc46c);
-    smokeMaterial.color.setHex(dust ? 0x797667 : 0x4a4841);
+    const palette=impactPalette(type);
+    coreMaterial.color.setHex(palette.core);
+    outerMaterial.color.setHex(palette.outer);
+    shockMaterial.color.setHex(palette.shock);
+    smokeMaterial.color.setHex(palette.smoke);
     root.visible = true;
     update(0);
   }
