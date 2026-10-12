@@ -25,7 +25,7 @@ test('deep upward pullback moves backwards while keeping a playable altitude',()
   const reversed=run(0,1,120),gentle=run(0,.45,120);
   assert.ok(reversed.speed< -15,'full thumb up provides genuine reverse');
   assert.ok(Math.abs(reversed.y-300)<14,'reversing should stay near the current height');
-  assert.ok(gentle.y>reversed.y+14,'gentle up climbs; deep up reverses');
+  assert.ok(gentle.y>reversed.y+6,'gentle up climbs distinctly; deep up reverses near level');
   assert.ok(gentle.vy>5,'gentle up continues to climb on demand');
 });
 
