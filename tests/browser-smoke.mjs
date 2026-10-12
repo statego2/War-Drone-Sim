@@ -51,6 +51,8 @@ try{
   assert.ok(hintBox.y>400,'first-flight hint stays in the lower third of portrait');
   await page.screenshot({path:join(root,'artifacts','02-flight-opening.png')});
   const running=await page.evaluate(()=>window.__openSkySnapshot());
+  assert.match(await page.locator('#build-version').innerText(),/^BUILD (?:LOCAL|[a-f0-9]{7,12})$/,
+    'mobile build identity must stay legible through gameplay');
   assert.equal(running.vehicles.length,16,'full forest level has sixteen persistent targets');
   assert.equal(running.scenicSites,3,'three decorative off-road camps accompany the wider encounter arenas');
   assert.equal(running.total,16);

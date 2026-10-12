@@ -161,3 +161,11 @@
  background:#f1eee3;color:#132b27;font-weight:900;font-size:14px;}
 .boot-error a{font-size:12px;color:#e4bb82;text-underline-offset:4px;}
 .boot-error button:focus-visible,.boot-error a:focus-visible{outline:3px solid #e4bb82;outline-offset:3px;}
+
+/* Noninteractive build stamp makes real-device bug screenshots traceable. */
+.build-version{
+  position:absolute;right:10px;bottom:calc(env(safe-area-inset-bottom) + 3px);
+  color:#f1eee3;opacity:.48;font-size:9px;font-weight:800;
+  letter-spacing:1.1px;z-index:1;pointer-events:none;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+}
