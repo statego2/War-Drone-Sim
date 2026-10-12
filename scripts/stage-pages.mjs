@@ -1,6 +1,6 @@
 // The single source of truth for what GitHub Pages actually publishes.
 // Never add a runtime import without also including it in this staged output.
-import {cp,copyFile,mkdir,readFile,rm,stat} from 'node:fs/promises';
+import {cp,copyFile,mkdir,readFile,rm,stat,writeFile} from 'node:fs/promises';
 import {join,resolve,dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
@@ -24,6 +24,8 @@ export async function validatePages(publicRoot=join(PROJECT_ROOT,'public')){
   const game=await readFile(join(publicRoot,'src/game3d.mjs'),'utf8');
   const three=await readFile(join(publicRoot,'vendor/three.module.min.js'),'utf8');
   if(!page.includes("import('./src/game3d.mjs')"))issues.push('index has no 3D game entrypoint');
+  if(!/id="build-version"[^>]*>BUILD [A-Za-z0-9]{4,12}<\/small>/.test(page))
+    issues.push('published build identifier is missing');
   if(!game.includes("from '../vendor/three.module.min.js'"))issues.push('game3d points to wrong Three.js module');
   if(!three.includes('from"./three.core.min.js"') && !three.includes("from'./three.core.min.js'"))
     issues.push('Three.js module cannot find matching local core module');
@@ -38,6 +40,13 @@ export async function stagePages({sourceRoot=PROJECT_ROOT,publicRoot=join(source
     await mkdir(dirname(join(publicRoot,file)),{recursive:true});
     await copyFile(join(sourceRoot,file),join(publicRoot,file));
   }
+  // Show the actual release SHA in the in-game interface, making stale
+  // Safari pages and misleading screenshots immediately identifiable.
+  const sha=(process.env.GITHUB_SHA||'LOCAL').slice(0,9);
+  const indexPath=join(publicRoot,'index.html');
+  const document=await readFile(indexPath,'utf8');
+  if(!document.includes('BUILD LOCAL'))throw new Error('Missing build stamp in index.html');
+  await writeFile(indexPath,document.replace('BUILD LOCAL','BUILD '+sha));
   for(const directory of ['src','vendor']){
     await cp(join(sourceRoot,directory),join(publicRoot,directory),{recursive:true});
   }
