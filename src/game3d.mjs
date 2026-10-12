@@ -9,6 +9,8 @@ import { createImpactFX, impactEnvelope } from './impactfx3d.mjs';
 import { gestureAxes } from './touchflight.mjs';
 import { treeHazard, resolveTreeContact, chooseContact } from './hazards.mjs';
 import { beaconAppearance } from './targetreadability.mjs';
+import { createPrimitiveGeometryPool } from './geometrypool.mjs';
+import { createRenderBudget } from './renderbudget.mjs';
 
 // A floating-origin, streamed polygonal world. No real-drone targeting or hardware integration.
 const $ = id => document.getElementById(id);
@@ -24,8 +26,12 @@ const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.27;
-let qualityDpr = Math.min(window.devicePixelRatio || 1, mobile ? 1.45 : 1.85);
-renderer.setPixelRatio(qualityDpr);
+const budget=createRenderBudget({
+  initialDpr:Math.min(window.devicePixelRatio||1,mobile?1.45:1.85),
+  maxDpr:Math.min(window.devicePixelRatio||1,mobile?1.6:2),
+  minDpr:.85
+});
+renderer.setPixelRatio(budget.dpr);
 const scene = new THREE.Scene();
 const clouds = createClouds(THREE,scene,hash);
 scene.fog = new THREE.FogExp2(0xb0beb5, .00032);
@@ -128,7 +134,7 @@ const temp = new THREE.Object3D();
 const greenPalette = [0x213e32, 0x294d36, 0x375740, 0x305238, 0x466344, 0x2c4d3f, 0x4c5e39, 0x335f45];
 const tiles = new Map();
 let flight = makeFlight(), mode = 'home', view = 'chase', cameraYaw = 0, cameraPitch = .05;
-let throttleMode = 'cruise', last = 0, lastSector = '', frameCount = 0, smoothMs = 17;
+let throttleMode = 'cruise', last = 0, lastSector = '';
 let encounter = makeEncounter(), scorecard = makeScorecard(), lastAward = null,
     impactAge = 0, impactType = '', impactId = -1, roundBannerTime=0, roundBannerText='', advancedSector=false;
 let pointer = null;
@@ -203,7 +209,7 @@ function makeRoadStrip(cx, cz, halfWidth, offsetY, material, centerOffset = 0, d
 }
 function instanced(geo, mat, count, color = false) {
   const mesh = new THREE.InstancedMesh(geo, mat, count);
-  mesh.frustumCulled = false; // instances span a tile; avoid stale frustum bounds
+  mesh.frustumCulled = true; // Three computes a local bounding sphere after instance placement
   if (color) mesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(count * 3), 3);
   return mesh;
 }
@@ -278,8 +284,12 @@ function addForest(group, cx, cz, near) {
     ground:t.h,size:t.size,radius:t.r
   })) : [];
 }
+const primitives=createPrimitiveGeometryPool({
+  box:(w,h,d)=>new THREE.BoxGeometry(w,h,d),
+  cylinder:(radius,height,segments)=>new THREE.CylinderGeometry(radius,radius,height,segments)
+});
 function addBox(parent, w, h, d, x, y, z, mat) {
-  const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+  const mesh = new THREE.Mesh(primitives.box(w,h,d), mat);
   mesh.position.set(x, y, z);
   parent.add(mesh);
   return mesh;
@@ -318,7 +328,7 @@ beaconTexture.colorSpace=THREE.SRGBColorSpace;
 const smokeGeo = new THREE.IcosahedronGeometry(1, 1);
 const impactFX = createImpactFX(THREE, encounterView);
 function wheel(parent, x, z, radius, y = .9) {
-  const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, .55, 9), targetTrim);
+  const mesh = new THREE.Mesh(primitives.cylinder(radius,.55,9), targetTrim);
   mesh.rotation.z = Math.PI / 2;
   mesh.position.set(x, y, z);
   parent.add(mesh);
@@ -458,7 +468,7 @@ function addScenicVehicle(group, cx, cz) {
   addBox(car, 3.5, .95, 6.6, 0, .6, 0, carPaint);
   addBox(car, 3.0, 1.15, 3.5, 0, 1.55, -.4, carGlass);
   for (const side of [-1, 1]) for (const fore of [-2.1, 2.1]) {
-    const wh = new THREE.Mesh(new THREE.CylinderGeometry(.64, .64, .38, 10), wheelMat);
+    const wh = new THREE.Mesh(primitives.cylinder(.64,.38,10), wheelMat);
     wh.rotation.z = Math.PI / 2; wh.position.set(side * 1.8, .35, fore); car.add(wh);
   }
   for (const x0 of [-1.1, 1.1]) addBox(car, .65, .26, .1, x0, .77, 3.33, lampMat);
@@ -508,7 +518,9 @@ function disposeTile(tile) {
     if (obj.isInstancedMesh) obj.dispose();
     if (obj.userData.ownedGeometry) obj.geometry.dispose();
     // Scenic vehicle geometries are unique to each tile.
-    if (obj.isMesh && !obj.isInstancedMesh && !obj.userData.ownedGeometry && obj.parent?.type === 'Group' && obj.parent !== tile.group) obj.geometry.dispose();
+    if (obj.isMesh && !obj.isInstancedMesh && !obj.userData.ownedGeometry &&
+        !obj.geometry.userData?.sharedPrimitive && obj.parent?.type === 'Group' &&
+        obj.parent !== tile.group) obj.geometry.dispose();
   });
 }
 function rebuildTiles(force = false) {
@@ -665,6 +677,7 @@ document.addEventListener('visibilitychange', () => {
     sound.suspendOnHidden();
   }
   last = 0;
+  budget.reset();
 });
 function toggleView() {
   view = view === 'chase' ? 'fpv' : 'chase';
@@ -900,18 +913,10 @@ function frame(now) {
   smokeViews.forEach((smoke,i)=>{ if(smoke.visible){smoke.position.y=encounter.vehicles[i].y+5+Math.sin(now*.0006+i)*1.2;smoke.rotation.y+=dt*.17;} });
   for (let i = 0; i < rotors.length; i++) rotors[i].rotation.y += dt * (i % 2 ? -43 : 43);
   renderer.render(scene, camera);
-  smoothMs = smoothMs * .98 + Math.min(dt * 1000, 50) * .02;
-  frameCount++;
-  // Very small adaptive-resolution feedback loop, deliberately gated to avoid thrashing.
-  if (mode === 'flying' && frameCount % 180 === 0) {
-    const maxDpr = Math.min(window.devicePixelRatio || 1, mobile ? 1.6 : 2);
-    const wanted = smoothMs > 29 ? Math.max(1, qualityDpr - .16)
-                 : smoothMs < 17.7 ? Math.min(maxDpr, qualityDpr + .08) : qualityDpr;
-    if (Math.abs(wanted - qualityDpr) > .01) {
-      qualityDpr = wanted;
-      renderer.setPixelRatio(qualityDpr);
-      resize();
-    }
+  const nextDpr=budget.sample(dt*1000,mode==='flying');
+  if(nextDpr!==null){
+    renderer.setPixelRatio(nextDpr);
+    resize();
   }
   requestAnimationFrame(frame);
 }
@@ -929,7 +934,10 @@ window.__openSkySnapshot = () => ({
   points:scorecard.points, combo:scorecard.combo, moving:encounter.vehicles.filter(v=>v.moving&&!v.destroyed).length,
   target:guidanceFor(encounter,flight), spawn:spawnForNextTarget(encounter), lastAward,
   nearbyTrees:tiles.get(Math.floor(flight.x/TILE)+':'+Math.floor(flight.z/TILE))?.hazards.length||0,
-  beacons:beaconViews.filter(b=>b.visible).length
+  beacons:beaconViews.filter(b=>b.visible).length,
+  dpr:budget.dpr,renderCalls:renderer.info.render.calls,
+  geometries:renderer.info.memory.geometries,primitiveGeometries:primitives.stats.total,
+  framePacing:budget.stats
 });
 document.documentElement.dataset.openSkyReady = 'true';
 requestAnimationFrame(frame);

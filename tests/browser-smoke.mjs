@@ -38,6 +38,10 @@ try{
     'nearby uncleared targets get in-world glints without flooding the scene');
   assert.ok(running.nearbyTrees>0,'visually streamed near forest has physical obstacle candidates');
   assert.ok(running.target?.distance>0,'target guidance is available as soon as a run starts');
+  assert.ok(running.dpr>=.85 && running.dpr<=1.6,'adaptive resolution starts in supported mobile bounds');
+  assert.ok(running.renderCalls>0,'3D scene draws at least one call');
+  assert.ok(running.primitiveGeometries>0 && running.primitiveGeometries<120,
+    'target models share repeated GPU primitive geometries');
   assert.equal(running.points,0,'a new run starts with a clean score');
   assert.equal(await page.locator('#arcade-score').innerText(),'0 PTS');
   assert.match(await page.locator('#target-compass').innerText(),/M$/);
