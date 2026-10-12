@@ -1,4 +1,4 @@
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
+import * as THREE from '../vendor/three.module.min.js';
 import { TILE, clamp, hash, roadCenter, groundHeight, makeFlight, advanceFlight, LAKE, lakeProximity } from './flight3d.mjs';
 import { createFlightAudio } from './audio3d.mjs';
 import { createScenery } from './scenery3d.mjs';
