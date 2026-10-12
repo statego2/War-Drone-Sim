@@ -1,4 +1,5 @@
 import { groundHeight, roadCenter } from './flight3d.mjs';
+import {ARCADE_HIT_VOLUME,sweptPropIntersection} from './contactvolume.mjs';
 
 // Fixed fictional arcade scene. Positions and collision volumes are gameplay art,
 // never a representation of a real vehicle or a real-world impact model.
@@ -72,26 +73,18 @@ export function levelComplete(encounter) {
   return encounter.hits===encounter.vehicles.length;
 }
 
-// Minimum distance from a swept flight segment to each deliberately generous
-// spherical silhouette. Checking the segment prevents skipping hits at speed.
+// Model-shaped arcade volumes: generous along the visible hull and tracks,
+// compact above the roof. Intersect the entire relative motion over the
+// frame and choose the FIRST contact, not the closest point after impact.
 export function resolveContact(encounter, from, to, groundContact = false) {
   let best = null;
   for (const vehicle of encounter.vehicles) {
     if (vehicle.destroyed) continue;
-    // Use the moving target's own segment as well as the drone segment.
-    // Relative sweep catches crossing paths even when the drone itself hardly moves.
-    const startX=from.x-(vehicle.previousX??vehicle.x);
-    const startY=from.y-(vehicle.previousY??vehicle.y);
-    const startZ=from.z-(vehicle.previousZ??vehicle.z);
-    const dx=to.x-vehicle.x-startX;
-    const dy=to.y-vehicle.y-startY;
-    const dz=to.z-vehicle.z-startZ;
-    const length2=dx*dx+dy*dy+dz*dz;
-    const t=length2?Math.max(0,Math.min(1,
-      -(startX*dx+startY*dy+startZ*dz)/length2)):0;
-    const px=startX+t*dx,py=startY+t*dy,pz=startZ+t*dz;
-    const distance2 = px*px + py*py + pz*pz;
-    if (distance2 < 7.8*7.8 && (!best || t < best.t)) best = { type:'vehicle', id:vehicle.id, t };
+    const start={x:vehicle.previousX??vehicle.x,
+      y:vehicle.previousY??vehicle.y,z:vehicle.previousZ??vehicle.z};
+    const end={x:vehicle.x,y:vehicle.y,z:vehicle.z};
+    const t=sweptPropIntersection(from,to,start,end,ARCADE_HIT_VOLUME[vehicle.kind]);
+    if(t!==null&&(!best||t<best.t))best={type:'vehicle',id:vehicle.id,t};
   }
   // Vehicle contact wins the same-frame tie at the road surface.
   return best || (groundContact ? { type:'ground' } : null);
