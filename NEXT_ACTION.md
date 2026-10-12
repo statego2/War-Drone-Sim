@@ -1,6 +1,12 @@
 # NEXT ACTION — War Drone Sim browser prototype
 
-**Updated 2026-10-08.** Source of truth: `main`. Hosted portrait build: https://statego2.github.io/War-Drone-Sim/
+**Updated 2026-10-12.** Source of truth: `main`. Hosted portrait build: https://statego2.github.io/War-Drone-Sim/
+
+## In review — encounter clarity (2026-10-12)
+
+- Branch `feat/encounter-clarity-20261012` implements a small GP-03 / CD-02 / CD-06 presentation slice: three original fictional matte olive tank/carrier/truck silhouettes with three distinct persistent wrecks, three progress marks, a shorter one-tap FLY home and approved palette accents. The encounter positions, swept collision volumes, one-finger physics, audio and 0.98-second respawn timing are unchanged.
+- Local `node --check` passed for the edited `src/game3d.mjs`. GitHub CI and visual portrait/browser checks remain to be confirmed on the PR. No real iPhone Safari test or owner fun acceptance is claimed.
+- Next unblocked action: inspect the PR screenshot at 390×844 and a three-hit run; tune target visibility and HUD if needed. Owner iPhone pass should check all three vehicle silhouettes, target choice, hit/wreck clarity, controls and uninterrupted retry. Preserve the GP-00 / GP-04 gates before adding content.
 
 ## Landed in main
 
