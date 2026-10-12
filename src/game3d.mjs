@@ -314,7 +314,7 @@ const battlefieldView=new THREE.Group();
 encounterView.add(battlefieldView);
 const battlefield=battlefieldLayout();
 const trailMaterial=new THREE.MeshLambertMaterial({
-  color:0x927a52,roughness:1,polygonOffset:true,polygonOffsetFactor:-2
+  color:0x927a52,polygonOffset:true,polygonOffsetFactor:-2
 });
 const hubMaterial=new THREE.MeshLambertMaterial({
   color:0x816b4b,polygonOffset:true,polygonOffsetFactor:-2
@@ -362,7 +362,7 @@ function makePadGeometry(pad){
     const x=pad.x+Math.cos(angle)*pad.rx*rough;
     const z=pad.z+Math.sin(angle)*pad.rz*rough;
     positions.push(x,groundHeight(x,z)+.61,z);
-    if(j>0)indices.push(0,j,j+1);
+    if(j>0)indices.push(0,j+1,j); // face upward in +Y rather than hide under terrain
   }
   const geometry=new THREE.BufferGeometry();
   geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
