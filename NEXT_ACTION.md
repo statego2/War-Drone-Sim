@@ -40,14 +40,23 @@ Owner reported the first tank was very difficult to hit, reversing sent the dron
 - **Military-style vehicle visual detail (#106, merged)**: 6 tanks get improved barrel, five APCs get dark visor/roof detail and 5 transports get windshield/grille/cargo roof. Browser smoke checks all 16 models.
 - **New acceptance order:** confirm Pages deployment of latest main, play full route on actual iPhone using build stamp, evaluate one-finger turnaround/flat-height reverse/punchy dive, visibility and collision against first tank, aesthetics/sound at each site, and performance after many consecutive respawns. Record exact model/iOS/build and screenshot; iterate against concrete problems rather than claiming mobile acceptance from Chromium.
 
+## 2026-10-12 — Follow-up production work v17–v22 (merged)
+
+- **Impact fairness [#107](https://github.com/statego2/War-Drone-Sim/pull/107):** body-kind-specific forgiving ellipsoid gameplay collisions; full swept relative intersection handles high-speed crossings, while truly high/side passes remain misses.
+- **Non-box vehicle models [#108](https://github.com/statego2/War-Drone-Sim/pull/108):** shared, faceted, low-poly sloped hulls on all 16 fictional tanks/carriers/trucks, with outward face-winding and actual GPU-model count tests.
+- **Soft visual impact [#109](https://github.com/statego2/War-Drone-Sim/pull/109):** gentle procedural radial glow sprites instead of harsh polygonal explosion cores, warm rewards vs muted terrain misses; preserves original audio, sparks, shock and 0.98-second retry.
+- **First target accessibility [#110](https://github.com/statego2/War-Drone-Sim/pull/110):** new 96-script deterministic test starting at the exact airborne spawn showed **1/96 successful simple swipes before tuning**. After lowering spawn 32→28 and slightly forgiving tank volume, **21/96** succeed (fastest 1.63 seconds versus 1.79). Test now requires at least 15 successes. This is repeatable simulation evidence, not proof the player's own gestures will feel intuitive.
+- **Cross-browser QA [#111](https://github.com/statego2/War-Drone-Sim/pull/111):** independent desktop Linux WebKit portrait Three.js boot alongside Chromium; full 16-target scene, active GPU draw calls and authentic screenshot passed. Not physical iPhone Safari.
+- **Screenshot-driven trail correction [#112](https://github.com/statego2/War-Drone-Sim/pull/112):** narrow grassy-dirt trails, smaller staging pads and transparent feathered 3D dirt vertices replace visually oversized opaque beige slabs. Both desktop Chromium and WebKit CI pass; screenshot demonstrates the actual change.
+
 ## Quality and release truth
 
 Desktop Chromium (software WebGL) automated checks and uploaded screenshots establish that a 3D forest, road, drone and UI render and the tested interactions execute. They **do not** establish iPhone Safari performance, 16-target human playability, fun, audio comfort, thermals, WebGL restoration on iOS, or the quality of collision feel.
 
 ## Next unblocked work / decisive acceptance blocker
 
-1. Confirm #94 final Node + Chromium checks green, merge and verify GitHub Pages/main CI at the exact resulting SHA. Inspect updated `02-flight-opening.png` screenshot and confirm guidance text no longer overlays the HUD.
-2. On the owner's actual iPhone, complete the entire 16-target forest route, plus ~10–15 retries and at least one moving target/tree contact. Check steering, reverse/climb, dive, every sector, one-second respawn, mobile pause/redeploy/restart, mute/app switch/WebGL, target readability and page reload. Capture build SHA + device/iOS, screenshot/video and frame-time observations.
-3. Once G1 fun and G2 mobile feasibility have empirical evidence, choose the **highest-impact concrete issue** (likely pacing, camera/sightline, foliage visibility or impact sound) and implement a focused reversible change. Do not equate CI with owner approval. Avoid adding modes or infinite content until the actual device gate is resolved.
+1. Verify latest **main** GitHub Pages deployment and both browser engines (Chromium + desktop WebKit) on that exact SHA. Check the tiny in-game BUILD stamp; stale standalone bookmarks of legacy Canvas must never masquerade as the new game.
+2. **Actual iPhone Safari owner playtest remains the decisive blocker.** Play 10–15 drones across three clearings; try the first tank, reverse at constant height, 90–180° turnaround, fast nose dive, diagonal chase, target contact vs missed trees, sound and automatic 0.98-second respawn. Record iPhone model/iOS, BUILD stamp, a 20–30s video or screenshots and temperature/FPS impressions.
+3. Tune only issues reproducible from player evidence: target readability and camera feel first, then performance/thermal or sound if necessary. Keep all changes reversible and avoid premature extra game modes. Browser tests are a regression floor, not an invented phone satisfaction rating.
 
 Only fictional arcade vehicles; no real-world targeting, hardware flight interfaces or real attack specifications.
