@@ -4,6 +4,7 @@ import { createFlightAudio } from './audio3d.mjs';
 import { createScenery } from './scenery3d.mjs';
 import { createClouds } from './atmosphere3d.mjs';
 import { makeEncounter, updateEncounter, spawnForNextTarget, resolveContact, applyContact, nextDrone, LEVEL_SECTORS, LEVEL_TARGETS, clearingRadius, activeSectorIndex, sectorProgress, levelComplete } from './encounter.mjs';
+import {battlefieldLayout} from './battlefieldlayout.mjs';
 import { makeScorecard, registerResult, guidanceFor } from './arcadeflow.mjs';
 import { createImpactFX, impactEnvelope } from './impactfx3d.mjs';
 import { gestureAxes } from './touchflight.mjs';
@@ -340,6 +341,73 @@ const lampMat = new THREE.MeshBasicMaterial({ color: 0xdfd4a8 });
 // Persistent encounter meshes sit in world coordinates; tile streaming never
 // disposes a wreck when the player flies out and returns.
 const encounterView = new THREE.Group(); scene.add(encounterView);
+// Permanent authored forest hubs: their terrain ribbons stay aligned with
+// target wrecks across airborne respawns and streamed scenery tile changes.
+const battlefieldView=new THREE.Group();
+encounterView.add(battlefieldView);
+const battlefield=battlefieldLayout();
+const trailMaterial=new THREE.MeshLambertMaterial({
+  color:0x927a52,polygonOffset:true,polygonOffsetFactor:-2
+});
+const hubMaterial=new THREE.MeshLambertMaterial({
+  color:0x816b4b,polygonOffset:true,polygonOffsetFactor:-2
+});
+const stagingMaterial=new THREE.MeshLambertMaterial({
+  color:0x998360,polygonOffset:true,polygonOffsetFactor:-2
+});
+// Ground-following ribbons with stable width and a gentle lateral bend.
+function makeTrackGeometry(points,halfWidth=3.1){
+  const positions=[],indices=[],stepsPerSection=12;
+  const path=[];
+  for(let j=0;j<points.length-1;j++){
+    const a=points[j],b=points[j+1];
+    for(let k=0;k<stepsPerSection;k++){
+      const t=k/stepsPerSection, smooth=t*t*(3-2*t);
+      path.push({x:a.x+(b.x-a.x)*smooth,z:a.z+(b.z-a.z)*t});
+    }
+  }
+  path.push(points.at(-1));
+  for(let i=0;i<path.length;i++){
+    const p=path[i],prev=path[Math.max(0,i-1)],next=path[Math.min(path.length-1,i+1)];
+    const dx=next.x-prev.x,dz=next.z-prev.z;
+    const length=Math.hypot(dx,dz)||1,nx=dz/length,nz=-dx/length;
+    const variance=1+.07*Math.sin(i*1.7);
+    for(const side of [-1,1]){
+      const x=p.x+side*halfWidth*nx*variance,z=p.z+side*halfWidth*nz*variance;
+      positions.push(x,groundHeight(x,z)+.58,z);
+    }
+    if(i>0){
+      const n=i*2;indices.push(n-2,n,n-1,n-1,n,n+1);
+    }
+  }
+  const geometry=new THREE.BufferGeometry();
+  geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();return geometry;
+}
+function makePadGeometry(pad){
+  const positions=[],indices=[],segments=28;
+  const y=groundHeight(pad.x,pad.z)+.6;
+  positions.push(pad.x,y,pad.z);
+  for(let j=0;j<=segments;j++){
+    const angle=j/segments*Math.PI*2;
+    const rough=1+.075*Math.sin(j*3.8+pad.z*.018);
+    const x=pad.x+Math.cos(angle)*pad.rx*rough;
+    const z=pad.z+Math.sin(angle)*pad.rz*rough;
+    positions.push(x,groundHeight(x,z)+.61,z);
+    if(j>0)indices.push(0,j+1,j); // face upward in +Y rather than hide under terrain
+  }
+  const geometry=new THREE.BufferGeometry();
+  geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+  geometry.setIndex(indices);geometry.computeVertexNormals();return geometry;
+}
+for(const trail of battlefield.trails)battlefieldView.add(
+  new THREE.Mesh(makeTrackGeometry(trail.path,trail.width),trailMaterial)
+);
+for(const pad of battlefield.pads)battlefieldView.add(
+  new THREE.Mesh(makePadGeometry(pad),pad.style==='hub'?hubMaterial:stagingMaterial)
+);
+
 // Three distinctive fictional, unoccupied arcade props. The collision
 // volumes and encounter positions remain owned by encounter.mjs.
 const targetKinds = ['tank', 'carrier', 'truck'];
@@ -1081,6 +1149,7 @@ window.__openSkySnapshot = () => ({
   moving:encounter.vehicles.filter(v=>v.moving&&!v.destroyed).length,
   target:guidanceFor(encounter,flight), spawn:spawnForNextTarget(encounter), lastAward,
   nearbyTrees:tiles.get(Math.floor(flight.x/TILE)+':'+Math.floor(flight.z/TILE))?.hazards.length||0,
+  battlefieldPaths:battlefield.trails.length,stagingPads:battlefield.pads.length,
   beacons:beaconViews.filter(b=>b.visible).length,
   redOutlines:outlineViews.filter(o=>o.group.visible).length,
   dpr:budget.dpr,graphicsReady,resumeMode,renderCalls:renderer.info.render.calls,
