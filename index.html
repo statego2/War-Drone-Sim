@@ -13,7 +13,7 @@
     <canvas id="scene" aria-label="Ζωντανός τρισδιάστατος κόσμος πτήσης"></canvas>
     <div id="vignette" aria-hidden="true"></div>
     <div id="hud" class="hidden">
-      <div class="hud-left"><span class="eyebrow">FOREST ENCOUNTER · FLIGHT V3</span><strong id="distance">0/3 VEHICLES</strong></div>
+      <div class="hud-left"><span class="eyebrow">FOREST ENCOUNTER</span><div id="progress" role="img" aria-label="0 από 3 οχήματα"><span></span><span></span><span></span></div><strong id="distance">0/3 · DRONE 1</strong></div>
       <div class="hud-right"><span class="eyebrow">ALTITUDE</span><strong id="altitude">0 M AGL</strong><small id="speed">0 KM/H</small><small id="vertical-rate" aria-label="Κατακόρυφη ταχύτητα">↑ 0.0 M/S</small></div>
       <div id="warning" role="status" aria-live="polite"></div>
       <div id="hint">Πάνω: ανέβα / φρένα / πίσω · κάτω: βουτιά · πλάγια: κατεύθυνση</div>
@@ -25,13 +25,13 @@
     </div>
     <section id="overlay" class="panel home">
       <div class="panel-content">
-        <div class="kicker">THREE VEHICLES. ONE CLEARING.</div>
+        <div class="kicker">ONE CLEARING · THREE CHOICES</div>
         <h1>WAR<br><em>DRONE</em><br>SIM</h1>
-        <p>Πέτα γρήγορα μέσα στο δάσος. Βούτα στα τρία οχήματα του ξέφωτου· κάθε πρόσκρουση αφήνει πίσω συντρίμμια. Το επόμενο drone μπαίνει αμέσως στη σκηνή.</p>
-        <button id="primary" type="button">BEGIN ENCOUNTER <span>↗</span></button>
-        <div class="controls">Ένα δάχτυλο: πάνω για άνοδο / φρένο / πίσω · κάτω για γρήγορη βουτιά · αριστερά / δεξιά για πλευρικό έλεγχο<br>Όλα χωρίς αλλαγές ταχύτητας ή επιπλέον κουμπιά</div>
+        <p>Βρες τρία οχήματα στο ξέφωτο. Βούτα, χτύπα και πέτα ξανά.</p>
+        <button id="primary" type="button">FLY <span>↗</span></button>
+        <div class="controls">Ένα δάχτυλο · πάνω / κάτω / αριστερά / δεξιά</div>
       </div>
-      <div class="footer">FOREST ENCOUNTER · ONE-FINGER FLIGHT V3</div>
+      <div class="footer">FOREST ENCOUNTER</div>
     </section>
     <div id="landscape">Γύρισε το κινητό όρθιο για να παίξεις.</div>
   </main>

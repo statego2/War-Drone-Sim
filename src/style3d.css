@@ -59,3 +59,20 @@
   #flight-actions .flight-tool {min-width: 60px;font-size: 9px;padding: 9px;}
   #sound-toggle {min-width: 75px!important;}
 }
+
+/* Encounter presentation: readable progress, quiet chrome and one clear launch. */
+:root { --deep-forest:#172b27; --soft-ivory:#f1eee3; --golden-hour:#e4bb82; --ember:#fa874e; }
+#game { background:var(--deep-forest); }
+.panel { background:linear-gradient(180deg,rgba(23,43,39,.04) 10%,rgba(23,43,39,.28) 42%,rgba(15,32,29,.92) 83%,#10231f 100%); }
+.panel h1 { color:var(--soft-ivory); margin:14px 0 18px; }
+.panel h1 em { color:var(--golden-hour); }
+.panel .kicker { color:var(--golden-hour); }
+.panel p { color:var(--soft-ivory); max-width:310px; }
+.panel button { background:var(--soft-ivory); color:var(--deep-forest); min-height:54px; border-radius:7px; }
+.panel button:focus-visible, .flight-tool:focus-visible, #pause:focus-visible { outline:3px solid var(--golden-hour); outline-offset:3px; }
+.home .controls { margin-top:13px; color:#dedfd2; }
+#hud .hud-left strong { font-size:12px; letter-spacing:1.1px; margin-top:7px; }
+#progress { display:flex; gap:6px; margin-top:10px; }
+#progress span { display:block; width:23px; height:7px; border-radius:5px; border:1px solid rgba(241,238,227,.82); background:rgba(23,43,39,.66); transition:background .18s,box-shadow .18s; }
+#progress span.complete { background:var(--golden-hour); border-color:var(--soft-ivory); box-shadow:0 0 9px rgba(228,187,130,.5); }
+@media (prefers-reduced-motion:reduce) { #progress span { transition:none; } }
