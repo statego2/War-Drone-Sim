@@ -10,7 +10,7 @@ test('world objective glint appears near playable empty props, not everywhere',(
   assert.ok(near.opacity>.3 && near.opacity<=.52);
   assert.ok(near.size>=5 && near.size<9);
   assert.equal(beaconAppearance({...target,z:800},player,0).visible,false);
-  assert.equal(beaconAppearance({...target,z:4},player,0).visible,false);
+  assert.equal(beaconAppearance({...target,y:25,z:4},player,0).visible,false);
 });
 test('completed and inactive sectors never show new in-world glints',()=>{
   assert.equal(beaconAppearance({...target,destroyed:true},player,0).visible,false);
