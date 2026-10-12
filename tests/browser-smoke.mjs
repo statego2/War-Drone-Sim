@@ -5,14 +5,19 @@ import { readFile, mkdir } from 'node:fs/promises';
 import { join, resolve, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { stagePages } from '../scripts/stage-pages.mjs';
 
 const root=resolve(fileURLToPath(new URL('../',import.meta.url)));
+const servingRoot=join(root,'public');
+// The browser must test precisely the files uploaded to GitHub Pages, not the
+// source tree (the vendor-path deployment regression escaped for this reason).
+await stagePages({publicRoot:servingRoot});
 const mime={'.html':'text/html','.css':'text/css','.mjs':'text/javascript','.js':'text/javascript'};
 const server=createServer(async(req,res)=>{
   try{
     const safe=decodeURIComponent(new URL(req.url||'/','http://localhost').pathname).replace(/^\/+/, '')||'index.html';
-    const file=resolve(root,safe);
-    if(!file.startsWith(root+'/')){res.writeHead(403).end();return;}
+    const file=resolve(servingRoot,safe);
+    if(!file.startsWith(servingRoot+'/')){res.writeHead(403).end();return;}
     res.writeHead(200,{'Content-Type':mime[extname(file)]||'application/octet-stream'});
     res.end(await readFile(file));
   }catch{res.writeHead(404).end('not found');}
@@ -160,7 +165,7 @@ try{
   // Legacy Canvas fallback must also provide sound control and basic lifecycle.
   const fallback=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:1.5,isMobile:true,hasTouch:true});
   fallback.on('pageerror',e=>errors.push('fallback: '+e.message));
-  await fallback.goto(`http://127.0.0.1:${server.address().port}/legacy-canvas.html`,{waitUntil:'domcontentloaded'});
+  await fallback.goto(`http://127.0.0.1:${server.address().port}/legacy-canvas.html?classic=1`,{waitUntil:'domcontentloaded'});
   await fallback.locator('#primary').click();
   await fallback.waitForSelector('#legacy-sound-toggle:not(.hidden)');
   await fallback.locator('#legacy-sound-toggle').click();
@@ -170,6 +175,23 @@ try{
   await fallback.locator('#primary').click();
   assert.ok(await fallback.locator('#hud').isVisible());
   await fallback.close();
+  // A broken module must produce a visible retry, not teleport the player
+  // back to the discarded V0.1 after years of development.
+  const failPage=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
+  await failPage.route('**/vendor/three.core.min.js',route=>route.abort());
+  await failPage.goto(`http://127.0.0.1:${server.address().port}/`,{waitUntil:'domcontentloaded'});
+  await failPage.waitForFunction(()=>document.documentElement.dataset.openSkyBoot==='failed',null,{timeout:15000});
+  assert.equal(await failPage.locator('#boot-error').isVisible(),true);
+  assert.equal(await failPage.locator('#boot-retry').isVisible(),true);
+  assert.match(await failPage.locator('#boot-error').innerText(),/3D/);
+  assert.equal(new URL(failPage.url()).pathname,'/','a failed 3D boot stays on the current game URL');
+  await failPage.close();
+  // Old redirected bookmarks should return to the 3D game automatically.
+  const staleBookmark=await browser.newPage({viewport:{width:390,height:844}});
+  await staleBookmark.goto(`http://127.0.0.1:${server.address().port}/legacy-canvas.html`,{waitUntil:'domcontentloaded'});
+  await staleBookmark.waitForURL('**/index.html',{timeout:10000});
+  await staleBookmark.waitForFunction(()=>document.documentElement.dataset.openSkyReady==='true',null,{timeout:45000});
+  await staleBookmark.close();
   assert.deepEqual(externalRequests,[],'3D build has no third-party runtime CDN dependencies');
   assert.deepEqual(errors,[],'no JavaScript page errors');
   console.log('PASS: one-finger no-mode flight, brake/hover gesture, reverse, diagonals, dive, mute and pause');
