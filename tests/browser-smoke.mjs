@@ -34,6 +34,8 @@ try{
   assert.equal(running.vehicles.length,16,'full forest level has sixteen persistent targets');
   assert.equal(running.total,16);
   assert.equal(running.moving,6,'six unoccupied fictional props patrol short arcade tracks');
+  assert.ok(running.beacons>=1 && running.beacons<=5,
+    'nearby uncleared targets get in-world glints without flooding the scene');
   assert.ok(running.nearbyTrees>0,'visually streamed near forest has physical obstacle candidates');
   assert.ok(running.target?.distance>0,'target guidance is available as soon as a run starts');
   assert.equal(running.points,0,'a new run starts with a clean score');
