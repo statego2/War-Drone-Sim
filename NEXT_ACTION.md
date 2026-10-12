@@ -1,82 +1,18 @@
-# NEXT ACTION — War Drone Sim browser prototype
+# NEXT ACTION — War Drone Sim
 
-**Updated 2026-10-12.** Source of truth: `main`. Hosted portrait build: https://statego2.github.io/War-Drone-Sim/
+**Updated 2026-10-12.** Source of truth: `main`. [Play the portrait build](https://statego2.github.io/War-Drone-Sim/).
 
-## In review — complete forest level (2026-10-12)
+## Shipped: first complete forest level
 
-- Owner correction: three vehicles were a greybox planning assumption; the requested product is a **whole playable level**. Branch `feat/forest-level-01-20261012` builds 16 targets across three connected forest clearings (5/5/6), checkpoint respawns at the earliest uncleared area, persistent wrecks, sector HUD, level-clear/replay and best drone count. No five-drone life limit.
-- The prior 3-target encounter, one-finger flight, collision logic, audio and rapid respawn serve as the foundation. The new target count and completion replace the old three-hit reset; detailed spatial layout and fun remain an experiment pending the owner's iPhone playtest.
-- Local Node syntax and encounter model checks passed. Browser CI and portrait/real-device assessment are pending until the PR runs; do not claim iPhone FPS or fun acceptance.
+- [PR #85](https://github.com/statego2/War-Drone-Sim/pull/85) merged as `30f0805`. The former three-target greybox is superseded. The level has a continuous forest route through three connected clearings, with 16 fictional empty vehicle props (5/5/6), persistent wrecks, progress HUD, quick checkpoint respawns near the earliest uncleared area, a final level-clear screen, replay, and locally saved best drone count. There is no three-target round reset or finite five-drone life limit.
+- One-finger flight, swept contact, impact visual/audio feedback, and fictional military-style tank/carrier/truck silhouettes remain the underlying mechanics and visual direction.
+- Local syntax and encounter checks passed; the PR's Node logic/syntax job passed in [run 38261307135](https://github.com/statego2/War-Drone-Sim/actions/runs/38261307135). Both [Pages deployment](https://github.com/statego2/War-Drone-Sim/actions/runs/38262074429) and [Pages build](https://github.com/statego2/War-Drone-Sim/actions/runs/38262072993) succeeded on the merge commit.
+- The Chromium visual job was still installing its browser dependency when this was written. Check the [main browser run](https://github.com/statego2/War-Drone-Sim/actions/runs/38262074457) before marking desktop visual smoke green. Actual iPhone Safari play, FPS, sound comfort and fun remain unverified.
 
-## Landed in main — encounter clarity (2026-10-12)
+## Next actions
 
-- **Merged PR #84** into `main` as `56ecad0`. This small GP-03 / CD-02 / CD-06 presentation slice implements: three original fictional matte olive tank/carrier/truck silhouettes with three distinct persistent wrecks, three progress marks, a shorter one-tap FLY home and approved palette accents. The encounter positions, swept collision volumes, one-finger physics, audio and 0.98-second respawn timing are unchanged.
-- Local `node --check` passed for the edited `src/game3d.mjs`. [PR #84](https://github.com/statego2/War-Drone-Sim/pull/84) passed Node logic/syntax and desktop Chromium interaction smoke on feature SHA `6d9defb` ([CI run 38259027437](https://github.com/statego2/War-Drone-Sim/actions/runs/38259027437)). The GitHub Pages deployment for `56ecad0` passed ([run 38259310822](https://github.com/statego2/War-Drone-Sim/actions/runs/38259310822)). No real iPhone Safari test, portrait screenshot review or owner fun acceptance is claimed.
-- Next unblocked action: inspect the deployed build at 390×844 and a three-hit run; tune target visibility and HUD if needed. Owner iPhone pass should check all three vehicle silhouettes, target choice, hit/wreck clarity, controls and uninterrupted retry. Preserve the GP-00 / GP-04 gates before adding content.
+1. Check the browser smoke result and inspect the deployed portrait build at 390×844. If it fails, determine whether the failure was setup or a game regression and fix the latter.
+2. Play the **entire 16-target route** on iPhone portrait: first approach, three clearing transitions, checkpoint spawn, wreck persistence, sector counter, final clear and replay. Also test one-finger climb/brake/reverse, diagonals, dives, ground impact, pause/mute/resume, and app switching.
+3. Record concrete observations, then tune pacing, sightlines, target spacing, controls, sound and visual feedback. Treat G1 fun and G2 phone performance as open until owner playtest evidence supports them. The linked [gameplay plan](docs/27_GAMEPLAY_FOCUS_PLAN.md) and [approved creative direction](docs/29_APPROVED_CREATIVE_DIRECTION_V2.md) set priorities.
 
-## Landed in main
-
-## Unified one-finger control V3 — 2026-10-08
-
-- **Merged PR #82** into `main` as `e819c1c`. Owner asked for complete thumb-only movement and removal of the CRUISE/FAST/REVERSE button. The browser version now maps short vertical touch motion to gentle climb, progressive braking/near-hover, faster reverse and gravity-led dive; sideways and diagonal steering get stronger response during braking. The speed-mode control and key R cycling were removed (FPV, sound and pause remain). Default no-touch movement remains an automatic forward cruise to preserve the current encounter loop.
-- Added `src/touchflight.mjs`, `tests/touchflight.test.mjs`, three targeted flight regression tests and portrait browser smoke assertions for no speed button and 52px upward brake gesture. Headless Chromium visual and Node logic checks both **passed** on feature SHA `71ae737` in [CI run 37833842027](https://github.com/statego2/War-Drone-Sim/actions/runs/37833842027). Documentation: [docs/31_ONE_FINGER_FLIGHT_V3.md](docs/31_ONE_FINGER_FLIGHT_V3.md). Check new `main` deployment/CI independently.
-- **Owner acceptance still OPEN:** actual iPhone portrait control feel, one-finger reversal speed, target readability, impacts and performance. In particular compare short-up brake to full-up reverse, left/right adjustment while near-hover, full down dive and releasing gesture.
-- If button removal impedes controllability, first retune gesture bands/velocity response; don't reinstate a complicated speed selector without owner feedback. Separate low-FPS simulation time issue #81 remains unresolved.
-
-
-## Pullback reverse flight v2 — 2026-10-08
-
-- **Merged PR #80** as `da5ba76`. Full upward gesture now smoothly tips the craft nose-high, cancels existing forward momentum over time and reverses arcade travel; small upward drags still climb forward. At full pullback it retains assisted climb and recovery from dive, with stronger diagonal left/right control and reduced forced yaw. Camera look-up is restrained; the speed display marks backward travel. Documentation: `docs/30_FLIGHT_PULLBACK_V2.md`.
-- Node flight regression checks and portrait Chromium smoke passed on feature SHA `5d5c861` in GitHub Actions run `37831981695`; the subsequent PR change only clarified documentation. Post-merge main CI / Pages run results should be verified separately. **Actual iPhone Safari playtest, thermal and subjective feel are still unverified**.
-- A separate general engineering issue [#81](https://github.com/statego2/War-Drone-Sim/issues/81) records software-WebGL simulation time dilation seen during browser smoke. This requires low-FPS profiling and bounded fixed-step catch-up work; do not assume Chrome headless timing represents iPhone FPS. Preserve swept-hit and automatic retry fairness.
-- **Next tangible gameplay acceptance:** on iPhone check soft-up vs sustained full-up (forward→reverse), upper diagonals while moving backward, release→forward recovery and FAST. Recheck nose dives, target choice and ~1-second retry; tune only from observed failures.
-
-
-- Browser WebGL Forest Encounter: one-finger steering, three fictional empty vehicles, swept contact, visible wreck states, automatic next drone (~0.98 s), next round once all three have been hit.
-- **Multidirectional inertial flight merged in `4e0e4e8` (#74):** sideways banking/strafe, all four diagonal gestures, HOVER lateral motion, faster forward-moving nose dive without air-braking, and gravity-led recovery. Speed/gesture/collision tests expanded. See `docs/28_OMNIDIRECTIONAL_FLIGHT.md`. This supersedes the earlier automatic steep-dive braking commits.
-- Procedural audio director: merged as `e9ada33`. Dynamic rotor/wind/altitude mix and synthesized distinct ground/vehicle contacts, with unit tests. See `docs/26_AUDIO_DIRECTOR_V1.md`.
-- Procedural visual impact pool: merged as `03cd218` via PR #71. Layered flash, planar shock ring, reusable embers and smoke, softer ground-impact treatment, mild FOV pulse, and deterministic envelope tests. See `docs/27_IMPACT_FEEDBACK_V1.md`.
-- All effects are fictional arcade feedback, not operational hardware/damage simulation.
-
-## Evidence and remaining validation
-
-- The pre-merge impact-VFX implementation branch's GitHub Actions run `37826960086` passed both logic and desktop Chromium visual smoke. Main's post-merge checks are tracked in GitHub Actions; do not mark them green until completed.
-- GitHub Pages deployment workflow `37827156003` reported success for merge commit `03cd218`. No actual iPhone Safari visual/audio/fps/haptics test has been performed in this session; do not claim professional sound mastering, 60fps, or player fun has been established.
-- Open older PR #67 proposes the **rejected air-braking behavior**. It is superseded by #74; do not reintroduce the stop without new owner approval. The 3D browser suite on #74 passed logic checks and prior visual checks; a post-merge run must still be checked.
-- The graphics overhaul design PR #66 is separate and does not by itself establish that the runtime visuals are implemented.
-
-## Next unblocked game-feel work
-
-1. On iPhone portrait, test all four diagonals, sideways HOVER and full dive on CRUISE/FAST. Verify the drone now **retains forward momentum instead of freezing** when pitched fully down, and can recover without sudden velocity changes.
-2. Play ten consecutive vehicle and ground impacts. Check that shockwave/embers/smoke and newly merged audio blend cleanly, reset every drone, and do not cause fatigue or frame spikes.
-3. Check three-target identification, first-approach timing, steering precision, pause/mute/resume and app switching. Document any reproducible failures in GitHub issues.
-4. Tune spawn, speed and feedback from phone evidence *before* adding more persistent systems. G1 fun and G2 phone performance remain unverified.
-
-No real-world targeting, vehicle damage calculations, live drone protocols or physical combat simulation belongs in this prototype.
-
-## Sonic UX follow-up (2026-10-08, Feel-Good v2)
-
-- Merged sound iteration `3d52feb8` (originally `feat/feel-good-sound-design-v2`) replaces unpleasant machine-like and brittle high-frequency audio with a softer original arcade palette and a deliberately restrained master mix. See `docs/28_FEEL_GOOD_AUDIO_V2.md`.
-- Gameplay rewards sound progression across 3 empty fictional vehicle contacts: short confirmation, richer confirmation, special completion cadence. FAST and dive develop audio energy without harsh perpetual whistles.
-- Unit tests include bounded timbre, dive-vs-level contrast, and unique chord-length reward design; CI will be tracked on the review PR. A passing browser test **does not prove acoustic enjoyment**.
-- **Next acceptance step:** owner listens on real iPhone speaker and headphones and compares 20 consecutive flight/impact cycles; tune rotor/wind/explosion response based on the actual listening feedback.
-
-
-## Owner-approved creative design plan — 2026-10-08 (planning only)
-
-- **ACCEPTED identity:** Premium Cinematic Arcade / “Beauty in flight. Precision in motion. Spectacle in impact.” See [Creative Direction 2.0](docs/29_APPROVED_CREATIVE_DIRECTION_V2.md), CD-00…CD-09 and [ADR-006](docs/09_DECISIONS.md). This is **not a runtime visual release**.
-- Order: CD-00 actual portrait baseline (coordinates with GP-00) → CD-01 CSS tokens → CD-02 single-CTA live forest launch → CD-03 minimal HUD; CD-04 authored clearing → CD-05 lighting → CD-06 drone/vehicle silhouettes → CD-07 reward polish → CD-08 pause/micro-UX → CD-09 live iPhone acceptance.
-- Preserve high-priority flight/dive, impact audio and performance work from above. Do not merge PR #66 as-is without reconciling graphics-overhaul concepts against approved CD direction and current shipped VFX/audio.
-- **Next safe art action:** capture current 390×844 home/flight/impact screenshot baselines; record which are desktop-only versus actually tested on iPhone, then implement a reversible launch-only PR. Do not modify game physics or hitboxes to achieve visual polish.
-
-## Owner art clarification — military-style vehicle targets (2026-10-08, planning only)
-
-- Owner confirmed the 3 encounter targets should look like **fictional military vehicles**, not generic civilian cars: **tank silhouette, APC/armored carrier silhouette, military transport truck silhouette**. Matte olive/military green, khaki/dust materials; recognizable from above at flight speed and distinct settled wrecks.
-- Authoritative scope: [Creative Direction 2.0](docs/29_APPROVED_CREATIVE_DIRECTION_V2.md) CD-06 + [ADR-006](docs/09_DECISIONS.md), tracked under [Issue #76](https://github.com/statego2/War-Drone-Sim/issues/76). This is **plan approval only**, not imported meshes or deployed gameplay visuals.
-- Preserve fixed 3-target encounter, fictional unoccupied objects, and existing hitbox/flight/instant-respawn contracts. No real vehicle replicas, military targeting UI or weapons simulation. Reconcile existing graphics PR #66 before implementing CD-06.
-
-## Quiet Air-Glide v3 — owner listening complaint (2026-10-08)
-
-- The owner still finds the constant drone sound irritating. `feat/quiet-air-glide-v3-rebased` eliminates the permanently running rotor oscillators instead of lowering their volume. See `docs/29_QUIET_AIR_GLIDE_V3.md`.
-- Flight now communicates speed, banking and dives through quiet movement-reactive air layers; reward and impact sounds remain separate.
-- Tests check that unlocking audio creates no continuous motor oscillator, plus speed/dive/turn response. Real iPhone listening remains the final comfort gate; passing automated tests does not establish sound quality.
+The owner explicitly requested a **whole playable level**; old three-target notes in historical PRs and documents are superseded. Keep the experience fictional arcade play, without real-world targeting or weapon simulation.
