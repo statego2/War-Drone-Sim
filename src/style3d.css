@@ -76,3 +76,48 @@
 #progress span { display:block; width:23px; height:7px; border-radius:5px; border:1px solid rgba(241,238,227,.82); background:rgba(23,43,39,.66); transition:background .18s,box-shadow .18s; }
 #progress span.complete { background:var(--golden-hour); border-color:var(--soft-ivory); box-shadow:0 0 9px rgba(228,187,130,.5); }
 @media (prefers-reduced-motion:reduce) { #progress span { transition:none; } }
+
+
+/* Forest Engagement v2: quiet, glanceable portrait navigation and score. */
+#arcade-score,#target-compass {
+  display:block;
+  width:max-content;
+  max-width:min(48vw,175px);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  text-align:left;
+}
+#arcade-score {
+  margin-top:6px;
+  color:#ffe5b6;
+  font-weight:900;
+  font-size:11px;
+  letter-spacing:.5px;
+  font-variant-numeric:tabular-nums;
+}
+#target-compass {
+  background:rgba(11,31,27,.65);
+  border:1px solid rgba(228,187,130,.45);
+  border-radius:6px;
+  color:#f7f5dc;
+  padding:7px 9px;
+  font-size:11px;
+  font-weight:850;
+  letter-spacing:.6px;
+  margin-top:11px;
+  box-shadow:0 3px 15px rgba(0,0,0,.12);
+  backdrop-filter:blur(5px);
+}
+#target-compass[data-direction="BEHIND"] {
+  border-color:rgba(244,151,99,.8);
+  color:#ffdbb6;
+}
+#target-compass[data-direction="CLEAR"] {
+  border-color:rgba(163,235,175,.8);
+  color:#d4ffda;
+}
+@media(max-width:375px) {
+  #target-compass {font-size:10px;padding:6px 7px;}
+  #arcade-score {font-size:10px;}
+}
