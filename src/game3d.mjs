@@ -281,44 +281,109 @@ const lampMat = new THREE.MeshBasicMaterial({ color: 0xdfd4a8 });
 // Persistent encounter meshes sit in world coordinates; tile streaming never
 // disposes a wreck when the player flies out and returns.
 const encounterView = new THREE.Group(); scene.add(encounterView);
-const targetColors = [0x9b7856, 0x607d76, 0x767e99];
+// Three distinctive fictional, unoccupied arcade props. The collision
+// volumes and encounter positions remain owned by encounter.mjs.
+const targetKinds = ['tank', 'carrier', 'truck'];
+const targetPaint = [0x586247, 0x657255, 0x77755b].map(color =>
+  new THREE.MeshStandardMaterial({ color, roughness: .91, metalness: .035 }));
+const targetTrim = new THREE.MeshStandardMaterial({ color: 0x343d32, roughness: .97 });
+const targetRoof = new THREE.MeshStandardMaterial({ color: 0x85836a, roughness: .96 });
+const wreckPaint = new THREE.MeshStandardMaterial({ color: 0x30352e, roughness: 1 });
+const wreckTrim = new THREE.MeshStandardMaterial({ color: 0x49483d, roughness: 1 });
 const intactViews = [], wreckViews = [], smokeViews = [];
 const smokeGeo = new THREE.IcosahedronGeometry(1, 1);
 const impactFX = createImpactFX(THREE, encounterView);
+function wheel(parent, x, z, radius, y = .9) {
+  const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, .55, 9), targetTrim);
+  mesh.rotation.z = Math.PI / 2;
+  mesh.position.set(x, y, z);
+  parent.add(mesh);
+}
+function tankShape(root, paint) {
+  // Low tracked hull + broad, short turret: legible from the chase camera.
+  addBox(root, 5.1, 1.45, 8.9, 0, 1.14, 0, paint);
+  for (const x of [-2.55, 2.55]) {
+    addBox(root, 1.15, 1.45, 9.3, x, .88, 0, targetTrim);
+    for (const z of [-3.25, -1.6, 0, 1.6, 3.25]) wheel(root, x + Math.sign(x) * .49, z, .54, .77);
+  }
+  addBox(root, 4.25, .72, 4.2, 0, 2.23, -.65, paint);
+  addBox(root, 3.1, .35, 2.85, 0, 2.74, -.6, targetRoof);
+}
+function carrierShape(root, paint) {
+  addBox(root, 6.05, 2.55, 9.7, 0, 1.72, 0, paint);
+  addBox(root, 5.0, .6, 7.2, 0, 3.3, -.3, targetRoof);
+  addBox(root, 5.2, .9, 2.4, 0, 2.95, 3.1, paint);
+  for (const x of [-3.03, 3.03])
+    for (const z of [-3.3, 0, 3.3]) wheel(root, x, z, 1.02, 1.05);
+  addBox(root, 4.5, .16, .3, 0, 2.22, 4.94, targetTrim);
+}
+function truckShape(root, paint) {
+  // Separate boxy cab and elevated cargo bed make its long silhouette obvious.
+  addBox(root, 5.45, .75, 11.1, 0, 1.35, 0, targetTrim);
+  addBox(root, 5.8, 2.55, 6.0, 0, 2.83, -2.05, paint);
+  addBox(root, 5.95, .28, 6.35, 0, 4.25, -2.05, targetRoof);
+  addBox(root, 5.25, 2.25, 3.1, 0, 2.73, 3.8, paint);
+  addBox(root, 4.0, .75, .18, 0, 3.27, 5.38, targetTrim);
+  for (const x of [-2.87, 2.87])
+    for (const z of [-3.65, -.95, 4.3]) wheel(root, x, z, .89, .94);
+}
+function wreckShape(root, kind) {
+  if (kind === 'tank') {
+    addBox(root, 6.6, .64, 9.4, 0, .46, 0, wreckPaint);
+    const turret = addBox(root, 3.8, .63, 3.8, .75, 1.19, -.7, wreckTrim);
+    turret.rotation.y = .31; turret.rotation.z = -.12;
+    for (const x of [-2.6, 2.6]) addBox(root, 1.05, .55, 8.5, x, .3, 0, targetTrim);
+  } else if (kind === 'carrier') {
+    addBox(root, 6.3, .8, 9.3, 0, .52, 0, wreckPaint);
+    const roof = addBox(root, 5.1, .51, 6.6, .6, 1.11, -.45, wreckTrim);
+    roof.rotation.z = -.18; roof.rotation.y = .14;
+    for (const x of [-2.9, 2.9]) for (const z of [-3.0, 2.9]) wheel(root, x, z, .53, .42);
+  } else {
+    addBox(root, 5.7, .48, 10.9, 0, .47, 0, wreckPaint);
+    const cargo = addBox(root, 5.7, 1.1, 5.4, -.6, 1.0, -2, wreckTrim);
+    cargo.rotation.z = .22;
+    const cab = addBox(root, 4.8, 1.2, 2.8, .6, .89, 3.7, wreckPaint);
+    cab.rotation.y = -.23;
+    for (const x of [-2.65, 2.65]) for (const z of [-3.3, 4.1]) wheel(root, x, z, .48, .4);
+  }
+}
 function buildTargets() {
   for (const target of encounter.vehicles) {
+    const kind = targetKinds[target.id];
     const root = new THREE.Group();
-    root.position.set(target.x,target.y-1.8,target.z);
-    root.rotation.y = .22 * (target.id-1);
-    const paint = new THREE.MeshStandardMaterial({color:targetColors[target.id],roughness:.68,metalness:.15});
-    addBox(root,5.8,1.6,10.4,0,1.05,0,paint);
-    addBox(root,4.5,1.55,4.1,0,2.45,-.85,carGlass);
-    for (const x of [-2.7,2.7]) for (const z of [-3.1,3.1]) {
-      const wheel=new THREE.Mesh(new THREE.CylinderGeometry(.95,.95,.6,10),wheelMat);
-      wheel.rotation.z=Math.PI/2;wheel.position.set(x,.85,z);root.add(wheel);
-    }
-    encounterView.add(root);intactViews.push(root);
-    const wreck=new THREE.Group();wreck.position.copy(root.position);
-    const dark = new THREE.MeshStandardMaterial({color:0x242a29,roughness:.96});
-    addBox(wreck,6.1,.85,10.3,0,.55,0,dark);
-    const twisted=addBox(wreck,4.9,.58,4.7,.6,1.3,-.6,dark);twisted.rotation.z=.22;
-    for(let k=0;k<4;k++){
-      const part=addBox(wreck,1.3,.35,1.8,(k%2?1:-1)*(3+k*.8),.3,(k-1.5)*2.7,dark);
-      part.rotation.y=k*1.1;
-    }
-    encounterView.add(wreck);wreckViews.push(wreck);
-    const smoke=new THREE.Mesh(smokeGeo,new THREE.MeshBasicMaterial({color:0x444949,transparent:true,opacity:.27,depthWrite:false}));
-    smoke.position.set(target.x,target.y+5,target.z);smoke.scale.set(2.8,5,2.8);
-    encounterView.add(smoke);smokeViews.push(smoke);
+    root.position.set(target.x, target.y - 1.8, target.z);
+    root.rotation.y = .22 * (target.id - 1);
+    if (kind === 'tank') tankShape(root, targetPaint[target.id]);
+    else if (kind === 'carrier') carrierShape(root, targetPaint[target.id]);
+    else truckShape(root, targetPaint[target.id]);
+    encounterView.add(root);
+    intactViews.push(root);
+    const wreck = new THREE.Group();
+    wreck.position.copy(root.position);
+    wreck.rotation.y = root.rotation.y;
+    wreckShape(wreck, kind);
+    encounterView.add(wreck);
+    wreckViews.push(wreck);
+    const smoke = new THREE.Mesh(smokeGeo, new THREE.MeshBasicMaterial({
+      color: 0x444949, transparent: true, opacity: .27, depthWrite: false
+    }));
+    smoke.position.set(target.x, target.y + 5, target.z);
+    smoke.scale.set(2.8, 5, 2.8);
+    encounterView.add(smoke);
+    smokeViews.push(smoke);
   }
   syncTargets();
 }
 function syncTargets() {
-  encounter.vehicles.forEach((vehicle,i)=>{
-    intactViews[i].visible=!vehicle.destroyed;
-    wreckViews[i].visible=vehicle.destroyed;
-    smokeViews[i].visible=vehicle.destroyed;
+  encounter.vehicles.forEach((vehicle, i) => {
+    intactViews[i].visible = !vehicle.destroyed;
+    wreckViews[i].visible = vehicle.destroyed;
+    smokeViews[i].visible = vehicle.destroyed;
+    const pip = document.querySelectorAll('#progress span')[i];
+    if (pip) pip.classList.toggle('complete', vehicle.destroyed);
   });
+  const progress = $('progress');
+  if (progress) progress.setAttribute('aria-label', `${encounter.hits} από 3 οχήματα`);
 }
 buildTargets();
 function moveEncounter() { encounterView.position.set(-flight.x,0,-flight.z); }
@@ -638,7 +703,7 @@ function updateCamera(dt) {
 }
 
 function updateHUD() {
-  distanceEl.textContent = `${encounter.hits}/3 VEHICLES · DRONE ${encounter.drones}`;
+  distanceEl.textContent = `${encounter.hits}/3 · DRONE ${encounter.drones}`;
   altitudeEl.textContent = Math.round(Math.max(0, flight.y - groundHeight(flight.x, flight.z))) + ' M AGL';
   const totalSpeed=Math.hypot(flight.vx,flight.vy,flight.vz);
   speedEl.textContent = (flight.speed < -5 ? '↶ ' : '') + Math.round(totalSpeed*3.6) + ' KM/H';
