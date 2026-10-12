@@ -5,6 +5,7 @@ import { createScenery } from './scenery3d.mjs';
 import { createClouds } from './atmosphere3d.mjs';
 import { makeEncounter, updateEncounter, spawnForNextTarget, resolveContact, applyContact, nextDrone, LEVEL_SECTORS, LEVEL_TARGETS, clearingRadius, activeSectorIndex, sectorProgress, levelComplete } from './encounter.mjs';
 import {battlefieldLayout} from './battlefieldlayout.mjs';
+import {trailAlpha,padAlpha} from './trailfade.mjs';
 import {slopedHullSpec} from './vehiclemesh.mjs';
 import { makeScorecard, registerResult, guidanceFor } from './arcadeflow.mjs';
 import { createImpactFX, impactEnvelope } from './impactfx3d.mjs';
@@ -95,8 +96,12 @@ const stripeMat = new THREE.MeshBasicMaterial({ color: 0xb7aa83 });
 const leafMat = new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true });
 const barkMat = new THREE.MeshLambertMaterial({ color: 0x42352b });
 const stoneMat = new THREE.MeshLambertMaterial({ color: 0x929081, flatShading: true });
-const dirtTrackMat = new THREE.MeshLambertMaterial({ color:0x887a5e, side:THREE.DoubleSide });
-const campPadMat = new THREE.MeshLambertMaterial({ color:0x6d6650, side:THREE.DoubleSide });
+const dirtTrackMat = new THREE.MeshLambertMaterial({
+  color:0x59563f,side:THREE.DoubleSide,transparent:true,opacity:.77,depthWrite:false
+});
+const campPadMat = new THREE.MeshLambertMaterial({
+  color:0x535d46,side:THREE.DoubleSide,transparent:true,opacity:.80,depthWrite:false
+});
 const tentMat = new THREE.MeshLambertMaterial({ color:0x5d6751, flatShading:true });
 const cargoMat = new THREE.MeshLambertMaterial({ color:0x7d745a });
 // Procedural layered conifers: each is an actual irregular 3D mesh, not a sprite or 2D triangle.
@@ -354,22 +359,25 @@ const battlefieldView=new THREE.Group();
 encounterView.add(battlefieldView);
 const battlefield=battlefieldLayout();
 const trailMaterial=new THREE.MeshLambertMaterial({
-  color:0x927a52,polygonOffset:true,polygonOffsetFactor:-2
+  color:0x696449,vertexColors:true,transparent:true,depthWrite:false,
+  side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2
 });
 const hubMaterial=new THREE.MeshLambertMaterial({
-  color:0x816b4b,polygonOffset:true,polygonOffsetFactor:-2
+  color:0x62654a,vertexColors:true,transparent:true,depthWrite:false,
+  side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2
 });
 const stagingMaterial=new THREE.MeshLambertMaterial({
-  color:0x998360,polygonOffset:true,polygonOffsetFactor:-2
+  color:0x736c4e,vertexColors:true,transparent:true,depthWrite:false,
+  side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2
 });
 // Ground-following ribbons with stable width and a gentle lateral bend.
-function makeTrackGeometry(points,halfWidth=3.1){
-  const positions=[],indices=[],stepsPerSection=12;
+function makeTrackGeometry(points,halfWidth=2.3){
+  const positions=[],colors=[],indices=[],stepsPerSection=12;
   const path=[];
   for(let j=0;j<points.length-1;j++){
     const a=points[j],b=points[j+1];
     for(let k=0;k<stepsPerSection;k++){
-      const t=k/stepsPerSection, smooth=t*t*(3-2*t);
+      const t=k/stepsPerSection,smooth=t*t*(3-2*t);
       path.push({x:a.x+(b.x-a.x)*smooth,z:a.z+(b.z-a.z)*t});
     }
   }
@@ -378,34 +386,43 @@ function makeTrackGeometry(points,halfWidth=3.1){
     const p=path[i],prev=path[Math.max(0,i-1)],next=path[Math.min(path.length-1,i+1)];
     const dx=next.x-prev.x,dz=next.z-prev.z;
     const length=Math.hypot(dx,dz)||1,nx=dz/length,nz=-dx/length;
-    const variance=1+.07*Math.sin(i*1.7);
-    for(const side of [-1,1]){
+    const variance=1+.065*Math.sin(i*1.7);
+    // Three lanes: transparent verge, partly visible tread, transparent verge.
+    for(const side of [-1,0,1]){
       const x=p.x+side*halfWidth*nx*variance,z=p.z+side*halfWidth*nz*variance;
       positions.push(x,groundHeight(x,z)+.58,z);
+      colors.push(1,1,1,trailAlpha(side));
     }
     if(i>0){
-      const n=i*2;indices.push(n-2,n,n-1,n-1,n,n+1);
+      for(let lane=0;lane<2;lane++){
+        const a=(i-1)*3+lane,b=i*3+lane;
+        indices.push(a,b,a+1,a+1,b,b+1);
+      }
     }
   }
   const geometry=new THREE.BufferGeometry();
   geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+  geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,4));
   geometry.setIndex(indices);
   geometry.computeVertexNormals();return geometry;
 }
 function makePadGeometry(pad){
-  const positions=[],indices=[],segments=28;
+  const positions=[],colors=[],indices=[],segments=28;
   const y=groundHeight(pad.x,pad.z)+.6;
   positions.push(pad.x,y,pad.z);
+  colors.push(1,1,1,padAlpha(0));
   for(let j=0;j<=segments;j++){
     const angle=j/segments*Math.PI*2;
     const rough=1+.075*Math.sin(j*3.8+pad.z*.018);
     const x=pad.x+Math.cos(angle)*pad.rx*rough;
     const z=pad.z+Math.sin(angle)*pad.rz*rough;
     positions.push(x,groundHeight(x,z)+.61,z);
-    if(j>0)indices.push(0,j+1,j); // face upward in +Y rather than hide under terrain
+    colors.push(1,1,1,padAlpha(1));
+    if(j>0)indices.push(0,j+1,j);
   }
   const geometry=new THREE.BufferGeometry();
   geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+  geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,4));
   geometry.setIndex(indices);geometry.computeVertexNormals();return geometry;
 }
 for(const trail of battlefield.trails)battlefieldView.add(
@@ -689,7 +706,7 @@ function addLake(group,cx,cz) {
 // collision or score effect and live only in authored wooded pockets.
 function addForestSideTrail(group,cx,cz,site) {
   const baseZ=cz*TILE;
-  const verts=[],triangles=[],width=4.2,steps=28;
+  const verts=[],triangles=[],width=2.6,steps=28;
   for(let i=0;i<=steps;i++){
     const t=i/steps,p=sideTrailPoint(site,t);
     const before=sideTrailPoint(site,Math.max(0,t-.002));
@@ -708,7 +725,7 @@ function addForestSideTrail(group,cx,cz,site) {
   group.add(ownedMesh(geo,dirtTrackMat));
 
   const endpoint=sideTrailPoint(site,1),y=groundHeight(endpoint.x,endpoint.z);
-  const pad=ownedMesh(new THREE.CircleGeometry(23,24),campPadMat);
+  const pad=ownedMesh(new THREE.CircleGeometry(14,24),campPadMat);
   pad.rotation.x=-Math.PI/2;
   pad.position.set(endpoint.x-cx*TILE,y+.33,endpoint.z-baseZ);
   group.add(pad);
@@ -1242,6 +1259,7 @@ window.__openSkySnapshot = () => ({
   target:guidanceFor(encounter,flight), spawn:spawnForNextTarget(encounter), lastAward,
   nearbyTrees:tiles.get(Math.floor(flight.x/TILE)+':'+Math.floor(flight.z/TILE))?.hazards.length||0,
   battlefieldPaths:battlefield.trails.length,stagingPads:battlefield.pads.length,
+  softSoilBlend:trailMaterial.transparent&&trailMaterial.vertexColors&&stagingMaterial.vertexColors,
   beacons:beaconViews.filter(b=>b.visible).length,
   tankCannons:intactViews.flatMap(v=>v.children).filter(m=>m.userData?.visualDetail==='tank-cannon').length,
   carrierVisors:intactViews.flatMap(v=>v.children).filter(m=>m.userData?.visualDetail==='carrier-visor').length,

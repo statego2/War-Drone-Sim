@@ -24,16 +24,16 @@ export function battlefieldLayout(){
         [last+15,side*28],
         [last+48,0]
       ].map(([z,offset])=>({x:round(roadCenter(z)+offset),z:round(z)}));
-      trails.push({id:sector+':'+side,sector,side,width:3.1,path});
+      trails.push({id:sector+':'+side,sector,side,width:2.45,path});
       pads.push({id:'hub-'+sector+'-'+side,sector,
         x:round(roadCenter(mid+side*15)+side*34),z:round(mid+side*15),
-        rx:15,rz:21,style:'hub'});
+        rx:11,rz:15,style:'hub'});
     }
     for(let i=0;i<targets.length;i++){
       const [z,offset,kind]=targets[i];
       pads.push({id:'vehicle-'+sector+'-'+i,sector,
-        x:round(roadCenter(z)+offset),z,rx:12.5+(i%2)*1.5,
-        rz:15.5+(i%3)*1.2,style:kind});
+        x:round(roadCenter(z)+offset),z,rx:10+(i%2)*1.1,
+        rz:12+(i%3)*1.4,style:kind});
     }
   }
   return {trails,pads};
