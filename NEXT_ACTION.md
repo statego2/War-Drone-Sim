@@ -12,7 +12,7 @@
 - [PR #91](https://github.com/statego2/War-Drone-Sim/pull/91): quick redeploy (costs one drone, retains wrecks/points) and confirmed full restart in the pause overlay, no new in-flight touch controls.
 - [PR #92](https://github.com/statego2/War-Drone-Sim/pull/92): first-frame, flight, pause, small 320×568 and maneuver screenshots in Chromium CI; touch/landscape assertions and larger pause control. [Main Chromium run](https://github.com/statego2/War-Drone-Sim/actions/runs/38282246202) succeeded.
 - [PR #93](https://github.com/statego2/War-Drone-Sim/pull/93): **exact official MIT-licensed Three.js r180 local bundles**, removing external CDN dependency for WebGL boot; license and upstream provenance recorded. No promise of offline-first service worker support.
-- [PR #94](https://github.com/statego2/War-Drone-Sim/pull/94): fixes a **real screenshot-discovered regression**: the first-flight thumb hint was accidentally positioned above and across the top sector/altitude HUD. Moves hint to root of game, below the play space and above the action deck; hides on launch/pause; asserts position in browser CI. Pending PR CI/merge while this handoff was written.
+- [PR #94](https://github.com/statego2/War-Drone-Sim/pull/94): fixes a **real screenshot-discovered regression**: the first-flight thumb hint was accidentally positioned above and across the top sector/altitude HUD. Moves hint to root of game, below the play space and above the action deck; hides on launch/pause; asserts position in browser CI. Merged and production CI passed.
 
 ## P0 — 2026-10-12 iPhone regression and deployment root cause
 
@@ -20,6 +20,16 @@
 - **Root cause established:** PR #93 moved Three.js r180 to local `vendor/` imports, but `.github/workflows/deploy-pages.yml` continued staging only `src/`, `index.html` and `legacy-canvas.html`. CI browser tested the repository root rather than the exact published `public/` output, masking the missing vendor files.
 - Fix branch `fix/pages-vendor-three-boot-v11`: publish `vendor/` through shared verified `scripts/stage-pages.mjs`; run node regression tests and browser smoke against the exact `public/` artifact; avoid automatic `legacy-canvas.html` redirects on 3D errors and show a visible retry screen with opt-in legacy.
 - **Acceptance:** Green Node and Chromium artifact tests; GitHub Pages deployment green; check actual public URLs for both Three.js modules and iPhone Safari. Do not declare iPhone acceptance from desktop CI alone.
+
+## Owner iPhone playtest fixes — 2026-10-12 (main)
+
+Owner reported the first tank was very difficult to hit, reversing sent the drone too high, turning around targets was too slow, descent/gravity felt underpowered, target readability was weak, vehicle silhouettes too boxy and three areas felt like a single road. Treat these as **real player feedback**, not green-test acceptance.
+
+- [PR #97](https://github.com/statego2/War-Drone-Sim/pull/97) **merged**: stronger arcade yaw and lateral control, medium up for deliberate climbing vs full up for height-stable reversal, more decisive dive gravity. Added targeted 30/60FPS, diagonal/orbit/reverse tests. Old tests that expected full-up to climb uncontrollably were reconciled with the updated design.
+- [PR #99](https://github.com/statego2/War-Drone-Sim/pull/99) **merged**: depth-tested red halo/outline cues around surviving fictional enemy vehicles in the active clearing. Scales with distance, hides on destruction, honors reduced-motion.
+- [PR #101](https://github.com/statego2/War-Drone-Sim/pull/101) **merged**: wider 69-unit clearings, 16 targets arranged on both sides of road, meandering short dirt spurs, recognizable tank/APC/truck silhouette detailing. Original 5/5/6 sectors and fast retries preserved. Full logic/Chromium CI passed before merge.
+- **Still NOT owner-approved on hardware**: how fast first tank can be hit; full reverse with little/no climb; 90–180° turn recovery; whether red halo clearly surrounds actual vehicle silhouette; visual quality/small-phone fps when tree lines and trail mesh render; sound satisfaction. Verify with the owner on the newest published SHA, then tune empirically. Do not promise realism or a fixed satisfaction percentage.
+- **Next practical action:** test in standalone iPhone Safari (not ChatGPT in-app browser), capture 20–30 seconds showing first vehicle approach, full-right turnaround, full-up reverse and full-down dive, plus a view of the widened first clearing. Record build SHA and screenshot/video. If still blocked, prioritize flight/camera and objective visibility over more assets.
 
 ## Quality and release truth
 
