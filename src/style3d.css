@@ -141,3 +141,10 @@
 /* Touch-safe primary pause control; stay outside thumb flying canvas. */
 #pause{width:48px;height:48px;right:16px;}
 #flight-actions .flight-tool{min-height:44px;}
+
+/* Position touch help relative to the viewport, NOT inside the compact HUD.
+   The old nested position made the first-flight hint overlap sector/altitude. */
+#hint{position:absolute;z-index:2;top:auto;bottom:calc(env(safe-area-inset-bottom) + 105px);
+  left:20px;right:20px;pointer-events:none;text-align:center;}
+#hud.hidden + #hint{display:none;}
+@media(max-height:610px){#hint{bottom:calc(env(safe-area-inset-bottom) + 83px);font-size:10px;}}

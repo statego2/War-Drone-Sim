@@ -34,10 +34,16 @@ try{
   await page.goto(`http://127.0.0.1:${server.address().port}/`,{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.documentElement.dataset.openSkyReady==='true',null,{timeout:45000});
   await mkdir(join(root,'artifacts'),{recursive:true});
+  assert.equal(await page.locator('#hint').isVisible(),false,'flight hints stay off the home screen');
   await page.screenshot({path:join(root,'artifacts','01-home-portrait.png')});
   await page.locator('#primary').click();
   await page.waitForSelector('#hud:not(.hidden)');
   await page.waitForTimeout(900);
+  const hintBox=await page.locator('#hint').boundingBox();
+  const hudBox=await page.locator('#hud').boundingBox();
+  assert.ok(hintBox && hudBox && hintBox.y>hudBox.y+hudBox.height+80,
+    'first-flight hint stays below the HUD instead of overlapping sector and altitude');
+  assert.ok(hintBox.y>400,'first-flight hint stays in the lower third of portrait');
   await page.screenshot({path:join(root,'artifacts','02-flight-opening.png')});
   const running=await page.evaluate(()=>window.__openSkySnapshot());
   assert.equal(running.vehicles.length,16,'full forest level has sixteen persistent targets');
@@ -99,6 +105,7 @@ try{
   assert.equal(await page.locator('#sound-toggle').innerText(),'MUTED');
   await page.locator('#pause').click();
   assert.ok(await page.locator('#overlay').isVisible());
+  assert.equal(await page.locator('#hint').isVisible(),false,'flight hints stay off pause menu');
   await page.screenshot({path:join(root,'artifacts','03-pause-menu.png')});
   await page.locator('#primary').click();
   assert.ok(await page.locator('#hud').isVisible());
