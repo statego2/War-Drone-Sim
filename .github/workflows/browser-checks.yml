@@ -33,5 +33,5 @@ jobs:
         if: always()
         with:
           name: forest-encounter-chromium-preview
-          path: artifacts/forest-encounter-webgl.png
+          path: artifacts/*.png
           if-no-files-found: ignore
