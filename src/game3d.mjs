@@ -22,6 +22,7 @@ import {makeSkimState,stepSkim} from './skimming.mjs';
 import {discoverNearby,explorationHint} from './exploration.mjs';
 import {BIOMES,biomeIndex,biomeBlend,biomePalette,biomeFoliage,biomeVegetation} from './biomes.mjs';
 import {LANDMARKS,landmarkPosition,landmarkClearance} from './landmarks.mjs';
+import {canopyWindStrength,canopyWindPhase} from './canopywind.mjs';
 import {forestChasePitch} from './cameracomposition.mjs';
 import {channelClearance,STREAM_START,STREAM_END} from './wetlands.mjs';
 import {createWildlife} from './wildlife3d.mjs';
@@ -115,6 +116,31 @@ const shoulderMat = new THREE.MeshLambertMaterial({ color: 0x82785f });
 const dirtTrailMat = new THREE.MeshLambertMaterial({color:0x756448,map:roadTex,polygonOffset:true,polygonOffsetFactor:-1});
 const stripeMat = new THREE.MeshBasicMaterial({ color: 0xb7aa83 });
 const leafMat = new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true });
+// Live micro-wind is GPU-only and reuses the existing instanced forest crowns.
+// Bark/trunks and all gameplay obstacles remain stationary. Moving the tip by
+// a few decimeters makes the forest feel alive without extra mesh draws.
+const canopyWind={time:{value:0},strength:{value:0}};
+let canopyShaderReady=false;
+leafMat.onBeforeCompile=shader=>{
+  shader.uniforms.uForestTime=canopyWind.time;
+  shader.uniforms.uForestStrength=canopyWind.strength;
+  shader.vertexShader=shader.vertexShader.replace('#include <common>',
+    '#include <common>\nuniform float uForestTime;\nuniform float uForestStrength;');
+  shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',`
+#include <begin_vertex>
+#ifdef USE_INSTANCING
+  float crownPhase=instanceMatrix[3].x*.041+instanceMatrix[3].z*.025;
+#else
+  float crownPhase=0.0;
+#endif
+  float upperCrown=max(0.0,position.y+.45);
+  transformed.x+=upperCrown*uForestStrength*
+    sin(uForestTime*.68+crownPhase+position.y*4.2);
+  transformed.z+=upperCrown*uForestStrength*.60*
+    sin(uForestTime*.53+crownPhase*1.71+position.y*2.8);
+`);
+  canopyShaderReady=true;
+};
 const barkMat = new THREE.MeshLambertMaterial({ color: 0x42352b });
 const stoneMat = new THREE.MeshLambertMaterial({ color: 0x929081, flatShading: true });
 const dirtTrackMat = new THREE.MeshLambertMaterial({
@@ -1461,6 +1487,8 @@ function frame(now) {
   sky.position.copy(camera.position);
   moveEncounter();
   wildlife.update(encounter.clock,flight.z);
+  canopyWind.time.value=canopyWindPhase(encounter.clock);
+  canopyWind.strength.value=canopyWindStrength(flight.z,reduceMotion);
   smokeViews.forEach((smoke,i)=>{ if(smoke.visible){smoke.position.y=encounter.vehicles[i].y+5+Math.sin(now*.0006+i)*1.2;smoke.rotation.y+=dt*.17;} });
   for (let i = 0; i < rotors.length; i++) rotors[i].rotation.y += dt * (i % 2 ? -43 : 43);
   renderer.render(scene, camera);
@@ -1505,6 +1533,7 @@ window.__openSkySnapshot = () => ({
   scenicSites:FOREST_SITES.length,landmarksAuthored:LANDMARKS.length,
   visitedBiomes:[...visitedAreas],
   mistTypes:scenery.groundMistStyles,
+  canopyWindReady:canopyShaderReady,canopyWindStrength:canopyWind.strength.value,
   riverStretch:STREAM_END-STREAM_START,
   livingForestBirds:wildlife.count,
   riverPoints:RIVER.samples+1,riverBridge:riverView.children.some(m=>m.userData.scenicFeature==='stone-bridge'),
