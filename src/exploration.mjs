@@ -1,12 +1,13 @@
+import {roadCenter} from './flight3d.mjs';
 // Pure fictional game exploration: the forest conceals objectives until the
 // player actually flies near them and faces the clearing. Never a real sensor.
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export const DISCOVERY_RANGE=82;
 export const CLOSE_DISCOVERY_RANGE=22;
 export const DISCOVERY_HINTS=Object.freeze([
-  'PINES · SEARCH',
-  'RIVER · SEARCH',
-  'RIDGE · SEARCH'
+  'PINES · FOLLOW DIRT TRAILS',
+  'RIVER · EXPLORE THE BANKS',
+  'RIDGE · FIND ROCKY CLEARINGS'
 ]);
 export function canDiscover(target,flight,terrainHeight=null){
   if(target.destroyed)return false;
@@ -14,6 +15,13 @@ export function canDiscover(target,flight,terrainHeight=null){
   const horizontal=Math.hypot(dx,dz),distance=Math.hypot(horizontal,dy);
   if(distance>DISCOVERY_RANGE)return false;
   const close=distance<CLOSE_DISCOVERY_RANGE;
+  // Beyond the learning target, deep forest sites cannot all be discovered
+  // by simply cruising straight down the asphalt. A side-trail excursion
+  // is required before showing the hidden prop's red arcade silhouette.
+  // Once really close, it is always discoverable without a mode switch.
+  const deepSite=Math.abs(target.offset||0)>=36 && target.id!==0;
+  const mainRoad=Math.abs(flight.x-roadCenter(flight.z))<25;
+  if(deepSite&&mainRoad&&!close)return false;
   if(!close){
     if(horizontal<.01)return Math.abs(dy)<40;
     const facing=Math.cos(flight.heading||0)*dz/horizontal+
