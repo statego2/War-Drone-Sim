@@ -1,9 +1,12 @@
 // Self-contained procedural scenic dressing. No military or real-world data.
 import {coverStyle,coverKind,coverColor,COVER_STYLES} from './groundcover.mjs';
+import {inMistyWetland,channelPoint,channelWidth,tileHasWetland} from './wetlands.mjs';
 export function createScenery(THREE, { TILE, hash, groundHeight, roadCenter, lakeProximity }) {
   const foliage = new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.DoubleSide });
   const straw = new THREE.MeshLambertMaterial({ color: 0x9b8c5e });
   const water = new THREE.MeshPhongMaterial({ color: 0x4a8490, shininess: 70, transparent: true, opacity: .80, side: THREE.DoubleSide });
+  const riverWater=new THREE.MeshPhongMaterial({color:0x79bbb0,emissive:0x143e42,
+    shininess:95,transparent:true,opacity:.86,depthWrite:false,side:THREE.DoubleSide});
   const timber = new THREE.MeshLambertMaterial({ color: 0x86674c });
   const stone = new THREE.MeshLambertMaterial({ color: 0xffffff });
   const roof = new THREE.MeshLambertMaterial({ color: 0x4c5854 });
@@ -112,6 +115,37 @@ export function createScenery(THREE, { TILE, hash, groundHeight, roadCenter, lak
     geo.setIndex(indices);geo.computeVertexNormals();
     mesh(group,geo,water,0,0,0);
   }
+  // Continuous meander on the forest side, tiled only where it intersects
+  // the current x/z tile. This gives the second region a recognizable river
+  // instead of a repeating flat green forest with occasional disconnected lines.
+  function addWetlandRiver(group,cx,cz){
+    if(!tileHasWetland(cz,TILE))return;
+    const verts=[],uvs=[],inds=[],steps=96;
+    const z0=cz*TILE;
+    let previous=null;
+    for(let i=0;i<=steps;i++){
+      const z=z0+i*TILE/steps;
+      if(!inMistyWetland(z)){previous=null;continue;}
+      const p=channelPoint(z),half=channelWidth(z);
+      if(Math.floor((p.x-half)/TILE)!==cx ||
+         Math.floor((p.x+half)/TILE)!==cx){previous=null;continue;}
+      const start=verts.length/3;
+      for(const side of [-1,1]){
+        const x=p.x+side*half;
+        verts.push(x-cx*TILE,groundHeight(x,z)+.49,z-z0);
+        uvs.push((side+1)*.5,(z-508)/25);
+      }
+      if(previous!==null)inds.push(previous,start,previous+1,previous+1,start,start+1);
+      previous=start;
+    }
+    if(!inds.length)return;
+    const geo=new THREE.BufferGeometry();
+    geo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
+    geo.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));
+    geo.setIndex(inds);geo.computeVertexNormals();
+    mesh(group,geo,riverWater,0,0,0);
+  }
+
   function cabin(group,cx,cz,z,side,kind=0) {
     const wx=roadCenter(z)+side*(48+kind*18);
     if (Math.floor(wx/TILE)!==cx) return;
@@ -157,7 +191,7 @@ export function createScenery(THREE, { TILE, hash, groundHeight, roadCenter, lak
   function decorateTile(group,cx,cz,near) {
     decorateGround(group,cx,cz,near);
     addRoadside(group,cx,cz);
-    if (near) addStream(group,cx,cz);
+    if (near){addStream(group,cx,cz);addWetlandRiver(group,cx,cz);}
   }
   return { decorateTile, groundCoverStyles:COVER_STYLES.length };
 }
