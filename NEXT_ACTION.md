@@ -1,6 +1,31 @@
 # NEXT ACTION — War Drone Sim
 
-**Updated 2026-10-12.** Canonical game: [mobile portrait browser build](https://statego2.github.io/War-Drone-Sim/). Source of truth: merged `main`; open PRs are not shipped until merge and Pages completes.
+**Updated 2026-10-19.** Canonical game: [mobile portrait browser build](https://statego2.github.io/War-Drone-Sim/). Source of truth: merged `main`; open PRs are not shipped until merge and Pages completes.
+
+## Forest exploration + artistic quality release v23–v33 (2026-10-19)
+
+**Design shift, merged into main:** a living three-biome exploration arcade instead of a visible row of vehicles beside one straight road. The only guaranteed introductory roadside objective is the opening tank; later empty, fictional military-style props live deeper in side pockets. The drone must approach, look in the right direction and often find a gap through existing tree canopies; passing straight above the road cannot reveal all objectives. Closer than 22 units reveals fairly, never demanding pixel-perfect occlusion. Spotted locations persist across fast drone retries. Precise compass and red edging are earned by discovery, not omniscient startup HUD.
+
+**Implemented PRs:**
+- [#113](https://github.com/statego2/War-Drone-Sim/pull/113): 82-unit proximity/orientation/terrain discovery; hidden until spotted; no opening omniscient GPS.
+- [#114](https://github.com/statego2/War-Drone-Sim/pull/114): gradually blended deep pine / misty river / amber highland vegetation, sky and fog.
+- [#115](https://github.com/statego2/War-Drone-Sim/pull/115): once-only scout and off-route grove discovery bonuses, positive short audio cues.
+- [#116](https://github.com/statego2/War-Drone-Sim/pull/116): fallen grove, spring and stone arch procedural landmarks.
+- [#120](https://github.com/statego2/War-Drone-Sim/pull/120): region-specific flowers, grasses, wetland reeds, rocky undergrowth with instanced meshes.
+- [#122](https://github.com/statego2/War-Drone-Sim/pull/122): deeper 15/16 forest side-clearing hiding places, preserved first-tank training approach, broad trail/river/ridge hints.
+- [#124](https://github.com/statego2/War-Drone-Sim/pull/124): three small flocks, one bounded instanced GPU draw.
+- [#126](https://github.com/statego2/War-Drone-Sim/pull/126): 462-unit winding river corridor through the middle biome, with clear bank foliage.
+- [#127](https://github.com/statego2/War-Drone-Sim/pull/127): proof all 16 can be found and finished, with continuous tree-free authored access corridors and no road auto-reveal.
+- [#131](https://github.com/statego2/War-Drone-Sim/pull/131): existing tree hazards block distant sightline; ~8Hz capped scanning, short-range fairness exception.
+- [#132](https://github.com/statego2/War-Drone-Sim/pull/132): very quiet region-dependent bird timing, wetland water wash and highland airflow, no continuous engine oscillator.
+
+**Shipping QA:** deterministic Node tests + staged GitHub Pages artifact smoke in desktop Chromium/WebKit, including 16 objectives, no silent Canvas fallback and bounded drawing structures. A green desktop browser check does **not** prove iPhone Safari GPU performance, clear sightlines in all camera angles, enjoyable audio or genuine fun. No invented FPS or user satisfaction scores.
+
+**Next highest-value action / acceptance gate:**
+1. Confirm production Pages from final `main` commit and BUILD stamp; open in standalone iPhone Safari, not embedded ChatGPT browser.
+2. In real mobile playtest, use 15–25 drones to visit **all three environments**, deliberately turn off the main road, locate at least one hidden objective per biome, inspect water/birds/landmarks, test first-tank landing and short-range discovery.
+3. Record exact BUILD ID, device/iOS, a 20–30 second clip of steering/approach/impact and a 10–20 second clip for each biome. Evaluate **fun loop**, forest readability, obstacles/fair collisions, camera feel, sound comfort, heating and smoothness; identify top two frustrations.
+4. Only after that evidence, iterate focused reversible enhancements: objective spacing/occlusion if search is too hard or too obvious; terrain/lighting/geometry if art is flat; adaptive resolution and foliage density if FPS/thermals fail; biome volume mix if sound is intrusive. Avoid uncontrolled additional modes before the gameplay passes owner testing.
 
 ## Implemented browser game
 
