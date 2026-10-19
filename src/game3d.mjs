@@ -1431,6 +1431,12 @@ window.__openSkySnapshot = () => ({
   ground: groundHeight(flight.x, flight.z), mode, audioEnabled: sound.enabled
   , hits:encounter.hits, drones:encounter.drones, sector:activeSectorIndex(encounter),
   seed:encounter.variationSeed,total:LEVEL_TARGETS, vehicles:encounter.vehicles.map(v=>v.destroyed),
+  hiddenPositions:encounter.vehicles.map(v=>[v.homeX,v.homeZ]),
+  displacedModels:encounter.vehicles.filter(v=>{
+    const art=intactViews[v.id];
+    if(!art||v.destroyed)return false;
+    return Math.hypot(art.position.x-v.x,art.position.z-v.z)>.25;
+  }).length,
   points:scorecard.points, combo:scorecard.combo, misses:scorecard.misses,
   moving:encounter.vehicles.filter(v=>v.moving&&!v.destroyed).length,
   target:guidanceFor(encounter,flight,encounter.discovered,biomeIndex(flight.z)),
