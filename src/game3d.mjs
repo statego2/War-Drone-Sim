@@ -21,6 +21,7 @@ import { redeployWithPenalty } from './recovery.mjs';
 import {discoverNearby,explorationHint} from './exploration.mjs';
 import {BIOMES,biomeIndex,biomeBlend,biomePalette,biomeFoliage,biomeVegetation} from './biomes.mjs';
 import {LANDMARKS,landmarkPosition,landmarkClearance} from './landmarks.mjs';
+import {RIVER,riverCrossing,riverStrip} from './riverlandscape.mjs';
 
 // A floating-origin, streamed polygonal world. No real-drone targeting or hardware integration.
 const $ = id => document.getElementById(id);
@@ -378,6 +379,41 @@ const encounterView = new THREE.Group(); scene.add(encounterView);
 // target wrecks across airborne respawns and streamed scenery tile changes.
 const battlefieldView=new THREE.Group();
 encounterView.add(battlefieldView);
+// A broad meandering stream and simple stone bridge physically distinguish
+// the middle forest landscape from the pine approach and amber ridge.
+const riverView=new THREE.Group();encounterView.add(riverView);
+const stream=riverStrip(groundHeight);
+const streamGeometry=new THREE.BufferGeometry();
+streamGeometry.setAttribute('position',new THREE.Float32BufferAttribute(stream.positions,3));
+const streamColors=[];
+for(let i=0;i<stream.alphas.length;i++){
+  const n=i%7,foam=n===2||n===4;
+  streamColors.push(foam?.57:.36,foam?.85:.68,foam?.85:.78,stream.alphas[i]);
+}
+streamGeometry.setAttribute('color',new THREE.Float32BufferAttribute(streamColors,4));
+streamGeometry.setIndex(stream.indices);streamGeometry.computeVertexNormals();
+const streamMaterial=new THREE.MeshPhongMaterial({
+  color:0xffffff,vertexColors:true,side:THREE.DoubleSide,transparent:true,
+  depthWrite:false,shininess:85
+});
+const riverMesh=new THREE.Mesh(streamGeometry,streamMaterial);
+riverMesh.userData.scenicFeature='valley-river';
+riverView.add(riverMesh);
+const crossing=riverCrossing(),bridge=new THREE.Group();
+bridge.position.set(crossing.x,groundHeight(crossing.x,crossing.z)+.85,crossing.z);
+bridge.userData.scenicFeature='stone-bridge';
+const bridgeStone=new THREE.MeshLambertMaterial({color:0x8c8877});
+const bridgeRail=new THREE.MeshLambertMaterial({color:0x6e736c});
+function addBridgePart(sx,sy,sz,x,y,z,material){
+  const mesh=new THREE.Mesh(primitives.box(sx,sy,sz),material);
+  mesh.position.set(x,y,z);bridge.add(mesh);
+}
+addBridgePart(13,.48,crossing.span,0,0,0,bridgeStone);
+for(const side of [-1,1]){
+  addBridgePart(.75,.85,crossing.span,side*6.1,.62,0,bridgeRail);
+  for(const z of [-13,0,13])addBridgePart(1.3,1.35,1.6,side*6.1,.85,z,bridgeStone);
+}
+riverView.add(bridge);
 const battlefield=battlefieldLayout();
 const trailMaterial=new THREE.MeshLambertMaterial({
   color:0x696449,vertexColors:true,transparent:true,depthWrite:false,
@@ -1403,6 +1439,7 @@ window.__openSkySnapshot = () => ({
   truckWindows:intactViews.flatMap(v=>v.children).filter(m=>m.userData?.visualDetail==='truck-windshield').length,
   redOutlines:outlineViews.filter(o=>o.group.visible).length,
   scenicSites:FOREST_SITES.length,landmarksAuthored:LANDMARKS.length,
+  riverPoints:RIVER.samples+1,riverBridge:riverView.children.some(m=>m.userData.scenicFeature==='stone-bridge'),
   physicalArea:biomeIndex(flight.z),checkpointArea:lastCheckpointSector,
   grovesVisited:visitedGROVES.size,
   discoveryPoints:scorecard.scoutingPoints,biome:biomePalette(flight.z).id,
