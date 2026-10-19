@@ -18,7 +18,7 @@ test('discovery requires actual local looking, not a long-range instant GPS',()=
   assert.equal(canDiscover(v,front),true);
   assert.equal(canDiscover(v,{...front,heading:Math.PI}),false);
   assert.equal(canDiscover(v,{...front,z:-DISCOVERY_RANGE-5}),false);
-  assert.equal(canDiscover(v,{...front,x:25,z:8,heading:Math.PI}),false);
+  assert.equal(canDiscover(v,{...front,x:25,z:8,heading:Math.PI/2}),false);
   assert.equal(canDiscover(v,{x:0,y:18,z:15,heading:0}),true,'close discovery works while orbiting');
 });
 test('a ridge can block distant visibility but cannot hide nearby objects',()=>{
