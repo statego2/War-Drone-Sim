@@ -7,14 +7,14 @@ import {ARCADE_HIT_VOLUME,sweptPropIntersection} from './contactvolume.mjs';
 // All vehicles are fictional, empty props. Positions are game-space composition.
 export const LEVEL_SECTORS = Object.freeze([
   { name:'PINE APPROACH', spawnZ:55, targets:[
-    [225,-12,'tank'],[264,30,'truck'],[303,-33,'carrier'],[345,26,'tank'],[383,-25,'truck']
+    [225,-12,'tank'],[264,47,'truck'],[303,-49,'carrier'],[345,45,'tank'],[383,-46,'truck']
   ] },
   { name:'FOREST BEND', spawnZ:475, targets:[
-    [615,28,'carrier'],[657,-31,'tank'],[700,33,'truck'],[744,-27,'carrier'],[786,17,'tank']
+    [615,45,'carrier'],[657,-47,'tank'],[700,48,'truck'],[744,-44,'carrier'],[786,36,'tank']
   ] },
   { name:'FINAL CLEARING', spawnZ:890, targets:[
-    [1045,-30,'truck'],[1074,31,'carrier'],[1107,-27,'tank'],
-    [1143,36,'truck'],[1174,-32,'carrier'],[1212,17,'tank']
+    [1045,-47,'truck'],[1074,46,'carrier'],[1107,-44,'tank'],
+    [1143,47,'truck'],[1174,-49,'carrier'],[1212,36,'tank']
   ] }
 ]);
 export const LEVEL_TARGETS = LEVEL_SECTORS.reduce((sum,sector)=>sum+sector.targets.length,0);
