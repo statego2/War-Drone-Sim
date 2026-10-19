@@ -1,13 +1,14 @@
 // Self-contained procedural scenic dressing. No military or real-world data.
+import {coverStyle,coverKind,coverColor,COVER_STYLES} from './groundcover.mjs';
 export function createScenery(THREE, { TILE, hash, groundHeight, roadCenter, lakeProximity }) {
-  const foliage = new THREE.MeshLambertMaterial({ color: 0x5b6b39, side: THREE.DoubleSide });
+  const foliage = new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.DoubleSide });
   const straw = new THREE.MeshLambertMaterial({ color: 0x9b8c5e });
   const water = new THREE.MeshPhongMaterial({ color: 0x4a8490, shininess: 70, transparent: true, opacity: .80, side: THREE.DoubleSide });
   const timber = new THREE.MeshLambertMaterial({ color: 0x86674c });
-  const stone = new THREE.MeshLambertMaterial({ color: 0x9f9b88 });
+  const stone = new THREE.MeshLambertMaterial({ color: 0xffffff });
   const roof = new THREE.MeshLambertMaterial({ color: 0x4c5854 });
   const windowMat = new THREE.MeshBasicMaterial({ color: 0xb9c7b0 });
-  const flower = new THREE.MeshLambertMaterial({ color: 0xc2ad72, side: THREE.DoubleSide });
+  const flower = new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.DoubleSide });
   const grassGeo = new THREE.PlaneGeometry(1, 1.65);
   grassGeo.translate(0, .82, 0);
   const flowerGeo = new THREE.IcosahedronGeometry(.32, 0);
@@ -37,29 +38,37 @@ export function createScenery(THREE, { TILE, hash, groundHeight, roadCenter, lak
       tmp.scale.set(item.sx||1,item.sy||1,item.sz||1);
       tmp.updateMatrix();
       result.setMatrixAt(index,tmp.matrix);
+      if (item.color!==undefined)result.setColorAt(index,new THREE.Color(item.color));
       if (builder) builder(result,index,item);
     });
     result.instanceMatrix.needsUpdate=true;
+    if(result.instanceColor)result.instanceColor.needsUpdate=true;
     group.add(result);
   }
   function decorateGround(group,cx,cz,near) {
     if (!near) return;
-    const grasses=[],stones=[],flowers=[];
-    const count=140;
+    const grasses=[],stones=[],flowers=[],reeds=[];
+    // Fixed upper cap per 320-unit tile. All details are GPU instanced and
+    // share three tiny geometries regardless of ground-cover density.
+    const count=Math.min(190,coverStyle((cz+.5)*TILE).count);
     for(let i=0;i<count;i++) {
       const x=hash(cx*1319+i*79,cz*733+i*13)*TILE;
       const z=hash(cz*377+i*31,cx*541+i*113)*TILE;
       const wx=cx*TILE+x,wz=cz*TILE+z;
       const offset=Math.abs(wx-roadCenter(wz));
-      if(offset<8 || (lakeProximity && lakeProximity(wx,wz) < 1.12)) continue;
-      // Broad meadow openings, only scattered foliage around the forest.
+      const lake=lakeProximity?lakeProximity(wx,wz):99;
+      if(offset<9 || lake<1.10)continue;
       const y=groundHeight(wx,wz);
       const a=hash(cx*73+i,cz*97+i*23);
-      if (i%12===0) stones.push({x,y:y+.12,z,sx:.4+a*.9,sy:.3+a*.5,sz:.55+a});
-      else if(i%17===0 && offset>17) flowers.push({x,y:y+.35,z,sx:.8,sy:.8,sz:.8});
-      else grasses.push({x,y:y+.1,z,ry:a*6.28,sx:.45+a*.8,sy:.6+a,sz:1});
+      const kind=coverKind(wz,i,lake<1.65 || (wz>520&&wz<970));
+      const color=coverColor(wz,kind,hash(cx*61+i*7,cz*109+i*29));
+      if(kind==='stone')stones.push({x,y:y+.12,z,sx:.4+a*.9,sy:.3+a*.5,sz:.55+a,color});
+      else if(kind==='flower'&&offset>17)flowers.push({x,y:y+.35,z,sx:.7+a*.55,sy:.65+a*.6,sz:.8,color});
+      else if(kind==='reed')reeds.push({x,y:y+.15,z,ry:a*6.28,sx:.22+a*.24,sy:1.7+a*.95,sz:1,color});
+      else grasses.push({x,y:y+.1,z,ry:a*6.28,sx:.42+a*.83,sy:.62+a,sz:1,color});
     }
     instanced(group,grassGeo,foliage,grasses);
+    instanced(group,grassGeo,foliage,reeds);
     instanced(group,gravelGeo,stone,stones);
     instanced(group,flowerGeo,flower,flowers);
   }
@@ -150,5 +159,5 @@ export function createScenery(THREE, { TILE, hash, groundHeight, roadCenter, lak
     addRoadside(group,cx,cz);
     if (near) addStream(group,cx,cz);
   }
-  return { decorateTile };
+  return { decorateTile, groundCoverStyles:COVER_STYLES.length };
 }
