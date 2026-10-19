@@ -60,6 +60,9 @@ try{
     await page.waitForTimeout(950);
     const current=await page.evaluate(()=>window.__openSkySnapshot());
     assert.equal(current.biome,expected[i]);
+    assert.equal(current.physicalArea,i,'progress HUD follows actual visited biome');
+    assert.match(await page.locator('#round-label').innerText(),
+      new RegExp('AREA '+(i+1)+'/3'));
     assert.ok(current.renderCalls>0);
     await page.screenshot({path:join(root,'artifacts',
       'webkit-biome-'+(i+1)+'-'+expected[i]+'.png')});

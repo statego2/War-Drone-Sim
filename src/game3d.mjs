@@ -31,6 +31,7 @@ const viewButton = $('view-mode'), muteButton = $('sound-toggle');
 const warning = $('warning');
 const redeployButton=$('redeploy'),restartButton=$('restart-level');
 let restartArmed=false;
+let lastCheckpointSector=0;
 const visitedGROVES=new Set();
 const sound = createFlightAudio();
 const scenery = createScenery(THREE, { TILE, hash, groundHeight, roadCenter, lakeProximity });
@@ -668,7 +669,7 @@ function syncTargets() {
 buildTargets();
 function moveEncounter() {
   encounterView.position.set(-flight.x,0,-flight.z);
-  const sector=activeSectorIndex(encounter);
+  const sector=biomeIndex(flight.z);
   for(const target of encounter.vehicles){
     const outline=outlineViews[target.id];
     const outlineState=outlineAppearance(target,flight,sector,encounter.clock,reduceMotion);
@@ -1066,7 +1067,7 @@ muteButton.addEventListener('click', () => {
 function startFlight() {
   sound.unlock().then(() => sound.cue('start')); sound.setActive(true);
   encounter = makeEncounter(); scorecard = makeScorecard(); lastAward=null;
-  visitedGROVES.clear();
+  lastCheckpointSector=0;visitedGROVES.clear();
   syncTargets(); roundBannerTime=0; roundBannerText='';
   spawnDrone(); mode = 'flying'; view = 'chase'; pointer = null;
   cameraYaw = flight.heading; cameraPitch=.05; throttleMode='cruise';
@@ -1081,7 +1082,7 @@ function startFlight() {
 }
 function spawnDrone() {
   flight = makeFlight();
-  const checkpoint=spawnForNextTarget(encounter);
+  const checkpoint=spawnForNextTarget(encounter,lastCheckpointSector);
   flight.z=checkpoint.z;
   flight.x=checkpoint.x;
   flight.y=checkpoint.y+((encounter.drones-1)%2)*5;
@@ -1097,6 +1098,7 @@ function spawnDrone() {
 function endFlight(contact) {
   if(mode!=='flying')return;
   mode='impact';pointer=null;keys.clear();impactAge=0;
+  lastCheckpointSector=contact.type==='vehicle'?encounter.vehicles[contact.id].sector:biomeIndex(flight.z);
   impactType=contact.type;impactId=contact.id??-1;
   if(contact.type==='vehicle') {
     const previousSector=activeSectorIndex(encounter);
@@ -1241,14 +1243,23 @@ function updateHUD() {
     (scorecard.combo>=2?` · ×${scorecard.combo} COMBO`:'');
   const compass=$('target-compass');
   if(compass) {
-    const guide=guidanceFor(encounter,flight,encounter.discovered);
-    const search=explorationHint(encounter);
+    const guide=guidanceFor(encounter,flight,encounter.discovered,biomeIndex(flight.z));
+    const search=explorationHint(encounter,flight);
     compass.textContent=guide?`${guide.arrow} ${guide.kind} · ${guide.distance} M`:
       search.clue;
     compass.dataset.direction=guide?.direction||'SEARCH';
     compass.setAttribute('aria-label',guide?'Προσεγγίζεις όχημα':'Αναζήτησε οχήματα μέσα στο δάσος');
   }
-  $('round-label').textContent = `SECTOR ${activeSectorIndex(encounter)+1}/${LEVEL_SECTORS.length}`;
+  const physicalArea=biomeIndex(flight.z);
+  $('round-label').textContent = `AREA ${physicalArea+1}/${LEVEL_SECTORS.length}`;
+  const here=encounter.vehicles.filter(v=>v.sector===physicalArea);
+  const progress=$('progress');
+  Array.from(progress.children).forEach((pip,i)=>{
+    pip.classList.toggle('hidden',i>=here.length);
+    pip.classList.toggle('complete',!!here[i]?.destroyed);
+  });
+  progress.setAttribute('aria-label',
+    `${here.filter(v=>v.destroyed).length} από ${here.length} οχήματα στην περιοχή ${physicalArea+1}`);
   altitudeEl.textContent = Math.round(Math.max(0, flight.y - groundHeight(flight.x, flight.z))) + ' M AGL';
   const totalSpeed=Math.hypot(flight.vx,flight.vy,flight.vz);
   speedEl.textContent = (flight.speed < -5 ? '↶ ' : '') + Math.round(totalSpeed*3.6) + ' KM/H';
@@ -1380,7 +1391,8 @@ window.__openSkySnapshot = () => ({
   , hits:encounter.hits, drones:encounter.drones, sector:activeSectorIndex(encounter), total:LEVEL_TARGETS, vehicles:encounter.vehicles.map(v=>v.destroyed),
   points:scorecard.points, combo:scorecard.combo, misses:scorecard.misses,
   moving:encounter.vehicles.filter(v=>v.moving&&!v.destroyed).length,
-  target:guidanceFor(encounter,flight,encounter.discovered), exploration:explorationHint(encounter),
+  target:guidanceFor(encounter,flight,encounter.discovered,biomeIndex(flight.z)),
+  exploration:explorationHint(encounter,flight),
   discovered:[...encounter.discovered], spawn:spawnForNextTarget(encounter), lastAward,
   nearbyTrees:tiles.get(Math.floor(flight.x/TILE)+':'+Math.floor(flight.z/TILE))?.hazards.length||0,
   battlefieldPaths:battlefield.trails.length,stagingPads:battlefield.pads.length,
@@ -1391,6 +1403,7 @@ window.__openSkySnapshot = () => ({
   truckWindows:intactViews.flatMap(v=>v.children).filter(m=>m.userData?.visualDetail==='truck-windshield').length,
   redOutlines:outlineViews.filter(o=>o.group.visible).length,
   scenicSites:FOREST_SITES.length,landmarksAuthored:LANDMARKS.length,
+  physicalArea:biomeIndex(flight.z),checkpointArea:lastCheckpointSector,
   grovesVisited:visitedGROVES.size,
   discoveryPoints:scorecard.scoutingPoints,biome:biomePalette(flight.z).id,
   landscapeNames:BIOMES.map(b=>b.name),skyHorizon:sky.material.uniforms.uHorizon.value.getHex(),

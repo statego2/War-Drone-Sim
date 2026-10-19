@@ -44,8 +44,8 @@ export function registerResult(card, hit, flight = {}) {
   };
 }
 
-export function guidanceFor(encounter, flight, revealedIds = null) {
-  const sector = activeSectorIndex(encounter);
+export function guidanceFor(encounter, flight, revealedIds = null, preferredSector = null) {
+  const sector = Number.isInteger(preferredSector)?preferredSector:activeSectorIndex(encounter);
   const remaining = encounter.vehicles.filter(v => !v.destroyed && v.sector === sector &&
     (revealedIds === null || revealedIds.has(v.id)));
   if (!remaining.length) return null;
