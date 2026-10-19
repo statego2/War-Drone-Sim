@@ -12,9 +12,12 @@ test('all 16 props in all three forest regions can be physically found and compl
   assert.equal(e.vehicles.length,LEVEL_TARGETS);
   for(const v of e.vehicles){
     const inClearing={x:v.x,y:v.y+8,z:v.z-13,heading:0};
+    const alreadySpotted=e.discovered.has(v.id);
     const fresh=discoverNearby(e,inClearing,groundHeight);
-    assert.ok(fresh.includes(v.id),'player inside clearing must be able to spot prop '+v.id);
-    assert.equal(e.discovered.has(v.id),true);
+    assert.equal(e.discovered.has(v.id),true,
+      'player inside clearing must be able to spot prop '+v.id);
+    if(!alreadySpotted)assert.ok(fresh.includes(v.id),
+      'newly revealed prop should trigger its one-off discovery event');
     const hint=guidanceFor(e,inClearing,e.discovered);
     assert.ok(hint?.distance>=0,'spotted vehicle may provide short-range gameplay guidance');
     assert.equal(applyContact(e,{type:'vehicle',id:v.id}),true);
