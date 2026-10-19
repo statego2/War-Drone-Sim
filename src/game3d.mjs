@@ -22,6 +22,7 @@ import {discoverNearby,explorationHint} from './exploration.mjs';
 import {BIOMES,biomeIndex,biomeBlend,biomePalette,biomeFoliage,biomeVegetation} from './biomes.mjs';
 import {LANDMARKS,landmarkPosition,landmarkClearance} from './landmarks.mjs';
 import {RIVER,riverCrossing,riverStrip} from './riverlandscape.mjs';
+import {areaArrival} from './areaarrival.mjs';
 
 // A floating-origin, streamed polygonal world. No real-drone targeting or hardware integration.
 const $ = id => document.getElementById(id);
@@ -35,6 +36,8 @@ let restartArmed=false;
 const playthroughSeed=Math.floor(Math.random()*0x7fffffff)||4023;
 let playthroughNumber=0;
 let lastCheckpointSector=0;
+let lastArrivalArea=0;
+const visitedAreas=new Set([0]);
 const visitedGROVES=new Set();
 const sound = createFlightAudio();
 const scenery = createScenery(THREE, { TILE, hash, groundHeight, roadCenter, lakeProximity });
@@ -1108,7 +1111,8 @@ muteButton.addEventListener('click', () => {
 function startFlight() {
   sound.unlock().then(() => sound.cue('start')); sound.setActive(true);
   encounter = makeEncounter(playthroughSeed+(++playthroughNumber)*193); scorecard = makeScorecard(); lastAward=null;
-  lastCheckpointSector=0;visitedGROVES.clear();
+  lastCheckpointSector=0;lastArrivalArea=0;
+  visitedAreas.clear();visitedAreas.add(0);visitedGROVES.clear();
   syncTargets(); roundBannerTime=0; roundBannerText='';
   spawnDrone(); mode = 'flying'; view = 'chase'; pointer = null;
   cameraYaw = flight.heading; cameraPitch=.05; throttleMode='cruise';
@@ -1127,6 +1131,7 @@ function spawnDrone() {
   flight.z=checkpoint.z;
   flight.x=checkpoint.x;
   flight.y=checkpoint.y+((encounter.drones-1)%2)*5;
+  lastArrivalArea=biomeIndex(flight.z);
   flight.heading = .10;
   flight.vx = Math.sin(flight.heading)*43;flight.vz = Math.cos(flight.heading)*43;
   flight.vy = 0;flight.throttle = .72;
@@ -1329,6 +1334,16 @@ function frame(now) {
     const previous={x:flight.x,y:flight.y,z:flight.z};
     advanceFlight(flight, command, dt);
     updateEncounter(encounter,dt);
+    const nextArea=areaArrival(lastArrivalArea,flight.z);
+    if(nextArea!==lastArrivalArea){
+      lastArrivalArea=nextArea;
+      if(!visitedAreas.has(nextArea)){
+        visitedAreas.add(nextArea);
+        roundBannerTime=2.65;
+        roundBannerText=BIOMES[nextArea].name+' · DISCOVERED';
+        sound.cue('landmark');
+      }
+    }
     const found=discoverNearby(encounter,flight,groundHeight);
     if(found.length){
       const reward=registerExploration(scorecard,'vehicle',found.length);
@@ -1451,6 +1466,7 @@ window.__openSkySnapshot = () => ({
   truckWindows:intactViews.flatMap(v=>v.children).filter(m=>m.userData?.visualDetail==='truck-windshield').length,
   redOutlines:outlineViews.filter(o=>o.group.visible).length,
   scenicSites:FOREST_SITES.length,landmarksAuthored:LANDMARKS.length,
+  visitedBiomes:[...visitedAreas],
   riverPoints:RIVER.samples+1,riverBridge:riverView.children.some(m=>m.userData.scenicFeature==='stone-bridge'),
   physicalArea:biomeIndex(flight.z),checkpointArea:lastCheckpointSector,
   grovesVisited:visitedGROVES.size,
