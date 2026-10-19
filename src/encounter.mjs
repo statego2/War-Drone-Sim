@@ -18,12 +18,28 @@ export const LEVEL_SECTORS = Object.freeze([
   ] }
 ]);
 export const LEVEL_TARGETS = LEVEL_SECTORS.reduce((sum,sector)=>sum+sector.targets.length,0);
+// Open only narrow approach lanes and pocket-sized cover gaps rather than a
+// 69-meter empty meadow visible from the main road. The first easy target stays
+// just off the road; later ones are surrounded by a searchable tree line.
+export function objectiveApproachClearance(x,z){
+  for(const section of LEVEL_SECTORS)for(const [targetZ,offset] of section.targets){
+    if(Math.abs(z-targetZ)>57)continue;
+    const homeX=roadCenter(targetZ)+offset;
+    if(Math.hypot(x-homeX,z-targetZ)<19)return true;
+    const startZ=targetZ-36,startX=roadCenter(startZ)+Math.sign(offset)*7;
+    const dx=homeX-startX,dz=targetZ-startZ;
+    const t=Math.max(0,Math.min(1,((x-startX)*dx+(z-startZ)*dz)/(dx*dx+dz*dz)));
+    if(Math.hypot(x-(startX+dx*t),z-(startZ+dz*t))<8.5)return true;
+  }
+  return false;
+}
+export function forestRoadGap(z){return clearingRadius(z)>15?19:15;}
 export function clearingRadius(z) {
   return (z>185 && z<415) || (z>575 && z<825) || (z>1005 && z<1250) ? 69 : 15;
 }
 export function makeEncounter() {
   let id=0;
-  return { drones:1, hits:0, round:1, clock:0, vehicles:LEVEL_SECTORS.flatMap((sector,sectorIndex)=>
+  return { drones:1, hits:0, round:1, clock:0, discovered:new Set(), vehicles:LEVEL_SECTORS.flatMap((sector,sectorIndex)=>
     sector.targets.map(([z,offset,kind])=>{
       const x=roadCenter(z)+offset;
       const targetId=id++;
