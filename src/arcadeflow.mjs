@@ -32,9 +32,10 @@ export function registerResult(card, hit, flight = {}) {
   };
 }
 
-export function guidanceFor(encounter, flight) {
+export function guidanceFor(encounter, flight, revealedIds = null) {
   const sector = activeSectorIndex(encounter);
-  const remaining = encounter.vehicles.filter(v => !v.destroyed && v.sector === sector);
+  const remaining = encounter.vehicles.filter(v => !v.destroyed && v.sector === sector &&
+    (revealedIds === null || revealedIds.has(v.id)));
   if (!remaining.length) return null;
   // Prefer a target in front, but never hide a missed target behind the drone.
   let chosen = null, best = Infinity;

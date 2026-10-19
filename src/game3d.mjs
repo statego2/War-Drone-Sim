@@ -3,7 +3,7 @@ import { TILE, clamp, hash, roadCenter, groundHeight, makeFlight, advanceFlight,
 import { createFlightAudio } from './audio3d.mjs';
 import { createScenery } from './scenery3d.mjs';
 import { createClouds } from './atmosphere3d.mjs';
-import { makeEncounter, updateEncounter, spawnForNextTarget, resolveContact, applyContact, nextDrone, LEVEL_SECTORS, LEVEL_TARGETS, clearingRadius, activeSectorIndex, sectorProgress, levelComplete } from './encounter.mjs';
+import { makeEncounter, updateEncounter, spawnForNextTarget, resolveContact, applyContact, nextDrone, LEVEL_SECTORS, LEVEL_TARGETS, clearingRadius, forestRoadGap, objectiveApproachClearance, activeSectorIndex, sectorProgress, levelComplete } from './encounter.mjs';
 import {battlefieldLayout} from './battlefieldlayout.mjs';
 import {trailAlpha,padAlpha} from './trailfade.mjs';
 import {slopedHullSpec} from './vehiclemesh.mjs';
@@ -18,6 +18,7 @@ import { createPrimitiveGeometryPool } from './geometrypool.mjs';
 import { createRenderBudget } from './renderbudget.mjs';
 import { pauseFlightState, resumeFlightState } from './flightlifecycle.mjs';
 import { redeployWithPenalty } from './recovery.mjs';
+import {discoverNearby,explorationHint} from './exploration.mjs';
 
 // A floating-origin, streamed polygonal world. No real-drone targeting or hardware integration.
 const $ = id => document.getElementById(id);
@@ -279,7 +280,8 @@ function addForest(group, cx, cz, near) {
     const rz = hash(cx * 2203 + i * 31, cz * 499 + 12);
     const x = rx * TILE, z = rz * TILE, wx = cx * TILE + x, wz = cz * TILE + z;
     const h = groundHeight(wx, wz);
-    if (Math.abs(wx - roadCenter(wz)) < clearingRadius(wz) ||
+    if (Math.abs(wx - roadCenter(wz)) < forestRoadGap(wz) ||
+        objectiveApproachClearance(wx,wz) ||
         scenicTrailClearance(wx,wz) || lakeProximity(wx,wz) < 1.12) continue;
     const size = (near ? 10 : 7) + 15 * hash(cx * 299 + i, cz * 41 + i * 61);
     const tree = { x, z, h, size, r: 1.7 + size * .19, color: greenPalette[Math.floor(hash(i + cx * 9, cz * 7 + i) * greenPalette.length)], turn: hash(i, cz * 2 + cx) * Math.PI * 2 };
@@ -652,11 +654,11 @@ function moveEncounter() {
   for(const target of encounter.vehicles){
     const outline=outlineViews[target.id];
     const outlineState=outlineAppearance(target,flight,sector,encounter.clock,reduceMotion);
-    outline.group.visible=outlineState.visible && (mode==='flying'||mode==='home');
+    outline.group.visible=encounter.discovered.has(target.id)&&outlineState.visible&&mode==='flying';
     if(outline.group.visible)outline.material.opacity=outlineState.opacity;
     const beacon=beaconViews[target.id];
     const state=beaconAppearance(target,flight,sector,encounter.clock,reduceMotion);
-    beacon.visible=state.visible && (mode==='flying'||mode==='home');
+    beacon.visible=encounter.discovered.has(target.id)&&state.visible&&mode==='flying';
     if(!beacon.visible)continue;
     beacon.position.set(target.x,target.y+2,target.z);
     beacon.scale.set(state.size,state.size*.78,1);
@@ -1014,6 +1016,7 @@ function endFlight(contact) {
   impactType=contact.type;impactId=contact.id??-1;
   if(contact.type==='vehicle') {
     const previousSector=activeSectorIndex(encounter);
+    encounter.discovered.add(contact.id);
     applyContact(encounter,contact);syncTargets();
     advancedSector=activeSectorIndex(encounter)>previousSector;
   } else advancedSector=false;
@@ -1154,9 +1157,12 @@ function updateHUD() {
     (scorecard.combo>=2?` · ×${scorecard.combo} COMBO`:'');
   const compass=$('target-compass');
   if(compass) {
-    const guide=guidanceFor(encounter,flight);
-    compass.textContent=guide?`${guide.arrow} ${guide.kind} · ${guide.distance} M`:'CLEAR';
-    compass.dataset.direction=guide?.direction||'CLEAR';
+    const guide=guidanceFor(encounter,flight,encounter.discovered);
+    const search=explorationHint(encounter);
+    compass.textContent=guide?`${guide.arrow} ${guide.kind} · ${guide.distance} M`:
+      search.clue;
+    compass.dataset.direction=guide?.direction||'SEARCH';
+    compass.setAttribute('aria-label',guide?'Προσεγγίζεις όχημα':'Αναζήτησε οχήματα μέσα στο δάσος');
   }
   $('round-label').textContent = `SECTOR ${activeSectorIndex(encounter)+1}/${LEVEL_SECTORS.length}`;
   altitudeEl.textContent = Math.round(Math.max(0, flight.y - groundHeight(flight.x, flight.z))) + ' M AGL';
@@ -1187,6 +1193,12 @@ function frame(now) {
     const previous={x:flight.x,y:flight.y,z:flight.z};
     advanceFlight(flight, command, dt);
     updateEncounter(encounter,dt);
+    const found=discoverNearby(encounter,flight,groundHeight);
+    if(found.length){
+      roundBannerTime=1.6;
+      roundBannerText=found.length===1?'VEHICLE SPOTTED':'NEW VEHICLES SPOTTED';
+      sound.cue('spot');
+    }
     const vehicleContact=resolveContact(encounter,previous,flight,flight.groundContact);
     const treeContact=forestContact(previous,flight);
     const contact=chooseContact(vehicleContact,treeContact,flight.groundContact);
@@ -1256,7 +1268,8 @@ window.__openSkySnapshot = () => ({
   , hits:encounter.hits, drones:encounter.drones, sector:activeSectorIndex(encounter), total:LEVEL_TARGETS, vehicles:encounter.vehicles.map(v=>v.destroyed),
   points:scorecard.points, combo:scorecard.combo, misses:scorecard.misses,
   moving:encounter.vehicles.filter(v=>v.moving&&!v.destroyed).length,
-  target:guidanceFor(encounter,flight), spawn:spawnForNextTarget(encounter), lastAward,
+  target:guidanceFor(encounter,flight,encounter.discovered), exploration:explorationHint(encounter),
+  discovered:[...encounter.discovered], spawn:spawnForNextTarget(encounter), lastAward,
   nearbyTrees:tiles.get(Math.floor(flight.x/TILE)+':'+Math.floor(flight.z/TILE))?.hazards.length||0,
   battlefieldPaths:battlefield.trails.length,stagingPads:battlefield.pads.length,
   softSoilBlend:trailMaterial.transparent&&trailMaterial.vertexColors&&stagingMaterial.vertexColors,
