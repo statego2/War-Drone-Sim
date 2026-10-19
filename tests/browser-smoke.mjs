@@ -56,7 +56,8 @@ try{
   assert.equal(running.vehicles.length,16,'full forest level has sixteen persistent targets');
   assert.equal(running.scenicSites,3,'three decorative off-road camps accompany the wider encounter arenas');
   assert.equal(running.landmarksAuthored,3,'three distinct cinematic natural landmarks orient exploration');
-  assert.equal(running.mistTypes,3,'lowland and highland get distinct GPU-instanced fog banks');
+  assert.equal(running.mistTypes,3,'each forest biome has its own low-lying mist treatment');
+  assert.ok(running.riverStretch>400,'the wetland biome has a substantial offroad water corridor');
   assert.equal(running.livingForestBirds,18,'three animated flocks share one instanced mesh');
   assert.ok(running.riverPoints>80,'misty valley contains a meandering physical stream');
   assert.equal(running.riverBridge,true,'river crosses the road via a stone bridge');

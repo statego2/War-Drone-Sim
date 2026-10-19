@@ -1,10 +1,13 @@
 // Self-contained procedural scenic dressing. No military or real-world data.
 import {coverStyle,coverKind,coverColor,COVER_STYLES} from './groundcover.mjs';
+import {inMistyWetland,channelPoint,channelWidth,tileHasWetland} from './wetlands.mjs';
 import {mistLayout,MIST_STYLES} from './mistbanks.mjs';
 export function createScenery(THREE, { TILE, hash, groundHeight, roadCenter, lakeProximity }) {
   const foliage = new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.DoubleSide });
   const straw = new THREE.MeshLambertMaterial({ color: 0x9b8c5e });
   const water = new THREE.MeshPhongMaterial({ color: 0x4a8490, shininess: 70, transparent: true, opacity: .80, side: THREE.DoubleSide });
+  const riverWater=new THREE.MeshPhongMaterial({color:0x79bbb0,emissive:0x143e42,
+    shininess:95,transparent:true,opacity:.86,depthWrite:false,side:THREE.DoubleSide});
   const timber = new THREE.MeshLambertMaterial({ color: 0x86674c });
   const stone = new THREE.MeshLambertMaterial({ color: 0xffffff });
   const roof = new THREE.MeshLambertMaterial({ color: 0x4c5854 });
@@ -16,7 +19,6 @@ export function createScenery(THREE, { TILE, hash, groundHeight, roadCenter, lak
   const gravelGeo = new THREE.IcosahedronGeometry(1, 0);
   const campGeo = new THREE.CylinderGeometry(.09, .16, 1, 6);
   const poleMat = new THREE.MeshLambertMaterial({ color: 0x443c30 });
-  // One locally generated soft radial texture shared by all streamed tiles.
   const mistCanvas=document.createElement('canvas');
   mistCanvas.width=mistCanvas.height=128;
   const paint=mistCanvas.getContext('2d');
@@ -34,7 +36,6 @@ export function createScenery(THREE, { TILE, hash, groundHeight, roadCenter, lak
     map:mistTexture,color:0xffffff,transparent:true,
     opacity:.50,depthWrite:false,depthTest:true,side:THREE.DoubleSide
   });
-
 
   function mesh(parent, geo, mat, x, y, z, rotation = 0) {
     const out = new THREE.Mesh(geo, mat);
@@ -132,6 +133,37 @@ export function createScenery(THREE, { TILE, hash, groundHeight, roadCenter, lak
     geo.setIndex(indices);geo.computeVertexNormals();
     mesh(group,geo,water,0,0,0);
   }
+  // Continuous meander on the forest side, tiled only where it intersects
+  // the current x/z tile. This gives the second region a recognizable river
+  // instead of a repeating flat green forest with occasional disconnected lines.
+  function addWetlandRiver(group,cx,cz){
+    if(!tileHasWetland(cz,TILE))return;
+    const verts=[],uvs=[],inds=[],steps=96;
+    const z0=cz*TILE;
+    let previous=null;
+    for(let i=0;i<=steps;i++){
+      const z=z0+i*TILE/steps;
+      if(!inMistyWetland(z)){previous=null;continue;}
+      const p=channelPoint(z),half=channelWidth(z);
+      if(Math.floor((p.x-half)/TILE)!==cx ||
+         Math.floor((p.x+half)/TILE)!==cx){previous=null;continue;}
+      const start=verts.length/3;
+      for(const side of [-1,1]){
+        const x=p.x+side*half;
+        verts.push(x-cx*TILE,groundHeight(x,z)+.49,z-z0);
+        uvs.push((side+1)*.5,(z-508)/25);
+      }
+      if(previous!==null)inds.push(previous,start,previous+1,previous+1,start,start+1);
+      previous=start;
+    }
+    if(!inds.length)return;
+    const geo=new THREE.BufferGeometry();
+    geo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
+    geo.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));
+    geo.setIndex(inds);geo.computeVertexNormals();
+    mesh(group,geo,riverWater,0,0,0);
+  }
+
   function cabin(group,cx,cz,z,side,kind=0) {
     const wx=roadCenter(z)+side*(48+kind*18);
     if (Math.floor(wx/TILE)!==cx) return;
@@ -178,27 +210,25 @@ export function createScenery(THREE, { TILE, hash, groundHeight, roadCenter, lak
     if(!near)return;
     const list=mistLayout(cx,cz,TILE,hash,groundHeight,roadCenter);
     if(!list.length)return;
-    const mesh=new THREE.InstancedMesh(mistGeometry,mistMaterial,list.length);
-    const tmp=new THREE.Object3D();
+    const cloud=new THREE.InstancedMesh(mistGeometry,mistMaterial,list.length);
+    const temp=new THREE.Object3D();
     for(let i=0;i<list.length;i++){
       const bank=list[i];
-      tmp.position.set(bank.x,bank.y,bank.z);
-      tmp.rotation.set(0,(i*1.6+cx*.2+cz*.3),0);
-      tmp.scale.set(bank.width,bank.length,1);
-      tmp.updateMatrix();mesh.setMatrixAt(i,tmp.matrix);
-      // Its color hue follows the native terrain while the shared alpha
-      // texture keeps cloud edges invisible, with no separate draw call.
-      mesh.setColorAt(i,new THREE.Color(bank.color).multiplyScalar(bank.opacity/.33));
+      temp.position.set(bank.x,bank.y,bank.z);
+      temp.rotation.set(0,i*1.6+cx*.2+cz*.3,0);
+      temp.scale.set(bank.width,bank.length,1);
+      temp.updateMatrix();cloud.setMatrixAt(i,temp.matrix);
+      cloud.setColorAt(i,new THREE.Color(bank.color).multiplyScalar(bank.opacity/.33));
     }
-    mesh.frustumCulled=false;mesh.instanceMatrix.needsUpdate=true;
-    mesh.instanceColor.needsUpdate=true;mesh.userData.lowMist=true;
-    group.add(mesh);
+    cloud.instanceMatrix.needsUpdate=true;cloud.instanceColor.needsUpdate=true;
+    cloud.frustumCulled=false;cloud.userData.lowMist=true;
+    group.add(cloud);
   }
   function decorateTile(group,cx,cz,near) {
     decorateGround(group,cx,cz,near);
     addLowMist(group,cx,cz,near);
     addRoadside(group,cx,cz);
-    if (near) addStream(group,cx,cz);
+    if (near){addStream(group,cx,cz);addWetlandRiver(group,cx,cz);}
   }
   return { decorateTile, groundCoverStyles:COVER_STYLES.length, groundMistStyles:MIST_STYLES.length };
 }
