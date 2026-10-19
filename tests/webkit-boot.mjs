@@ -60,6 +60,8 @@ try{
     await page.waitForTimeout(950);
     const current=await page.evaluate(()=>window.__openSkySnapshot());
     assert.equal(current.biome,expected[i]);
+    assert.ok(current.cameraPitch<-.14&&current.cameraPitch>-.55,
+      'portrait chase camera frames treetops and clearings instead of empty sky');
     assert.equal(current.physicalArea,i,'progress HUD follows actual visited biome');
     assert.match(await page.locator('#round-label').innerText(),
       new RegExp('AREA '+(i+1)+'/3'));

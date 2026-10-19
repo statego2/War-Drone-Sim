@@ -21,6 +21,7 @@ import { redeployWithPenalty } from './recovery.mjs';
 import {discoverNearby,explorationHint} from './exploration.mjs';
 import {BIOMES,biomeIndex,biomeBlend,biomePalette,biomeFoliage,biomeVegetation} from './biomes.mjs';
 import {LANDMARKS,landmarkPosition,landmarkClearance} from './landmarks.mjs';
+import {forestChasePitch} from './cameracomposition.mjs';
 import {channelClearance,STREAM_START,STREAM_END} from './wetlands.mjs';
 import {createWildlife} from './wildlife3d.mjs';
 import {RIVER,riverCrossing,riverStrip} from './riverlandscape.mjs';
@@ -1260,7 +1261,13 @@ function updateCamera(dt) {
   cameraYaw += yawDifference*(1-Math.exp(-4.4*dt));
   // Camera follows the actual nose-down attitude: steep pitch shows terrain
   // rushing up, rather than staying level while the model dives.
-  cameraPitch += (clamp(.035-flight.pitch*.67-.42*(flight.pullback||0),-.93,.43)-cameraPitch)*(1-Math.exp(-4.1*dt));
+  const desiredPitch=view==='chase'
+    ? forestChasePitch({
+        height:Math.max(0,flight.y-groundHeight(flight.x,flight.z)),
+        pitch:flight.pitch,pullback:flight.pullback||0
+      })
+    : clamp(.035-flight.pitch*.67-.42*(flight.pullback||0),-.93,.43);
+  cameraPitch+=(desiredPitch-cameraPitch)*(1-Math.exp(-4.1*dt));
   const dirX = Math.sin(cameraYaw), dirZ = Math.cos(cameraYaw);
   const lookX=dirX*Math.cos(cameraPitch), lookZ=dirZ*Math.cos(cameraPitch);
   const lookY=Math.sin(cameraPitch);
@@ -1492,7 +1499,7 @@ if(location.hostname==='127.0.0.1'){
     flight.heading=0;flight.pitch=0;flight.bank=0;
     flight.vx=flight.vy=flight.vz=0;
     camera.position.set(0,flight.y+8,-23);
-    cameraYaw=0;cameraPitch=.03;
+    cameraYaw=0;cameraPitch=forestChasePitch({height:74,pitch:0});
     lastSector='';rebuildTiles(true);moveTiles();updateFarLand();updateHUD();
     return {region:BIOMES[index].id,position:z};
   };
