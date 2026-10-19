@@ -10,7 +10,7 @@ export function makeScorecard() {
 // Reward finding things, not just crashing into known markers. Caller owns
 // one-off discovery state; awarding score never influences actual contact.
 export function registerExploration(card,type='vehicle',count=1){
-  const n=Math.max(0,Math.min(16,Math.floor(count)||0));
+  const n=Number.isFinite(count)?Math.max(0,Math.min(16,Math.floor(count))):0;
   const per=type==='landmark'?75:35;
   const points=n*per;
   card.points+=points;card.scoutingPoints+=points;
