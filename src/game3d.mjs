@@ -1464,6 +1464,7 @@ window.__openSkySnapshot = () => ({
   truckWindows:intactViews.flatMap(v=>v.children).filter(m=>m.userData?.visualDetail==='truck-windshield').length,
   redOutlines:outlineViews.filter(o=>o.group.visible).length,
   scenicSites:FOREST_SITES.length,landmarksAuthored:LANDMARKS.length,
+  mistTypes:scenery.groundMistStyles,
   riverStretch:STREAM_END-STREAM_START,
   livingForestBirds:wildlife.count,
   riverPoints:RIVER.samples+1,riverBridge:riverView.children.some(m=>m.userData.scenicFeature==='stone-bridge'),
