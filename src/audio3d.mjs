@@ -1,4 +1,5 @@
 import {biomeBlend} from './biomes.mjs';
+import {channelPoint} from './wetlands.mjs';
 // War Drone Sim — Quiet Air-Glide Director v3.
 // Original fictional arcade sounds. Deliberately musical, soft-edged and non-literal.
 // Procedural Web Audio, no downloads, no microphones, no real aircraft audio.
@@ -44,14 +45,22 @@ export function deriveImpactMix({chain=1,finale=false,intensity=1}={}) {
 }
 
 // Three quiet sonic landscapes, without continuous motors or intrusive beeps.
-export function deriveLandscapeMix(z=0,height=30){
-  const blend=biomeBlend(Number.isFinite(z)?z:0);
+export function deriveLandscapeMix(z=0,height=30,worldX=null){
+  const validZ=Number.isFinite(z)?z:0;
+  const blend=biomeBlend(validZ);
   const t=blend.t;
   const weight=[0,0,0];weight[blend.from]+=1-t;weight[blend.to]+=t;
   const nearGround=1-clamp((height-40)/160,0,1);
+  // A fictional creek has a location in this forest. Water should not
+  // sound equally loud from a distant road or high above the mountain.
+  // Null worldX preserves deterministic legacy audio tests and previews.
+  const distance=worldX===null?0:Math.abs(worldX-channelPoint(validZ).x);
+  const riverProximity=clamp((105-distance)/85,0,1);
+  const closeness=riverProximity*riverProximity*(3-2*riverProximity);
+  const water=weight[1]*nearGround*closeness;
   return {
-    streamGain:.022*weight[1]*nearGround,
-    streamLowpass:950+330*weight[1],
+    streamGain:.022*water,
+    streamLowpass:950+330*water,
     highlandWind:.016*weight[2],
     birdDelay:15*weight[0]+12*weight[1]+30*weight[2]
   };
@@ -299,7 +308,7 @@ export function createFlightAudio() {
     if(t<nextUpdate)return;
     nextUpdate=t+.045;
     const m=deriveFlightMix(speed,height,options);
-    const landscape=deriveLandscapeMix(options.biomeZ??0,height);
+    const landscape=deriveLandscapeMix(options.biomeZ??0,height,options.worldX??null);
     const playing=active&&enabled&&!hidden;
     windFilter.frequency.setTargetAtTime(m.windFilter,t,.24);
     glideFilter.frequency.setTargetAtTime(m.glideFilter,t,.22);
