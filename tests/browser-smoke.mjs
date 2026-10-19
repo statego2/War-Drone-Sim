@@ -91,7 +91,9 @@ try{
   assert.equal(running.points,running.discovered.length*35,
     'exploring nearby objects awards bounded discovery points exactly once');
   assert.match(await page.locator('#arcade-score').innerText(),/^\d+ PTS/);
-  assert.match(await page.locator('#target-compass').innerText(),/(TRAILS|BANKS|CLEARINGS|M)$/);
+  assert.match(await page.locator('#target-compass').innerText(),
+    /(PINES|RIVER|RIDGE|M)$/,
+    'unknown goals show environmental clues rather than instant numerical GPS');
   assert.equal(await page.locator('#progress span:not(.hidden)').count(),5,'entry clearing has five goals');
   assert.ok(running.speed>43,'neutral flight maintains automatic forward cruise');
   assert.equal(await page.locator('#boost').count(),0,'one-finger flight must not show a speed-mode button');
