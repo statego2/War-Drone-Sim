@@ -1,5 +1,6 @@
 // Pure fictional game exploration: the forest conceals objectives until the
 // player actually flies near them and faces the clearing. Never a real sensor.
+import {biomeIndex} from './biomes.mjs';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export const DISCOVERY_RANGE=82;
 export const CLOSE_DISCOVERY_RANGE=22;
@@ -34,7 +35,7 @@ export function canDiscover(target,flight,terrainHeight=null){
 export function discoverNearby(encounter,flight,terrainHeight=null){
   const spotted=encounter.discovered || (encounter.discovered=new Set());
   const next=[];
-  const sector=encounter.vehicles.find(v=>!v.destroyed)?.sector??0;
+  const sector=biomeIndex(flight.z);
   for(const v of encounter.vehicles){
     if(v.sector!==sector||v.destroyed||spotted.has(v.id))continue;
     if(canDiscover(v,flight,terrainHeight)){
@@ -43,8 +44,9 @@ export function discoverNearby(encounter,flight,terrainHeight=null){
   }
   return next;
 }
-export function explorationHint(encounter){
-  const sector=encounter.vehicles.find(v=>!v.destroyed)?.sector??0;
+export function explorationHint(encounter,flight=null){
+  const sector=flight?biomeIndex(flight.z):
+    (encounter.vehicles.find(v=>!v.destroyed)?.sector??0);
   const remaining=encounter.vehicles.filter(v=>v.sector===sector&&!v.destroyed);
   const revealed=remaining.filter(v=>encounter.discovered?.has(v.id));
   return {

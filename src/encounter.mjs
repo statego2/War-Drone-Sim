@@ -69,8 +69,10 @@ export function updateEncounter(encounter, dt) {
   return encounter;
 }
 
-export function spawnForNextTarget(encounter) {
-  const sector=activeSectorIndex(encounter);
+export function spawnForNextTarget(encounter,preferredSector=null) {
+  const valid=Number.isInteger(preferredSector)&&preferredSector>=0&&preferredSector<LEVEL_SECTORS.length;
+  const hasLocal=valid&&encounter.vehicles.some(v=>v.sector===preferredSector&&!v.destroyed);
+  const sector=hasLocal?preferredSector:activeSectorIndex(encounter);
   const live=encounter.vehicles.find(v=>v.sector===sector&&!v.destroyed);
   const z=Math.max(LEVEL_SECTORS[sector].spawnZ, (live?.z ?? LEVEL_SECTORS[sector].spawnZ+110)-110);
   const x=roadCenter(z);

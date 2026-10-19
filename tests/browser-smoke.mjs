@@ -58,6 +58,7 @@ try{
   assert.equal(running.landmarksAuthored,3,'three distinct cinematic natural landmarks orient exploration');
   assert.deepEqual(running.landscapeNames,['PINE SHADOWS','MISTY RIVER','AMBER HIGHLANDS']);
   assert.equal(running.biome,'pine','opening landscape is a dark pine forest');
+  assert.equal(running.physicalArea,0,'entry is the first physical forest region');
   assert.equal(running.total,16);
   assert.equal(running.tankSlopedHulls,6,'each tank has a low-poly sloped body');
   assert.equal(running.carrierSlopedHulls,5,'each carrier has angled armour sides');
