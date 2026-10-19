@@ -21,6 +21,8 @@ import { redeployWithPenalty } from './recovery.mjs';
 import {discoverNearby,explorationHint} from './exploration.mjs';
 import {BIOMES,biomeIndex,biomeBlend,biomePalette,biomeFoliage,biomeVegetation} from './biomes.mjs';
 import {LANDMARKS,landmarkPosition,landmarkClearance} from './landmarks.mjs';
+import {channelClearance,STREAM_START,STREAM_END} from './wetlands.mjs';
+import {createWildlife} from './wildlife3d.mjs';
 import {RIVER,riverCrossing,riverStrip} from './riverlandscape.mjs';
 import {areaArrival} from './areaarrival.mjs';
 
@@ -179,6 +181,7 @@ let qaFrozen=false;
 let resumeMode='flying',graphicsReady=true,contextCopy=null;
 let encounter = makeEncounter(), scorecard = makeScorecard(), lastAward = null,
     impactAge = 0, impactType = '', impactId = -1, roundBannerTime=0, roundBannerText='', advancedSector=false;
+let lastSightCheck=-Infinity;
 let pointer = null;
 const keys = new Set();
 
@@ -304,7 +307,7 @@ function addForest(group, cx, cz, near) {
     const x = rx * TILE, z = rz * TILE, wx = cx * TILE + x, wz = cz * TILE + z;
     const h = groundHeight(wx, wz);
     if (Math.abs(wx - roadCenter(wz)) < forestRoadGap(wz) ||
-        objectiveApproachClearance(wx,wz) || landmarkClearance(wx,wz) ||
+        objectiveApproachClearance(wx,wz) || landmarkClearance(wx,wz) || channelClearance(wx,wz) ||
         scenicTrailClearance(wx,wz) || lakeProximity(wx,wz) < 1.12) continue;
     const size = (near ? 10 : 7) + 15 * hash(cx * 299 + i, cz * 41 + i * 61);
     const tree = { x, z, h, size, r: 1.7 + size * .19,
@@ -380,6 +383,7 @@ const lampMat = new THREE.MeshBasicMaterial({ color: 0xdfd4a8 });
 // Persistent encounter meshes sit in world coordinates; tile streaming never
 // disposes a wreck when the player flies out and returns.
 const encounterView = new THREE.Group(); scene.add(encounterView);
+const wildlife=createWildlife(THREE,encounterView,{groundHeight,reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches});
 // Permanent authored forest hubs: their terrain ribbons stay aligned with
 // target wrecks across airborne respawns and streamed scenery tile changes.
 const battlefieldView=new THREE.Group();
@@ -1111,6 +1115,7 @@ muteButton.addEventListener('click', () => {
 function startFlight() {
   sound.unlock().then(() => sound.cue('start')); sound.setActive(true);
   encounter = makeEncounter(playthroughSeed+(++playthroughNumber)*193); scorecard = makeScorecard(); lastAward=null;
+  lastSightCheck=-Infinity;
   lastCheckpointSector=0;lastArrivalArea=0;
   visitedAreas.clear();visitedAreas.add(0);visitedGROVES.clear();
   syncTargets(); roundBannerTime=0; roundBannerText='';
@@ -1334,22 +1339,29 @@ function frame(now) {
     const previous={x:flight.x,y:flight.y,z:flight.z};
     advanceFlight(flight, command, dt);
     updateEncounter(encounter,dt);
-    const nextArea=areaArrival(lastArrivalArea,flight.z);
-    if(nextArea!==lastArrivalArea){
-      lastArrivalArea=nextArea;
-      if(!visitedAreas.has(nextArea)){
-        visitedAreas.add(nextArea);
+    const nextArrival=areaArrival(lastArrivalArea,flight.z);
+    if(nextArrival!==lastArrivalArea){
+      lastArrivalArea=nextArrival;
+      if(!visitedAreas.has(nextArrival)){
+        visitedAreas.add(nextArrival);
         roundBannerTime=2.65;
-        roundBannerText=BIOMES[nextArea].name+' · DISCOVERED';
+        roundBannerText=BIOMES[nextArrival].name+' · DISCOVERED';
         sound.cue('landmark');
       }
     }
-    const found=discoverNearby(encounter,flight,groundHeight);
-    if(found.length){
-      const reward=registerExploration(scorecard,'vehicle',found.length);
-      roundBannerTime=1.8;
-      roundBannerText=`${reward.label} · +${reward.points}`;
-      sound.cue('spot');
+    // Cap tree-occlusion discovery checks at roughly eight per second. This
+    // lets a player actually search behind canopies without a mobile CPU tax
+    // on all sixty rendered frames. The close approach always catches up.
+    if(encounter.clock-lastSightCheck>=.12){
+      lastSightCheck=encounter.clock;
+      const found=discoverNearby(encounter,flight,groundHeight,
+        (eye,object)=>Boolean(forestContact(eye,object)));
+      if(found.length){
+        const reward=registerExploration(scorecard,'vehicle',found.length);
+        roundBannerTime=1.8;
+        roundBannerText=`${reward.label} · +${reward.points}`;
+        sound.cue('spot');
+      }
     }
     // Optional exploration challenge: investigate natural off-road camp sites.
     // These are scenery discoveries, not military targeting markers or tools.
@@ -1424,6 +1436,7 @@ function frame(now) {
   }
   sky.position.copy(camera.position);
   moveEncounter();
+  wildlife.update(encounter.clock,flight.z);
   smokeViews.forEach((smoke,i)=>{ if(smoke.visible){smoke.position.y=encounter.vehicles[i].y+5+Math.sin(now*.0006+i)*1.2;smoke.rotation.y+=dt*.17;} });
   for (let i = 0; i < rotors.length; i++) rotors[i].rotation.y += dt * (i % 2 ? -43 : 43);
   renderer.render(scene, camera);
@@ -1467,6 +1480,8 @@ window.__openSkySnapshot = () => ({
   redOutlines:outlineViews.filter(o=>o.group.visible).length,
   scenicSites:FOREST_SITES.length,landmarksAuthored:LANDMARKS.length,
   visitedBiomes:[...visitedAreas],
+  riverStretch:STREAM_END-STREAM_START,
+  livingForestBirds:wildlife.count,
   riverPoints:RIVER.samples+1,riverBridge:riverView.children.some(m=>m.userData.scenicFeature==='stone-bridge'),
   physicalArea:biomeIndex(flight.z),checkpointArea:lastCheckpointSector,
   grovesVisited:visitedGROVES.size,

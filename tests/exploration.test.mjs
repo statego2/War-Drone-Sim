@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {canDiscover,discoverNearby,explorationHint,DISCOVERY_RANGE} from '../src/exploration.mjs';
 import {makeEncounter,applyContact} from '../src/encounter.mjs';
 import {roadCenter} from '../src/flight3d.mjs';
+import {resolveTreeContact} from '../src/hazards.mjs';
 
 test('a launch does not expose every target through trees',()=>{
   const encounter=makeEncounter();
@@ -51,4 +52,22 @@ test('hidden side-clearing props demand actual exploration, not straight asphalt
   const near={x:hidden.x,y:hidden.y+9,z:hidden.z-12,heading:0};
   assert.equal(canDiscover(hidden,near),true,'actually entering the clearing reveals the prop');
   assert.equal(e.vehicles[0].offset,-12,'the accessible learning tank is unchanged');
+});
+
+test('actual trees conceal a distant prop until the player changes vantage',()=>{
+  const v={id:6,x:0,y:10,z:0,offset:40,sector:1,destroyed:false};
+  const player={x:42,y:18,z:-50,heading:-.7};
+  const obstacle={id:'pine',x:20,z:-25,bottom:1,top:24,radius:8};
+  const blocked=(eye,target)=>Boolean(resolveTreeContact(eye,target,[obstacle]));
+  const distant={...v,x:0,offset:0,id:0};
+  const onAxis={x:0,y:18,z:-62,heading:0};
+  const pine={id:'trunk',x:0,z:-31,bottom:1,top:27,radius:9};
+  const canopy=(eye,target)=>Boolean(resolveTreeContact(eye,target,[pine]));
+  assert.equal(canDiscover(distant,onAxis,null,canopy),false,
+    'facing a hidden vehicle through a canopy must not expose its red outline');
+  assert.equal(canDiscover(distant,onAxis,null,()=>false),true,
+    'a clear view from the same place reveals it normally');
+  const near={...onAxis,z:-12};
+  assert.equal(canDiscover(distant,near,null,canopy),true,
+    'very close encounter never becomes impossible due to canopy geometry');
 });

@@ -10,7 +10,7 @@ export const DISCOVERY_HINTS=Object.freeze([
   'RIVER · EXPLORE THE BANKS',
   'RIDGE · FIND ROCKY CLEARINGS'
 ]);
-export function canDiscover(target,flight,terrainHeight=null){
+export function canDiscover(target,flight,terrainHeight=null,visionBlocked=null){
   if(target.destroyed)return false;
   const dx=target.x-flight.x,dy=target.y-flight.y,dz=target.z-flight.z;
   const horizontal=Math.hypot(dx,dz),distance=Math.hypot(horizontal,dy);
@@ -38,15 +38,21 @@ export function canDiscover(target,flight,terrainHeight=null){
       if(terrainHeight(x,z)>lineY-2)return false;
     }
   }
+  // Real tree geometry matters: don't glow through an intervening canopy.
+  // The close-range exception deliberately guarantees a player who flies
+  // into a pocket can finish it without pixel-perfect line-of-sight.
+  if(!close && visionBlocked && visionBlocked(flight,{
+    x:target.x,y:target.y+2,z:target.z
+  }))return false;
   return true;
 }
-export function discoverNearby(encounter,flight,terrainHeight=null){
+export function discoverNearby(encounter,flight,terrainHeight=null,visionBlocked=null){
   const spotted=encounter.discovered || (encounter.discovered=new Set());
   const next=[];
   const sector=biomeIndex(flight.z);
   for(const v of encounter.vehicles){
     if(v.sector!==sector||v.destroyed||spotted.has(v.id))continue;
-    if(canDiscover(v,flight,terrainHeight)){
+    if(canDiscover(v,flight,terrainHeight,visionBlocked)){
       spotted.add(v.id);next.push(v.id);
     }
   }
