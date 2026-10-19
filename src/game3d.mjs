@@ -21,6 +21,7 @@ import { redeployWithPenalty } from './recovery.mjs';
 import {discoverNearby,explorationHint} from './exploration.mjs';
 import {BIOMES,biomeIndex,biomeBlend,biomePalette,biomeFoliage,biomeVegetation} from './biomes.mjs';
 import {LANDMARKS,landmarkPosition,landmarkClearance} from './landmarks.mjs';
+import {createWildlife} from './wildlife3d.mjs';
 import {RIVER,riverCrossing,riverStrip} from './riverlandscape.mjs';
 
 // A floating-origin, streamed polygonal world. No real-drone targeting or hardware integration.
@@ -375,6 +376,7 @@ const lampMat = new THREE.MeshBasicMaterial({ color: 0xdfd4a8 });
 // Persistent encounter meshes sit in world coordinates; tile streaming never
 // disposes a wreck when the player flies out and returns.
 const encounterView = new THREE.Group(); scene.add(encounterView);
+const wildlife=createWildlife(THREE,encounterView,{groundHeight,reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches});
 // Permanent authored forest hubs: their terrain ribbons stay aligned with
 // target wrecks across airborne respawns and streamed scenery tile changes.
 const battlefieldView=new THREE.Group();
@@ -1404,6 +1406,7 @@ function frame(now) {
   }
   sky.position.copy(camera.position);
   moveEncounter();
+  wildlife.update(encounter.clock,flight.z);
   smokeViews.forEach((smoke,i)=>{ if(smoke.visible){smoke.position.y=encounter.vehicles[i].y+5+Math.sin(now*.0006+i)*1.2;smoke.rotation.y+=dt*.17;} });
   for (let i = 0; i < rotors.length; i++) rotors[i].rotation.y += dt * (i % 2 ? -43 : 43);
   renderer.render(scene, camera);
@@ -1439,6 +1442,7 @@ window.__openSkySnapshot = () => ({
   truckWindows:intactViews.flatMap(v=>v.children).filter(m=>m.userData?.visualDetail==='truck-windshield').length,
   redOutlines:outlineViews.filter(o=>o.group.visible).length,
   scenicSites:FOREST_SITES.length,landmarksAuthored:LANDMARKS.length,
+  livingForestBirds:wildlife.count,
   riverPoints:RIVER.samples+1,riverBridge:riverView.children.some(m=>m.userData.scenicFeature==='stone-bridge'),
   physicalArea:biomeIndex(flight.z),checkpointArea:lastCheckpointSector,
   grovesVisited:visitedGROVES.size,
