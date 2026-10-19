@@ -1,3 +1,4 @@
+import {biomeBlend} from './biomes.mjs';
 // War Drone Sim — Quiet Air-Glide Director v3.
 // Original fictional arcade sounds. Deliberately musical, soft-edged and non-literal.
 // Procedural Web Audio, no downloads, no microphones, no real aircraft audio.
@@ -42,11 +43,24 @@ export function deriveImpactMix({chain=1,finale=false,intensity=1}={}) {
   };
 }
 
+// Three quiet sonic landscapes, without continuous motors or intrusive beeps.
+export function deriveLandscapeMix(z=0,height=30){
+  const blend=biomeBlend(Number.isFinite(z)?z:0);
+  const t=blend.t;
+  const weight=[0,0,0];weight[blend.from]+=1-t;weight[blend.to]+=t;
+  const nearGround=1-clamp((height-40)/160,0,1);
+  return {
+    streamGain:.022*weight[1]*nearGround,
+    streamLowpass:950+330*weight[1],
+    highlandWind:.016*weight[2],
+    birdDelay:15*weight[0]+12*weight[1]+30*weight[2]
+  };
+}
 export function createFlightAudio() {
   let ctx=null, gate=null, flightBus=null, worldBus=null, effectsBus=null;
   let windGain=null, windFilter=null, glideGain=null, glideFilter=null;
   let bankGain=null, bankFilter=null, diveGain=null, diveFilter=null;
-  let ambienceGain=null, sources=[], airy=null, warm=null;
+  let ambienceGain=null,streamGain=null,streamFilter=null,sources=[],airy=null,warm=null;
   let enabled=true, active=false, hidden=false, voices=0, nextUpdate=0;
   let birdsAt=15, birdElapsed=0, lastCueTime=-100, duckUntil=0;
   const MAX_VOICES=32;
@@ -111,6 +125,10 @@ export function createFlightAudio() {
     ambienceGain=nodeGain(.09);
     ambienceGain.connect(worldBus);
     loop(warm,ambienceGain,90,440);
+    // River is a soft filtered noise stream, never a pitched oscillator.
+    streamGain=nodeGain(0);
+    streamFilter=loop(airy,streamGain,180,1200);
+    streamGain.connect(flightBus);
   }
 
   async function unlock() {
@@ -266,6 +284,7 @@ export function createFlightAudio() {
       bankGain.gain.setTargetAtTime(0,t,.12);
       diveGain.gain.setTargetAtTime(0,t,.08);
       worldBus.gain.setTargetAtTime(0,t,.16);
+      streamGain?.gain.setTargetAtTime(0,t,.18);
     }
   }
 
@@ -273,23 +292,27 @@ export function createFlightAudio() {
     if(!ctx||ctx.state!=='running')return;
     if(active&&enabled&&!hidden&&airborne&&height<125){
       birdElapsed+=Math.max(0,dt||0);
-      if(birdElapsed>=birdsAt){softBird();birdElapsed=0;birdsAt=13+Math.random()*14;}
+      if(birdElapsed>=birdsAt){softBird();birdElapsed=0;
+        birdsAt=deriveLandscapeMix(options.biomeZ??0,height).birdDelay+Math.random()*10;}
     }
     const t=ctx.currentTime;
     if(t<nextUpdate)return;
     nextUpdate=t+.045;
     const m=deriveFlightMix(speed,height,options);
+    const landscape=deriveLandscapeMix(options.biomeZ??0,height);
     const playing=active&&enabled&&!hidden;
     windFilter.frequency.setTargetAtTime(m.windFilter,t,.24);
     glideFilter.frequency.setTargetAtTime(m.glideFilter,t,.22);
     bankFilter.frequency.setTargetAtTime(m.bankFilter,t,.20);
     diveFilter.frequency.setTargetAtTime(m.diveFilter,t,.12);
     const duck=t<duckUntil?.30:1;
-    windGain.gain.setTargetAtTime(playing?m.windGain*duck:0,t,.21);
+    windGain.gain.setTargetAtTime(playing?(m.windGain+landscape.highlandWind)*duck:0,t,.21);
     glideGain.gain.setTargetAtTime(playing?m.glideGain*duck:0,t,.25);
     bankGain.gain.setTargetAtTime(playing?m.bankGain*duck:0,t,.16);
     diveGain.gain.setTargetAtTime(playing?m.diveGain*duck:0,t,.11);
     worldBus.gain.setTargetAtTime(playing?m.ambienceGain*.7:0,t,.33);
+    streamFilter.frequency.setTargetAtTime(landscape.streamLowpass,t,.5);
+    streamGain.gain.setTargetAtTime(playing?landscape.streamGain:0,t,.65);
   }
 
   function suspendOnHidden(){

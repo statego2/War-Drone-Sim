@@ -1,6 +1,7 @@
 // Self-contained procedural scenic dressing. No military or real-world data.
 import {coverStyle,coverKind,coverColor,COVER_STYLES} from './groundcover.mjs';
 import {inMistyWetland,channelPoint,channelWidth,tileHasWetland} from './wetlands.mjs';
+import {mistLayout,MIST_STYLES} from './mistbanks.mjs';
 export function createScenery(THREE, { TILE, hash, groundHeight, roadCenter, lakeProximity }) {
   const foliage = new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.DoubleSide });
   const straw = new THREE.MeshLambertMaterial({ color: 0x9b8c5e });
@@ -18,6 +19,23 @@ export function createScenery(THREE, { TILE, hash, groundHeight, roadCenter, lak
   const gravelGeo = new THREE.IcosahedronGeometry(1, 0);
   const campGeo = new THREE.CylinderGeometry(.09, .16, 1, 6);
   const poleMat = new THREE.MeshLambertMaterial({ color: 0x443c30 });
+  const mistCanvas=document.createElement('canvas');
+  mistCanvas.width=mistCanvas.height=128;
+  const paint=mistCanvas.getContext('2d');
+  const radial=paint.createRadialGradient(64,64,4,64,64,63);
+  radial.addColorStop(0,'rgba(255,255,255,.60)');
+  radial.addColorStop(.30,'rgba(255,255,255,.40)');
+  radial.addColorStop(.70,'rgba(255,255,255,.12)');
+  radial.addColorStop(1,'rgba(255,255,255,0)');
+  paint.fillStyle=radial;paint.fillRect(0,0,128,128);
+  const mistTexture=new THREE.CanvasTexture(mistCanvas);
+  mistTexture.colorSpace=THREE.SRGBColorSpace;
+  const mistGeometry=new THREE.PlaneGeometry(1,1);
+  mistGeometry.rotateX(-Math.PI/2);
+  const mistMaterial=new THREE.MeshBasicMaterial({
+    map:mistTexture,color:0xffffff,transparent:true,
+    opacity:.50,depthWrite:false,depthTest:true,side:THREE.DoubleSide
+  });
 
   function mesh(parent, geo, mat, x, y, z, rotation = 0) {
     const out = new THREE.Mesh(geo, mat);
@@ -188,10 +206,29 @@ export function createScenery(THREE, { TILE, hash, groundHeight, roadCenter, lak
     }
     instanced(group,campGeo,poleMat,posts);
   }
+  function addLowMist(group,cx,cz,near){
+    if(!near)return;
+    const list=mistLayout(cx,cz,TILE,hash,groundHeight,roadCenter);
+    if(!list.length)return;
+    const cloud=new THREE.InstancedMesh(mistGeometry,mistMaterial,list.length);
+    const temp=new THREE.Object3D();
+    for(let i=0;i<list.length;i++){
+      const bank=list[i];
+      temp.position.set(bank.x,bank.y,bank.z);
+      temp.rotation.set(0,i*1.6+cx*.2+cz*.3,0);
+      temp.scale.set(bank.width,bank.length,1);
+      temp.updateMatrix();cloud.setMatrixAt(i,temp.matrix);
+      cloud.setColorAt(i,new THREE.Color(bank.color).multiplyScalar(bank.opacity/.33));
+    }
+    cloud.instanceMatrix.needsUpdate=true;cloud.instanceColor.needsUpdate=true;
+    cloud.frustumCulled=false;cloud.userData.lowMist=true;
+    group.add(cloud);
+  }
   function decorateTile(group,cx,cz,near) {
     decorateGround(group,cx,cz,near);
+    addLowMist(group,cx,cz,near);
     addRoadside(group,cx,cz);
     if (near){addStream(group,cx,cz);addWetlandRiver(group,cx,cz);}
   }
-  return { decorateTile, groundCoverStyles:COVER_STYLES.length };
+  return { decorateTile, groundCoverStyles:COVER_STYLES.length, groundMistStyles:MIST_STYLES.length };
 }

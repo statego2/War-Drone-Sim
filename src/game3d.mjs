@@ -1382,7 +1382,7 @@ function frame(now) {
     rebuildTiles(); moveTiles(); updateFarLand(); updateHUD();
     sound.update(Math.hypot(flight.vx,flight.vy,flight.vz),Math.max(0,flight.y-groundHeight(flight.x,flight.z)),dt,true,{
       verticalSpeed: flight.vy, throttle: flight.throttle, throttleMode,
-      bank: flight.bank, sideRate: flight.sideRate
+      bank: flight.bank, sideRate: flight.sideRate,biomeZ:flight.z
     });
   } else if (mode === 'impact') {
     impactAge+=dt;
@@ -1480,6 +1480,7 @@ window.__openSkySnapshot = () => ({
   redOutlines:outlineViews.filter(o=>o.group.visible).length,
   scenicSites:FOREST_SITES.length,landmarksAuthored:LANDMARKS.length,
   visitedBiomes:[...visitedAreas],
+  mistTypes:scenery.groundMistStyles,
   riverStretch:STREAM_END-STREAM_START,
   livingForestBirds:wildlife.count,
   riverPoints:RIVER.samples+1,riverBridge:riverView.children.some(m=>m.userData.scenicFeature==='stone-bridge'),
