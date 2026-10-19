@@ -20,6 +20,7 @@ import { pauseFlightState, resumeFlightState } from './flightlifecycle.mjs';
 import { redeployWithPenalty } from './recovery.mjs';
 import {discoverNearby,explorationHint} from './exploration.mjs';
 import {BIOMES,biomeIndex,biomeBlend,biomePalette,biomeFoliage,biomeVegetation} from './biomes.mjs';
+import {LANDMARKS,landmarkPosition,landmarkClearance} from './landmarks.mjs';
 
 // A floating-origin, streamed polygonal world. No real-drone targeting or hardware integration.
 const $ = id => document.getElementById(id);
@@ -290,7 +291,7 @@ function addForest(group, cx, cz, near) {
     const x = rx * TILE, z = rz * TILE, wx = cx * TILE + x, wz = cz * TILE + z;
     const h = groundHeight(wx, wz);
     if (Math.abs(wx - roadCenter(wz)) < forestRoadGap(wz) ||
-        objectiveApproachClearance(wx,wz) ||
+        objectiveApproachClearance(wx,wz) || landmarkClearance(wx,wz) ||
         scenicTrailClearance(wx,wz) || lakeProximity(wx,wz) < 1.12) continue;
     const size = (near ? 10 : 7) + 15 * hash(cx * 299 + i, cz * 41 + i * 61);
     const tree = { x, z, h, size, r: 1.7 + size * .19,
@@ -757,6 +758,70 @@ function addForestSideTrail(group,cx,cz,site) {
   group.add(supply);
 }
 
+// Three reusable scenic landmark compositions make the areas visibly distinct.
+// Each landmark is built only while its streamed tile is near the player.
+const springMat=new THREE.MeshPhongMaterial({color:0x67aaa4,transparent:true,
+  opacity:.82,shininess:95,side:THREE.DoubleSide,depthWrite:false});
+const pineFallenMat=new THREE.MeshLambertMaterial({color:0x5d4935,flatShading:true});
+const ridgeRockMat=new THREE.MeshLambertMaterial({color:0xa39171,flatShading:true});
+const lichenMat=new THREE.MeshLambertMaterial({color:0x7d8c66,flatShading:true});
+const rockyPoolMat=new THREE.MeshLambertMaterial({color:0x6e7a72});
+function makeNaturalLandmark(group,cx,cz,site){
+  const p=landmarkPosition(site);
+  if(cx!==Math.floor(p.x/TILE)||cz!==Math.floor(p.z/TILE))return;
+  const y=groundHeight(p.x,p.z);
+  const root=new THREE.Group();
+  root.position.set(p.x-cx*TILE,y+.22,p.z-cz*TILE);
+  root.userData.landmarkId=site.id;
+  group.add(root);
+  const rock=(x,z,scale,material=ridgeRockMat)=>{
+    const item=ownedMesh(new THREE.DodecahedronGeometry(1,0),material);
+    item.position.set(x,scale*.8,z);
+    item.scale.set(scale*1.1,scale*.86,scale*1.2);
+    item.rotation.set(.1,.33,.12);
+    root.add(item);return item;
+  };
+  if(site.kind==='fallen-grove'){
+    // Fallen trunks, moss and small stump clusters distinguish the first area.
+    for(let i=0;i<4;i++){
+      const stem=ownedMesh(new THREE.CylinderGeometry(1.2,1.7,26,7),pineFallenMat);
+      stem.position.set(-13+i*8,1.4,Math.sin(i*2.2)*9);
+      stem.rotation.z=Math.PI/2+.12*i;
+      stem.rotation.y=i*.27;
+      root.add(stem);
+      for(let j=0;j<2;j++)rock(-12+i*8+j*3,12-i*5+j*3,1.8,lichenMat);
+    }
+  }else if(site.kind==='waterfall'){
+    // A pale spring pool with stony banks and low mist-like falls; never
+    // cross the main asphalt and stay purely environmental.
+    const pool=ownedMesh(new THREE.CircleGeometry(1,36),springMat);
+    pool.rotation.x=-Math.PI/2;pool.scale.set(20,13,1);
+    pool.position.y=.65;root.add(pool);
+    for(let i=0;i<11;i++){
+      const a=i*Math.PI*2/11;
+      rock(Math.cos(a)*20,Math.sin(a)*14,2.0+i%3*.6,rockyPoolMat);
+    }
+    for(let i=0;i<3;i++){
+      const drop=ownedMesh(new THREE.PlaneGeometry(3.2,10),springMat);
+      drop.position.set(-6+i*5,5,-9);
+      drop.rotation.y=(i-1)*.08;
+      root.add(drop);
+    }
+  }else{
+    // Amber arch and scattered lichen boulders define the elevated ridge.
+    for(const side of [-1,1]){
+      for(let h=0;h<3;h++){
+        const piece=rock(side*8+(h%2)*.5,0,3.8+(h%2)*.3);
+        piece.position.y=3+h*5;
+      }
+    }
+    const lintel=ownedMesh(new THREE.DodecahedronGeometry(1,0),ridgeRockMat);
+    lintel.position.set(0,17,0);lintel.scale.set(11,3.2,4);
+    root.add(lintel);
+    for(let i=0;i<8;i++)rock(Math.sin(i*1.7)*24,Math.cos(i*2.4)*20,2+i%3);
+  }
+}
+
 function makeTile(cx, cz, near) {
   const group = new THREE.Group();
   const terrain = ownedMesh(terrainGeometry(cx, cz, near ? 32 : 18), terrainMat);
@@ -779,6 +844,7 @@ function makeTile(cx, cz, near) {
       addForestSideTrail(group,cx,cz,site);
   }
   scenery.decorateTile(group, cx, cz, near);
+  if(near)for(const landmark of LANDMARKS)makeNaturalLandmark(group,cx,cz,landmark);
   addLake(group, cx, cz);
   scene.add(group);
   return { group, cx, cz, near, hazards };
@@ -1318,7 +1384,8 @@ window.__openSkySnapshot = () => ({
   carrierVisors:intactViews.flatMap(v=>v.children).filter(m=>m.userData?.visualDetail==='carrier-visor').length,
   truckWindows:intactViews.flatMap(v=>v.children).filter(m=>m.userData?.visualDetail==='truck-windshield').length,
   redOutlines:outlineViews.filter(o=>o.group.visible).length,
-  scenicSites:FOREST_SITES.length,grovesVisited:visitedGROVES.size,
+  scenicSites:FOREST_SITES.length,landmarksAuthored:LANDMARKS.length,
+  grovesVisited:visitedGROVES.size,
   discoveryPoints:scorecard.scoutingPoints,biome:biomePalette(flight.z).id,
   landscapeNames:BIOMES.map(b=>b.name),skyHorizon:sky.material.uniforms.uHorizon.value.getHex(),
   dpr:budget.dpr,graphicsReady,resumeMode,renderCalls:renderer.info.render.calls,
