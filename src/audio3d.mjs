@@ -180,6 +180,14 @@ export function createFlightAudio() {
     if(name==='start'){
       noise(t,.23,.055,120,1350,.06);
       tone(t+.025,255,390,.21,.038,'sine',.032);
+    }else if(name==='spot'){
+      // Discovery should be joyful and distinct from impacts, not an alarm.
+      tone(t,330,500,.17,.030,'sine',.025);
+      tone(t+.10,494,620,.20,.025,'sine',.024);
+      noise(t,.14,.018,200,1100,.035);
+    }else if(name==='landmark'){
+      tone(t,330,390,.24,.023,'sine',.036);
+      tone(t+.14,440,550,.26,.022,'sine',.04);
     }else if(name==='respawn'){
       // Short "ready again" lift, not a new fanfare every second.
       tone(t,240,400,.135,.034,'sine',.012);
