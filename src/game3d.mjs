@@ -60,9 +60,9 @@ scene.add(sunlight);
 const sky = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), new THREE.ShaderMaterial({
   side: THREE.BackSide, depthWrite: false, fog: false,
   uniforms:{
-    uHorizon:{value:new THREE.Color(BIOMES[0].horizon)},
-    uZenith:{value:new THREE.Color(BIOMES[0].zenith)},
-    uSunTint:{value:new THREE.Color(BIOMES[0].sun)}
+    uHorizon:{value:new THREE.Color(BIOMES[0].horizon).convertLinearToSRGB()},
+    uZenith:{value:new THREE.Color(BIOMES[0].zenith).convertLinearToSRGB()},
+    uSunTint:{value:new THREE.Color(BIOMES[0].sun).convertLinearToSRGB()}
   },
   vertexShader: 'varying vec3 v; void main(){v=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
   fragmentShader: 'varying vec3 v;uniform vec3 uHorizon;uniform vec3 uZenith;uniform vec3 uSunTint;void main(){vec3 d=normalize(v);float h=clamp(d.y*1.45+.18,0.0,1.0);vec3 col=mix(uHorizon,uZenith,pow(h,.65));float sun=pow(max(dot(d,normalize(vec3(-.45,.60,.62))),0.0),350.0);col+=uSunTint*sun*.67;float warm=pow(1.0-abs(d.y),5.0);col+=uSunTint*warm*.07;gl_FragColor=vec4(col,1.0);}'
@@ -158,7 +158,12 @@ const rockGeo = new THREE.DodecahedronGeometry(1, 0);
 const broadGeo = new THREE.IcosahedronGeometry(1, 2);
 const broadPalette = [0x4d6740, 0x688050, 0x7d8c54, 0x496e42, 0x73845d, 0x42644b];
 const temp = new THREE.Object3D();
-const biomeColors=BIOMES.map(b=>({horizon:new THREE.Color(b.horizon),zenith:new THREE.Color(b.zenith),sun:new THREE.Color(b.sun),fog:new THREE.Color(b.fog),hemi:new THREE.Color(b.hemi)}));
+const biomeColors=BIOMES.map(b=>({
+  horizon:new THREE.Color(b.horizon).convertLinearToSRGB(),
+  zenith:new THREE.Color(b.zenith).convertLinearToSRGB(),
+  skySun:new THREE.Color(b.sun).convertLinearToSRGB(),
+  sun:new THREE.Color(b.sun),fog:new THREE.Color(b.fog),hemi:new THREE.Color(b.hemi)
+}));
 const terrainColors=BIOMES.map(b=>b.terrain);
 const tiles = new Map();
 let flight = makeFlight(), mode = 'home', view = 'chase', cameraYaw = 0, cameraPitch = .05;
@@ -1324,7 +1329,7 @@ function frame(now) {
   const t=biomeTransition.t;
   sky.material.uniforms.uHorizon.value.copy(A.horizon).lerp(B.horizon,t);
   sky.material.uniforms.uZenith.value.copy(A.zenith).lerp(B.zenith,t);
-  sky.material.uniforms.uSunTint.value.copy(A.sun).lerp(B.sun,t);
+  sky.material.uniforms.uSunTint.value.copy(A.skySun).lerp(B.skySun,t);
   scene.fog.color.copy(A.fog).lerp(B.fog,t);
   hemi.color.copy(A.hemi).lerp(B.hemi,t);
   sunlight.color.copy(A.sun).lerp(B.sun,t);

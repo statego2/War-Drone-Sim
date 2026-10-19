@@ -4,9 +4,9 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export const DISCOVERY_RANGE=82;
 export const CLOSE_DISCOVERY_RANGE=22;
 export const DISCOVERY_HINTS=Object.freeze([
-  'SEARCH THE PINE GROVES',
-  'SEARCH THE CREEK BANK',
-  'SEARCH THE HIGH RIDGE'
+  'PINES · SEARCH',
+  'RIVER · SEARCH',
+  'RIDGE · SEARCH'
 ]);
 export function canDiscover(target,flight,terrainHeight=null){
   if(target.destroyed)return false;
