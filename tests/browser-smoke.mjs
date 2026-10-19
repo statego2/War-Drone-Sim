@@ -81,8 +81,9 @@ try{
   assert.ok(running.renderCalls>0,'3D scene draws at least one call');
   assert.ok(running.primitiveGeometries>0 && running.primitiveGeometries<120,
     'target models share repeated GPU primitive geometries');
-  assert.equal(running.points,0,'a new run starts with a clean score');
-  assert.equal(await page.locator('#arcade-score').innerText(),'0 PTS');
+  assert.equal(running.points,running.discovered.length*35,
+    'exploring nearby objects awards bounded discovery points exactly once');
+  assert.match(await page.locator('#arcade-score').innerText(),/^\d+ PTS/);
   assert.match(await page.locator('#target-compass').innerText(),/(SEARCH|M)$/);
   assert.equal(await page.locator('#progress span:not(.hidden)').count(),5,'entry clearing has five goals');
   assert.ok(running.speed>43,'neutral flight maintains automatic forward cruise');

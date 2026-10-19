@@ -7,7 +7,7 @@ import { makeEncounter, updateEncounter, spawnForNextTarget, resolveContact, app
 import {battlefieldLayout} from './battlefieldlayout.mjs';
 import {trailAlpha,padAlpha} from './trailfade.mjs';
 import {slopedHullSpec} from './vehiclemesh.mjs';
-import { makeScorecard, registerResult, guidanceFor } from './arcadeflow.mjs';
+import { makeScorecard, registerResult, registerExploration, guidanceFor } from './arcadeflow.mjs';
 import { createImpactFX, impactEnvelope } from './impactfx3d.mjs';
 import { gestureAxes } from './touchflight.mjs';
 import { treeHazard, resolveTreeContact, chooseContact } from './hazards.mjs';
@@ -30,6 +30,7 @@ const viewButton = $('view-mode'), muteButton = $('sound-toggle');
 const warning = $('warning');
 const redeployButton=$('redeploy'),restartButton=$('restart-level');
 let restartArmed=false;
+const visitedGROVES=new Set();
 const sound = createFlightAudio();
 const scenery = createScenery(THREE, { TILE, hash, groundHeight, roadCenter, lakeProximity });
 const mobile = matchMedia('(pointer: coarse)').matches;
@@ -993,6 +994,7 @@ muteButton.addEventListener('click', () => {
 function startFlight() {
   sound.unlock().then(() => sound.cue('start')); sound.setActive(true);
   encounter = makeEncounter(); scorecard = makeScorecard(); lastAward=null;
+  visitedGROVES.clear();
   syncTargets(); roundBannerTime=0; roundBannerText='';
   spawnDrone(); mode = 'flying'; view = 'chase'; pointer = null;
   cameraYaw = flight.heading; cameraPitch=.05; throttleMode='cruise';
@@ -1205,9 +1207,22 @@ function frame(now) {
     updateEncounter(encounter,dt);
     const found=discoverNearby(encounter,flight,groundHeight);
     if(found.length){
-      roundBannerTime=1.6;
-      roundBannerText=found.length===1?'VEHICLE SPOTTED':'NEW VEHICLES SPOTTED';
+      const reward=registerExploration(scorecard,'vehicle',found.length);
+      roundBannerTime=1.8;
+      roundBannerText=`${reward.label} · +${reward.points}`;
       sound.cue('spot');
+    }
+    // Optional exploration challenge: investigate natural off-road camp sites.
+    // These are scenery discoveries, not military targeting markers or tools.
+    for(const site of FOREST_SITES){
+      if(visitedGROVES.has(site.id))continue;
+      const end=sideTrailPoint(site,1);
+      if(Math.hypot(flight.x-end.x,flight.z-end.z)>32)continue;
+      visitedGROVES.add(site.id);
+      const reward=registerExploration(scorecard,'landmark',1);
+      roundBannerTime=2.0;
+      roundBannerText=`${reward.label} · +${reward.points}`;
+      sound.cue('landmark');
     }
     const vehicleContact=resolveContact(encounter,previous,flight,flight.groundContact);
     const treeContact=forestContact(previous,flight);
@@ -1303,7 +1318,8 @@ window.__openSkySnapshot = () => ({
   carrierVisors:intactViews.flatMap(v=>v.children).filter(m=>m.userData?.visualDetail==='carrier-visor').length,
   truckWindows:intactViews.flatMap(v=>v.children).filter(m=>m.userData?.visualDetail==='truck-windshield').length,
   redOutlines:outlineViews.filter(o=>o.group.visible).length,
-  scenicSites:FOREST_SITES.length,biome:biomePalette(flight.z).id,
+  scenicSites:FOREST_SITES.length,grovesVisited:visitedGROVES.size,
+  discoveryPoints:scorecard.scoutingPoints,biome:biomePalette(flight.z).id,
   landscapeNames:BIOMES.map(b=>b.name),skyHorizon:sky.material.uniforms.uHorizon.value.getHex(),
   dpr:budget.dpr,graphicsReady,resumeMode,renderCalls:renderer.info.render.calls,
   geometries:renderer.info.memory.geometries,primitiveGeometries:primitives.stats.total,

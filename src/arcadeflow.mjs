@@ -3,9 +3,21 @@
 import { activeSectorIndex } from './encounter.mjs';
 
 export function makeScorecard() {
-  return { points: 0, combo: 0, bestCombo: 0, hits: 0, misses: 0, diveHits: 0 };
+  return { points: 0, combo: 0, bestCombo: 0, hits: 0, misses: 0, diveHits: 0,
+    discoveries:0,landmarks:0,scoutingPoints:0 };
 }
 
+// Reward finding things, not just crashing into known markers. Caller owns
+// one-off discovery state; awarding score never influences actual contact.
+export function registerExploration(card,type='vehicle',count=1){
+  const n=Math.max(0,Math.min(16,Math.floor(count)||0));
+  const per=type==='landmark'?75:35;
+  const points=n*per;
+  card.points+=points;card.scoutingPoints+=points;
+  if(type==='landmark')card.landmarks+=n;
+  else card.discoveries+=n;
+  return {points,label:type==='landmark'?'HIDDEN GROVE FOUND':'OBJECTIVE SPOTTED'};
+}
 export function registerResult(card, hit, flight = {}) {
   if (!hit) {
     card.misses++;
