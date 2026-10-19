@@ -98,6 +98,15 @@ Owner reported the first tank was very difficult to hit, reversing sent the dron
 3. Observe whether the forest is visually appealing and *FUN*, especially search time, how discoverable hidden props feel, environmental variety, and whether an unspotted prop can appear unfairly invisible. Check sound pleasantness, temporary screen pauses, crashless respawns, Safari heat, FPS and layout after 10 minutes.
 4. Before new content, prioritize exactly the top reproducible owner problem. Green CI proves technical correctness of exercised cases, **not** fun, visual approval, real iPhone thermals or human playability.
 
+## 2026-10-19 — Additional production upgrades v32–v36
+
+- [#130](https://github.com/statego2/War-Drone-Sim/pull/130): three deterministic sparse soft **mist-bank** treatments, most pronounced around the wetland; shared radial texture + instanced mesh, no new network assets. Node, desktop WebKit and Chromium checks passed.
+- [#133](https://github.com/statego2/War-Drone-Sim/pull/133): **forest-first portrait chase camera** tips toward ground instead of wasting screen real estate on empty sky; adjusts with altitude, dive and reverse. Does not change one-finger flight physics, tests passed in Chromium and WebKit.
+- [#134](https://github.com/statego2/War-Drone-Sim/pull/134): existing soft river ambiance now **varies with actual proximity to the fictional watercourse**, fades from the road or above the canopy. No new audio loops, no annoying constant motor oscillator.
+- [#135](https://github.com/statego2/War-Drone-Sim/pull/135): **TREELINE SKIM / FOREST FLOW** bonuses reward intentional, low-fast maneuvering; capped to five per drone with distinct soft cue and no added control. Simulation tests reject passive cruise, hovering and exploit loops.
+- [#136](https://github.com/statego2/War-Drone-Sim/pull/136): restrained GPU-only upper-canopy swaying, smoothly varied in three biomes and disabled by prefers-reduced-motion; shared shader uniforms rather than per-tree JS/extra draw calls. Node + Chromium + WebKit tests green.
+- Do not infer subjective fun, actual iPhone heat or FPS from the above automated checks. The **highest remaining uncertainty** is genuine 10-minute owner playtesting in Safari, including whether searching for 15 hidden props is engaging vs frustrating.
+
 ## Quality and release truth
 
 Desktop Chromium (software WebGL) automated checks and uploaded screenshots establish that a 3D forest, road, drone and UI render and the tested interactions execute. They **do not** establish iPhone Safari performance, 16-target human playability, fun, audio comfort, thermals, WebGL restoration on iOS, or the quality of collision feel.
