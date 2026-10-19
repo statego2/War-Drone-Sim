@@ -1250,7 +1250,16 @@ function updateHUD() {
     compass.dataset.direction=guide?.direction||'SEARCH';
     compass.setAttribute('aria-label',guide?'Προσεγγίζεις όχημα':'Αναζήτησε οχήματα μέσα στο δάσος');
   }
-  $('round-label').textContent = `AREA ${biomeIndex(flight.z)+1}/${LEVEL_SECTORS.length}`;
+  const physicalArea=biomeIndex(flight.z);
+  $('round-label').textContent = `AREA ${physicalArea+1}/${LEVEL_SECTORS.length}`;
+  const here=encounter.vehicles.filter(v=>v.sector===physicalArea);
+  const progress=$('progress');
+  Array.from(progress.children).forEach((pip,i)=>{
+    pip.classList.toggle('hidden',i>=here.length);
+    pip.classList.toggle('complete',!!here[i]?.destroyed);
+  });
+  progress.setAttribute('aria-label',
+    `${here.filter(v=>v.destroyed).length} από ${here.length} οχήματα στην περιοχή ${physicalArea+1}`);
   altitudeEl.textContent = Math.round(Math.max(0, flight.y - groundHeight(flight.x, flight.z))) + ' M AGL';
   const totalSpeed=Math.hypot(flight.vx,flight.vy,flight.vz);
   speedEl.textContent = (flight.speed < -5 ? '↶ ' : '') + Math.round(totalSpeed*3.6) + ' KM/H';
