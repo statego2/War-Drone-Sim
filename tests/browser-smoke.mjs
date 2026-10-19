@@ -98,6 +98,7 @@ try{
     /(PINES|RIVER|RIDGE|M)$/,
     'unknown objectives show environmental clues, not exact numerical GPS');
   assert.equal(await page.locator('#progress span:not(.hidden)').count(),5,'entry clearing has five goals');
+  assert.equal(running.skimPoints,0,'hands-off launch gives no unearned low-altitude flow bonus');
   assert.ok(running.speed>43,'neutral flight maintains automatic forward cruise');
   assert.equal(await page.locator('#boost').count(),0,'one-finger flight must not show a speed-mode button');
   // A modest thumb movement should reach the intermediate near-hover band.

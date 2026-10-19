@@ -215,6 +215,10 @@ export function createFlightAudio() {
     }else if(name==='landmark'){
       tone(t,330,390,.24,.023,'sine',.036);
       tone(t+.14,440,550,.26,.022,'sine',.04);
+    }else if(name==='skim'){
+      // A soft celebratory gust rather than another nagging electronic beep.
+      noise(t,.21,.018,180,1100,.055);
+      tone(t+.04,360,520,.16,.012,'sine',.035);
     }else if(name==='respawn'){
       // Short "ready again" lift, not a new fanfare every second.
       tone(t,240,400,.135,.034,'sine',.012);

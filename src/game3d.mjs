@@ -18,6 +18,7 @@ import { createPrimitiveGeometryPool } from './geometrypool.mjs';
 import { createRenderBudget } from './renderbudget.mjs';
 import { pauseFlightState, resumeFlightState } from './flightlifecycle.mjs';
 import { redeployWithPenalty } from './recovery.mjs';
+import {makeSkimState,stepSkim} from './skimming.mjs';
 import {discoverNearby,explorationHint} from './exploration.mjs';
 import {BIOMES,biomeIndex,biomeBlend,biomePalette,biomeFoliage,biomeVegetation} from './biomes.mjs';
 import {LANDMARKS,landmarkPosition,landmarkClearance} from './landmarks.mjs';
@@ -36,6 +37,7 @@ const viewButton = $('view-mode'), muteButton = $('sound-toggle');
 const warning = $('warning');
 const redeployButton=$('redeploy'),restartButton=$('restart-level');
 let restartArmed=false;
+let skimState=makeSkimState();
 const playthroughSeed=Math.floor(Math.random()*0x7fffffff)||4023;
 let playthroughNumber=0;
 let lastCheckpointSector=0;
@@ -1115,6 +1117,7 @@ muteButton.addEventListener('click', () => {
 });
 function startFlight() {
   sound.unlock().then(() => sound.cue('start')); sound.setActive(true);
+  skimState=makeSkimState();
   encounter = makeEncounter(playthroughSeed+(++playthroughNumber)*193); scorecard = makeScorecard(); lastAward=null;
   lastSightCheck=-Infinity;
   lastCheckpointSector=0;lastArrivalArea=0;
@@ -1132,6 +1135,7 @@ function startFlight() {
    lastSector = ''; rebuildTiles(true); moveTiles(); updateFarLand(); last = performance.now();
 }
 function spawnDrone() {
+  skimState=makeSkimState();
   flight = makeFlight();
   const checkpoint=spawnForNextTarget(encounter,lastCheckpointSector);
   flight.z=checkpoint.z;
@@ -1346,6 +1350,19 @@ function frame(now) {
     const previous={x:flight.x,y:flight.y,z:flight.z};
     advanceFlight(flight, command, dt);
     updateEncounter(encounter,dt);
+    const skim=stepSkim(skimState,{
+      height:Math.max(0,flight.y-groundHeight(flight.x,flight.z)),
+      speed:Math.hypot(flight.vx,flight.vz),
+      dx:flight.x-previous.x,dz:flight.z-previous.z,
+      gesture:Math.abs(command.x)+Math.abs(command.y)
+    },dt);
+    if(skim){
+      scorecard.points+=skim.points;
+      scorecard.skimPoints=(scorecard.skimPoints||0)+skim.points;
+      roundBannerText=skim.label+' · +'+skim.points;
+      roundBannerTime=1.15;
+      sound.cue('skim');
+    }
     const nextArrival=areaArrival(lastArrivalArea,flight.z);
     if(nextArrival!==lastArrivalArea){
       lastArrivalArea=nextArrival;
@@ -1493,7 +1510,8 @@ window.__openSkySnapshot = () => ({
   riverPoints:RIVER.samples+1,riverBridge:riverView.children.some(m=>m.userData.scenicFeature==='stone-bridge'),
   physicalArea:biomeIndex(flight.z),checkpointArea:lastCheckpointSector,
   grovesVisited:visitedGROVES.size,
-  discoveryPoints:scorecard.scoutingPoints,biome:biomePalette(flight.z).id,
+  discoveryPoints:scorecard.scoutingPoints,skimPoints:scorecard.skimPoints||0,
+  biome:biomePalette(flight.z).id,
   landscapeNames:BIOMES.map(b=>b.name),skyHorizon:sky.material.uniforms.uHorizon.value.getHex(),
   dpr:budget.dpr,graphicsReady,resumeMode,renderCalls:renderer.info.render.calls,
   geometries:renderer.info.memory.geometries,primitiveGeometries:primitives.stats.total,
