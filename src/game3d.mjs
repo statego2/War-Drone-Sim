@@ -168,6 +168,7 @@ const terrainColors=BIOMES.map(b=>b.terrain);
 const tiles = new Map();
 let flight = makeFlight(), mode = 'home', view = 'chase', cameraYaw = 0, cameraPitch = .05;
 let throttleMode = 'cruise', last = 0, lastSector = '';
+let qaFrozen=false;
 let resumeMode='flying',graphicsReady=true,contextCopy=null;
 let encounter = makeEncounter(), scorecard = makeScorecard(), lastAward = null,
     impactAge = 0, impactType = '', impactId = -1, roundBannerTime=0, roundBannerText='', advancedSector=false;
@@ -1266,7 +1267,7 @@ function frame(now) {
     return;
   }
   const dt = Math.min((now - last) / 1000 || .016, .1); last = now;
-  if (mode === 'flying') {
+  if (mode === 'flying'&&!qaFrozen) {
     roundBannerTime=Math.max(0,roundBannerTime-dt);
     // CRUISE/FAST/HOVER/REVERSE no longer require a mode button. The
     // player's one-finger vertical gesture controls requested motion.
@@ -1401,5 +1402,22 @@ window.__openSkySnapshot = () => ({
   truckSlopedCargos:intactViews.filter(group=>group.children.some(m=>m.userData.visualDetail==='truck-sloped-cargo')).length,
   framePacing:budget.stats
 });
+// Local-only visual QA: no debug cheats or repositioning on public GitHub Pages.
+if(location.hostname==='127.0.0.1'){
+  window.__forestVisualQA=(index)=>{
+    if(!Number.isInteger(index)||index<0||index>=LEVEL_SECTORS.length)
+      throw new RangeError('Invalid QA landscape');
+    qaFrozen=true;
+    const z=[325,735,1120][index];
+    const x=roadCenter(z);
+    flight.x=x;flight.z=z;flight.y=groundHeight(x,z)+74;
+    flight.heading=0;flight.pitch=0;flight.bank=0;
+    flight.vx=flight.vy=flight.vz=0;
+    camera.position.set(0,flight.y+8,-23);
+    cameraYaw=0;cameraPitch=.03;
+    lastSector='';rebuildTiles(true);moveTiles();updateFarLand();updateHUD();
+    return {region:BIOMES[index].id,position:z};
+  };
+}
 document.documentElement.dataset.openSkyReady = 'true';
 requestAnimationFrame(frame);

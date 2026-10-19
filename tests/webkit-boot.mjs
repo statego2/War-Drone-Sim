@@ -51,7 +51,20 @@ try{
   assert.deepEqual(pageErrors,[],'no uncaught desktop WebKit JavaScript errors');
   await mkdir(join(root,'artifacts'),{recursive:true});
   await page.screenshot({path:join(root,'artifacts','webkit-portrait-gameplay.png')});
-  console.log('PASS: desktop WebKit portrait Three.js scene boot, 16 targets, active WebGL');
+  // Visual regression captures all three actually rendered areas, not merely
+  // a list of palette names. Freeze model time only on local test origin.
+  const expected=['pine','valley','ridge'];
+  for(let i=0;i<3;i++){
+    const result=await page.evaluate(index=>window.__forestVisualQA(index),i);
+    assert.equal(result.region,expected[i]);
+    await page.waitForTimeout(950);
+    const current=await page.evaluate(()=>window.__openSkySnapshot());
+    assert.equal(current.biome,expected[i]);
+    assert.ok(current.renderCalls>0);
+    await page.screenshot({path:join(root,'artifacts',
+      'webkit-biome-'+(i+1)+'-'+expected[i]+'.png')});
+  }
+  console.log('PASS: desktop WebKit 3D, three rendered biomes, 16 targets');
 }finally{
   if(browser)await browser.close();
   await new Promise(ok=>server.close(ok));
