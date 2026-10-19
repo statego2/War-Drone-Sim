@@ -25,6 +25,7 @@ import {forestChasePitch} from './cameracomposition.mjs';
 import {channelClearance,STREAM_START,STREAM_END} from './wetlands.mjs';
 import {createWildlife} from './wildlife3d.mjs';
 import {RIVER,riverCrossing,riverStrip} from './riverlandscape.mjs';
+import {areaArrival} from './areaarrival.mjs';
 
 // A floating-origin, streamed polygonal world. No real-drone targeting or hardware integration.
 const $ = id => document.getElementById(id);
@@ -38,6 +39,8 @@ let restartArmed=false;
 const playthroughSeed=Math.floor(Math.random()*0x7fffffff)||4023;
 let playthroughNumber=0;
 let lastCheckpointSector=0;
+let lastArrivalArea=0;
+const visitedAreas=new Set([0]);
 const visitedGROVES=new Set();
 const sound = createFlightAudio();
 const scenery = createScenery(THREE, { TILE, hash, groundHeight, roadCenter, lakeProximity });
@@ -1114,7 +1117,8 @@ function startFlight() {
   sound.unlock().then(() => sound.cue('start')); sound.setActive(true);
   encounter = makeEncounter(playthroughSeed+(++playthroughNumber)*193); scorecard = makeScorecard(); lastAward=null;
   lastSightCheck=-Infinity;
-  lastCheckpointSector=0;visitedGROVES.clear();
+  lastCheckpointSector=0;lastArrivalArea=0;
+  visitedAreas.clear();visitedAreas.add(0);visitedGROVES.clear();
   syncTargets(); roundBannerTime=0; roundBannerText='';
   spawnDrone(); mode = 'flying'; view = 'chase'; pointer = null;
   cameraYaw = flight.heading; cameraPitch=.05; throttleMode='cruise';
@@ -1133,6 +1137,7 @@ function spawnDrone() {
   flight.z=checkpoint.z;
   flight.x=checkpoint.x;
   flight.y=checkpoint.y+((encounter.drones-1)%2)*5;
+  lastArrivalArea=biomeIndex(flight.z);
   flight.heading = .10;
   flight.vx = Math.sin(flight.heading)*43;flight.vz = Math.cos(flight.heading)*43;
   flight.vy = 0;flight.throttle = .72;
@@ -1341,6 +1346,16 @@ function frame(now) {
     const previous={x:flight.x,y:flight.y,z:flight.z};
     advanceFlight(flight, command, dt);
     updateEncounter(encounter,dt);
+    const nextArrival=areaArrival(lastArrivalArea,flight.z);
+    if(nextArrival!==lastArrivalArea){
+      lastArrivalArea=nextArrival;
+      if(!visitedAreas.has(nextArrival)){
+        visitedAreas.add(nextArrival);
+        roundBannerTime=2.65;
+        roundBannerText=BIOMES[nextArrival].name+' · DISCOVERED';
+        sound.cue('landmark');
+      }
+    }
     // Cap tree-occlusion discovery checks at roughly eight per second. This
     // lets a player actually search behind canopies without a mobile CPU tax
     // on all sixty rendered frames. The close approach always catches up.
@@ -1471,6 +1486,7 @@ window.__openSkySnapshot = () => ({
   truckWindows:intactViews.flatMap(v=>v.children).filter(m=>m.userData?.visualDetail==='truck-windshield').length,
   redOutlines:outlineViews.filter(o=>o.group.visible).length,
   scenicSites:FOREST_SITES.length,landmarksAuthored:LANDMARKS.length,
+  visitedBiomes:[...visitedAreas],
   mistTypes:scenery.groundMistStyles,
   riverStretch:STREAM_END-STREAM_START,
   livingForestBirds:wildlife.count,
