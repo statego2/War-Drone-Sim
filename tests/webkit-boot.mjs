@@ -61,6 +61,8 @@ try{
     const current=await page.evaluate(()=>window.__openSkySnapshot());
     assert.equal(current.biome,expected[i]);
     assert.equal(current.physicalArea,i,'progress HUD follows actual visited biome');
+    assert.ok(current.cameraPitch<-.14 && current.cameraPitch>-.55,
+      'QA cruise camera frames the trees instead of looking into empty sky');
     assert.match(await page.locator('#round-label').innerText(),
       new RegExp('AREA '+(i+1)+'/3'));
     assert.ok(current.renderCalls>0);

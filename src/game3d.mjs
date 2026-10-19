@@ -21,6 +21,7 @@ import { redeployWithPenalty } from './recovery.mjs';
 import {discoverNearby,explorationHint} from './exploration.mjs';
 import {BIOMES,biomeIndex,biomeBlend,biomePalette,biomeFoliage,biomeVegetation} from './biomes.mjs';
 import {LANDMARKS,landmarkPosition,landmarkClearance} from './landmarks.mjs';
+import {forestChasePitch} from './cameracomposition.mjs';
 
 // A floating-origin, streamed polygonal world. No real-drone targeting or hardware integration.
 const $ = id => document.getElementById(id);
@@ -1214,7 +1215,13 @@ function updateCamera(dt) {
   cameraYaw += yawDifference*(1-Math.exp(-4.4*dt));
   // Camera follows the actual nose-down attitude: steep pitch shows terrain
   // rushing up, rather than staying level while the model dives.
-  cameraPitch += (clamp(.035-flight.pitch*.67-.42*(flight.pullback||0),-.93,.43)-cameraPitch)*(1-Math.exp(-4.1*dt));
+  const preferredView=view==='chase'
+    ? forestChasePitch({
+        height:Math.max(0,flight.y-groundHeight(flight.x,flight.z)),
+        pitch:flight.pitch,pullback:flight.pullback||0
+      })
+    : clamp(.035-flight.pitch*.67-.42*(flight.pullback||0),-.93,.43);
+  cameraPitch+=(preferredView-cameraPitch)*(1-Math.exp(-4.1*dt));
   const dirX = Math.sin(cameraYaw), dirZ = Math.cos(cameraYaw);
   const lookX=dirX*Math.cos(cameraPitch), lookZ=dirZ*Math.cos(cameraPitch);
   const lookY=Math.sin(cameraPitch);
