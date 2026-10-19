@@ -58,6 +58,23 @@ export function discoverNearby(encounter,flight,terrainHeight=null,visionBlocked
   }
   return next;
 }
+const REGION_SHORT=Object.freeze(['PINES','RIVER','RIDGE']);
+// Approximate atmospheric hints only: no arrows, IDs, coordinates or metric
+// distances until the player earns an actual sighting.
+export function forestTrace(encounter,flight){
+  const sector=biomeIndex(flight.z);
+  let nearest=Infinity;
+  for(const v of encounter.vehicles){
+    if(v.destroyed||v.sector!==sector||encounter.discovered?.has(v.id))continue;
+    nearest=Math.min(nearest,Math.hypot(v.x-flight.x,v.z-flight.z));
+  }
+  const remaining=encounter.vehicles.some(v=>v.sector===sector&&!v.destroyed);
+  if(!remaining)return {strength:'clear',label:`AREA CLEAR · ${REGION_SHORT[sector]}`};
+  const strength=nearest<103?'near':nearest<205?'trace':'quiet';
+  const lead=strength==='near'?'SIGNS NEARBY':
+    strength==='trace'?'FAINT TRACES':'SEARCH';
+  return {strength,label:`${lead} · ${REGION_SHORT[sector]}`};
+}
 export function explorationHint(encounter,flight=null){
   const sector=flight?biomeIndex(flight.z):
     (encounter.vehicles.find(v=>!v.destroyed)?.sector??0);
@@ -68,6 +85,7 @@ export function explorationHint(encounter,flight=null){
     remaining:remaining.length,
     revealed:revealed.length,
     clue:DISCOVERY_HINTS[sector]||'SEARCH THE FOREST',
+    signal:flight?forestTrace(encounter,flight):null,
     label: revealed.length>0 ? `SPOTTED ${revealed.length} · EXPLORE` :
       (DISCOVERY_HINTS[sector]||'SEARCH THE FOREST')
   };

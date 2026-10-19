@@ -1292,7 +1292,7 @@ function updateHUD() {
     const guide=guidanceFor(encounter,flight,encounter.discovered,biomeIndex(flight.z));
     const search=explorationHint(encounter,flight);
     compass.textContent=guide?`${guide.arrow} ${guide.kind} · ${guide.distance} M`:
-      search.clue;
+      search.signal?.label||search.clue;
     compass.dataset.direction=guide?.direction||'SEARCH';
     compass.setAttribute('aria-label',guide?'Προσεγγίζεις όχημα':'Αναζήτησε οχήματα μέσα στο δάσος');
   }
