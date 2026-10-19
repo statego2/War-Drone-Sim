@@ -1,4 +1,5 @@
 import { groundHeight, roadCenter } from './flight3d.mjs';
+import {varyHidingPlace} from './hidingplaces.mjs';
 import {ARCADE_HIT_VOLUME,sweptPropIntersection} from './contactvolume.mjs';
 
 // Fixed fictional arcade scene. Positions and collision volumes are gameplay art,
@@ -37,16 +38,20 @@ export function forestRoadGap(z){return clearingRadius(z)>15?19:15;}
 export function clearingRadius(z) {
   return (z>185 && z<415) || (z>575 && z<825) || (z>1005 && z<1250) ? 69 : 15;
 }
-export function makeEncounter() {
+export function makeEncounter(seed=0) {
   let id=0;
-  return { drones:1, hits:0, round:1, clock:0, discovered:new Set(), vehicles:LEVEL_SECTORS.flatMap((sector,sectorIndex)=>
+  return { drones:1, hits:0, round:1, clock:0,variationSeed:seed, discovered:new Set(),
+    vehicles:LEVEL_SECTORS.flatMap((sector,sectorIndex)=>
     sector.targets.map(([z,offset,kind])=>{
-      const x=roadCenter(z)+offset;
       const targetId=id++;
-      return { id:targetId, sector:sectorIndex, kind, x, z,
-        homeX:x, homeZ:z, offset, moving:[1,4,6,9,11,14].includes(targetId),
-        previousX:x, previousY:groundHeight(x,z)+2.2, previousZ:z,
-        y:groundHeight(x,z)+2.2, destroyed:false };
+      const variation=varyHidingPlace(targetId,seed);
+      const homeZ=z+variation.z,shiftedOffset=offset+variation.x;
+      const x=roadCenter(homeZ)+shiftedOffset;
+      return { id:targetId, sector:sectorIndex, kind,x,z:homeZ,
+        homeX:x,homeZ,offset:shiftedOffset,
+        moving:[1,4,6,9,11,14].includes(targetId),
+        previousX:x,previousY:groundHeight(x,homeZ)+2.2,previousZ:homeZ,
+        y:groundHeight(x,homeZ)+2.2,destroyed:false };
     })
   ) };
 }
