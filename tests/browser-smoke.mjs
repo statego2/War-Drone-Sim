@@ -57,12 +57,16 @@ try{
   assert.equal(running.scenicSites,3,'three decorative off-road camps accompany the wider encounter arenas');
   assert.equal(running.landmarksAuthored,3,'three distinct cinematic natural landmarks orient exploration');
   assert.ok(running.riverStretch>400,'the wetland biome has a substantial offroad water corridor');
+  assert.equal(running.livingForestBirds,18,'three animated flocks share one instanced mesh');
   assert.ok(running.riverPoints>80,'misty valley contains a meandering physical stream');
   assert.equal(running.riverBridge,true,'river crosses the road via a stone bridge');
   assert.deepEqual(running.landscapeNames,['PINE SHADOWS','MISTY RIVER','AMBER HIGHLANDS']);
   assert.equal(running.biome,'pine','opening landscape is a dark pine forest');
   assert.equal(running.physicalArea,0,'entry is the first physical forest region');
   assert.equal(running.total,16);
+  assert.ok(Number.isFinite(running.seed)&&running.seed>0,
+    'new playthrough varies hiding places while preserving first tank tutorial');
+  assert.equal(running.displacedModels,0,'rendered vehicle meshes match random collision positions');
   assert.equal(running.tankSlopedHulls,6,'each tank has a low-poly sloped body');
   assert.equal(running.carrierSlopedHulls,5,'each carrier has angled armour sides');
   assert.equal(running.truckSlopedCargos,5,'each truck has a faceted military cargo body');
@@ -166,6 +170,13 @@ try{
   assert.equal(fresh.drones,1,'confirmed restart uses the original first drone');
   assert.equal(fresh.points,0,'confirmed restart resets score');
   assert.equal(fresh.hits,0,'confirmed restart resets destroyed props');
+  assert.notEqual(fresh.seed,postRedeploy.seed,
+    'a new game creates a new seeded hiding-spot arrangement');
+  assert.deepEqual(fresh.hiddenPositions[0],postRedeploy.hiddenPositions[0],
+    'first tank remains consistent and approachable');
+  assert.notDeepEqual(fresh.hiddenPositions.slice(1),postRedeploy.hiddenPositions.slice(1),
+    'remaining concealed vehicle hiding spots vary on replay');
+  assert.equal(fresh.displacedModels,0,'visual mesh transforms reset to new hiding spots');
   // Narrow phones must keep all essential pause/redeploy/restart controls
   // entirely inside the viewport, including minimum 44px touch hit areas.
   await page.setViewportSize({width:320,height:568});

@@ -22,6 +22,7 @@ import {discoverNearby,explorationHint} from './exploration.mjs';
 import {BIOMES,biomeIndex,biomeBlend,biomePalette,biomeFoliage,biomeVegetation} from './biomes.mjs';
 import {LANDMARKS,landmarkPosition,landmarkClearance} from './landmarks.mjs';
 import {channelClearance,STREAM_START,STREAM_END} from './wetlands.mjs';
+import {createWildlife} from './wildlife3d.mjs';
 import {RIVER,riverCrossing,riverStrip} from './riverlandscape.mjs';
 
 // A floating-origin, streamed polygonal world. No real-drone targeting or hardware integration.
@@ -33,6 +34,8 @@ const viewButton = $('view-mode'), muteButton = $('sound-toggle');
 const warning = $('warning');
 const redeployButton=$('redeploy'),restartButton=$('restart-level');
 let restartArmed=false;
+const playthroughSeed=Math.floor(Math.random()*0x7fffffff)||4023;
+let playthroughNumber=0;
 let lastCheckpointSector=0;
 const visitedGROVES=new Set();
 const sound = createFlightAudio();
@@ -376,6 +379,7 @@ const lampMat = new THREE.MeshBasicMaterial({ color: 0xdfd4a8 });
 // Persistent encounter meshes sit in world coordinates; tile streaming never
 // disposes a wreck when the player flies out and returns.
 const encounterView = new THREE.Group(); scene.add(encounterView);
+const wildlife=createWildlife(THREE,encounterView,{groundHeight,reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches});
 // Permanent authored forest hubs: their terrain ribbons stay aligned with
 // target wrecks across airborne respawns and streamed scenery tile changes.
 const battlefieldView=new THREE.Group();
@@ -681,6 +685,9 @@ function buildTargets() {
 }
 function syncTargets() {
   encounter.vehicles.forEach((vehicle,i)=>{
+    // Reset visual transforms as well as pure state on each newly varied run.
+    // Otherwise collisions would be at new locations but props at old places.
+    intactViews[i].position.set(vehicle.x,vehicle.y-1.8,vehicle.z);
     intactViews[i].visible=!vehicle.destroyed;
     wreckViews[i].visible=vehicle.destroyed;
     smokeViews[i].visible=vehicle.destroyed;
@@ -1103,7 +1110,7 @@ muteButton.addEventListener('click', () => {
 });
 function startFlight() {
   sound.unlock().then(() => sound.cue('start')); sound.setActive(true);
-  encounter = makeEncounter(); scorecard = makeScorecard(); lastAward=null;
+  encounter = makeEncounter(playthroughSeed+(++playthroughNumber)*193); scorecard = makeScorecard(); lastAward=null;
   lastCheckpointSector=0;visitedGROVES.clear();
   syncTargets(); roundBannerTime=0; roundBannerText='';
   spawnDrone(); mode = 'flying'; view = 'chase'; pointer = null;
@@ -1405,6 +1412,7 @@ function frame(now) {
   }
   sky.position.copy(camera.position);
   moveEncounter();
+  wildlife.update(encounter.clock,flight.z);
   smokeViews.forEach((smoke,i)=>{ if(smoke.visible){smoke.position.y=encounter.vehicles[i].y+5+Math.sin(now*.0006+i)*1.2;smoke.rotation.y+=dt*.17;} });
   for (let i = 0; i < rotors.length; i++) rotors[i].rotation.y += dt * (i % 2 ? -43 : 43);
   renderer.render(scene, camera);
@@ -1425,7 +1433,14 @@ window.__openSkySnapshot = () => ({
   cameraYaw, cameraPitch, throttleMode, gesture: inputState(), speed:flight.speed,
   vx:flight.vx,vy:flight.vy,vz:flight.vz,pitch:flight.pitch,bank:flight.bank,sideRate:flight.sideRate,pullback:flight.pullback||0,brakeIntent:flight.brakeIntent||0,reverseIntent:flight.reverseIntent||0,
   ground: groundHeight(flight.x, flight.z), mode, audioEnabled: sound.enabled
-  , hits:encounter.hits, drones:encounter.drones, sector:activeSectorIndex(encounter), total:LEVEL_TARGETS, vehicles:encounter.vehicles.map(v=>v.destroyed),
+  , hits:encounter.hits, drones:encounter.drones, sector:activeSectorIndex(encounter),
+  seed:encounter.variationSeed,total:LEVEL_TARGETS, vehicles:encounter.vehicles.map(v=>v.destroyed),
+  hiddenPositions:encounter.vehicles.map(v=>[v.homeX,v.homeZ]),
+  displacedModels:encounter.vehicles.filter(v=>{
+    const art=intactViews[v.id];
+    if(!art||v.destroyed)return false;
+    return Math.hypot(art.position.x-v.x,art.position.z-v.z)>.25;
+  }).length,
   points:scorecard.points, combo:scorecard.combo, misses:scorecard.misses,
   moving:encounter.vehicles.filter(v=>v.moving&&!v.destroyed).length,
   target:guidanceFor(encounter,flight,encounter.discovered,biomeIndex(flight.z)),
@@ -1441,6 +1456,7 @@ window.__openSkySnapshot = () => ({
   redOutlines:outlineViews.filter(o=>o.group.visible).length,
   scenicSites:FOREST_SITES.length,landmarksAuthored:LANDMARKS.length,
   riverStretch:STREAM_END-STREAM_START,
+  livingForestBirds:wildlife.count,
   riverPoints:RIVER.samples+1,riverBridge:riverView.children.some(m=>m.userData.scenicFeature==='stone-bridge'),
   physicalArea:biomeIndex(flight.z),checkpointArea:lastCheckpointSector,
   grovesVisited:visitedGROVES.size,
