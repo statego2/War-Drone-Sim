@@ -11,7 +11,7 @@ test('a launch does not expose every target through trees',()=>{
   assert.equal(canDiscover(v,far),false);
   assert.deepEqual(discoverNearby(encounter,far),[]);
   assert.equal(encounter.discovered.size,0);
-  assert.match(explorationHint(encounter).clue,/SEARCH/);
+  assert.match(explorationHint(encounter).clue,/PINES · FOLLOW DIRT TRAILS/);
 });
 test('discovery requires actual local looking, not a long-range instant GPS',()=>{
   const v={id:0,x:0,y:10,z:0,sector:0,destroyed:false};
