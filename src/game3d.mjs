@@ -32,6 +32,8 @@ const viewButton = $('view-mode'), muteButton = $('sound-toggle');
 const warning = $('warning');
 const redeployButton=$('redeploy'),restartButton=$('restart-level');
 let restartArmed=false;
+const playthroughSeed=Math.floor(Math.random()*0x7fffffff)||4023;
+let playthroughNumber=0;
 let lastCheckpointSector=0;
 const visitedGROVES=new Set();
 const sound = createFlightAudio();
@@ -680,6 +682,9 @@ function buildTargets() {
 }
 function syncTargets() {
   encounter.vehicles.forEach((vehicle,i)=>{
+    // Reset visual transforms as well as pure state on each newly varied run.
+    // Otherwise collisions would be at new locations but props at old places.
+    intactViews[i].position.set(vehicle.x,vehicle.y-1.8,vehicle.z);
     intactViews[i].visible=!vehicle.destroyed;
     wreckViews[i].visible=vehicle.destroyed;
     smokeViews[i].visible=vehicle.destroyed;
@@ -1102,7 +1107,7 @@ muteButton.addEventListener('click', () => {
 });
 function startFlight() {
   sound.unlock().then(() => sound.cue('start')); sound.setActive(true);
-  encounter = makeEncounter(); scorecard = makeScorecard(); lastAward=null;
+  encounter = makeEncounter(playthroughSeed+(++playthroughNumber)*193); scorecard = makeScorecard(); lastAward=null;
   lastCheckpointSector=0;visitedGROVES.clear();
   syncTargets(); roundBannerTime=0; roundBannerText='';
   spawnDrone(); mode = 'flying'; view = 'chase'; pointer = null;
@@ -1424,7 +1429,8 @@ window.__openSkySnapshot = () => ({
   cameraYaw, cameraPitch, throttleMode, gesture: inputState(), speed:flight.speed,
   vx:flight.vx,vy:flight.vy,vz:flight.vz,pitch:flight.pitch,bank:flight.bank,sideRate:flight.sideRate,pullback:flight.pullback||0,brakeIntent:flight.brakeIntent||0,reverseIntent:flight.reverseIntent||0,
   ground: groundHeight(flight.x, flight.z), mode, audioEnabled: sound.enabled
-  , hits:encounter.hits, drones:encounter.drones, sector:activeSectorIndex(encounter), total:LEVEL_TARGETS, vehicles:encounter.vehicles.map(v=>v.destroyed),
+  , hits:encounter.hits, drones:encounter.drones, sector:activeSectorIndex(encounter),
+  seed:encounter.variationSeed,total:LEVEL_TARGETS, vehicles:encounter.vehicles.map(v=>v.destroyed),
   points:scorecard.points, combo:scorecard.combo, misses:scorecard.misses,
   moving:encounter.vehicles.filter(v=>v.moving&&!v.destroyed).length,
   target:guidanceFor(encounter,flight,encounter.discovered,biomeIndex(flight.z)),

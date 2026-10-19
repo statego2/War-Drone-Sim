@@ -62,6 +62,8 @@ try{
   assert.equal(running.biome,'pine','opening landscape is a dark pine forest');
   assert.equal(running.physicalArea,0,'entry is the first physical forest region');
   assert.equal(running.total,16);
+  assert.ok(Number.isFinite(running.seed)&&running.seed>0,
+    'new playthrough varies hiding places while preserving first tank tutorial');
   assert.equal(running.tankSlopedHulls,6,'each tank has a low-poly sloped body');
   assert.equal(running.carrierSlopedHulls,5,'each carrier has angled armour sides');
   assert.equal(running.truckSlopedCargos,5,'each truck has a faceted military cargo body');
