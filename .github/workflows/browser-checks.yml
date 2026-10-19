@@ -53,5 +53,5 @@ jobs:
         if: always()
         with:
           name: forest-encounter-desktop-webkit
-          path: artifacts/webkit-portrait-gameplay.png
+          path: artifacts/webkit-*.png
           if-no-files-found: ignore
