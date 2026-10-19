@@ -19,6 +19,7 @@ import { createRenderBudget } from './renderbudget.mjs';
 import { pauseFlightState, resumeFlightState } from './flightlifecycle.mjs';
 import { redeployWithPenalty } from './recovery.mjs';
 import {discoverNearby,explorationHint} from './exploration.mjs';
+import {BIOMES,biomeIndex,biomeBlend,biomePalette,biomeFoliage,biomeVegetation} from './biomes.mjs';
 
 // A floating-origin, streamed polygonal world. No real-drone targeting or hardware integration.
 const $ = id => document.getElementById(id);
@@ -44,7 +45,7 @@ const budget=createRenderBudget({
 renderer.setPixelRatio(budget.dpr);
 const scene = new THREE.Scene();
 const clouds = createClouds(THREE,scene,hash);
-scene.fog = new THREE.FogExp2(0xb0beb5, .00032);
+scene.fog = new THREE.FogExp2(BIOMES[0].fog, .00032);
 const baseFov = mobile ? 73 : 70;
 const camera = new THREE.PerspectiveCamera(baseFov, 1, .15, 6500);
 const hemi = new THREE.HemisphereLight(0xcde6ee, 0x39432d, 2.1);
@@ -56,8 +57,13 @@ scene.add(sunlight);
 // Gradient sky and sun: geometry genuinely surrounds the 3D world.
 const sky = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), new THREE.ShaderMaterial({
   side: THREE.BackSide, depthWrite: false, fog: false,
+  uniforms:{
+    uHorizon:{value:new THREE.Color(BIOMES[0].horizon)},
+    uZenith:{value:new THREE.Color(BIOMES[0].zenith)},
+    uSunTint:{value:new THREE.Color(BIOMES[0].sun)}
+  },
   vertexShader: 'varying vec3 v; void main(){v=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
-  fragmentShader: 'varying vec3 v;void main(){vec3 d=normalize(v);float h=clamp(d.y*1.45+.18,0.0,1.0);vec3 horizon=vec3(.74,.75,.67);vec3 top=vec3(.16,.37,.57);vec3 col=mix(horizon,top,pow(h,.62));float sun=pow(max(dot(d,normalize(vec3(-.45,.60,.62))),0.0),420.0);col+=vec3(1.0,.68,.32)*sun*.95;float warm=pow(1.0-abs(d.y),5.0);col+=vec3(.16,.08,.025)*warm;gl_FragColor=vec4(col,1.0);}'
+  fragmentShader: 'varying vec3 v;uniform vec3 uHorizon;uniform vec3 uZenith;uniform vec3 uSunTint;void main(){vec3 d=normalize(v);float h=clamp(d.y*1.45+.18,0.0,1.0);vec3 col=mix(uHorizon,uZenith,pow(h,.65));float sun=pow(max(dot(d,normalize(vec3(-.45,.60,.62))),0.0),350.0);col+=uSunTint*sun*.67;float warm=pow(1.0-abs(d.y),5.0);col+=uSunTint*warm*.07;gl_FragColor=vec4(col,1.0);}'
 }));
 sky.scale.setScalar(5500);
 sky.frustumCulled = false;
@@ -150,7 +156,8 @@ const rockGeo = new THREE.DodecahedronGeometry(1, 0);
 const broadGeo = new THREE.IcosahedronGeometry(1, 2);
 const broadPalette = [0x4d6740, 0x688050, 0x7d8c54, 0x496e42, 0x73845d, 0x42644b];
 const temp = new THREE.Object3D();
-const greenPalette = [0x213e32, 0x294d36, 0x375740, 0x305238, 0x466344, 0x2c4d3f, 0x4c5e39, 0x335f45];
+const biomeColors=BIOMES.map(b=>({horizon:new THREE.Color(b.horizon),zenith:new THREE.Color(b.zenith),sun:new THREE.Color(b.sun),fog:new THREE.Color(b.fog),hemi:new THREE.Color(b.hemi)}));
+const terrainColors=BIOMES.map(b=>b.terrain);
 const tiles = new Map();
 let flight = makeFlight(), mode = 'home', view = 'chase', cameraYaw = 0, cameraPitch = .05;
 let throttleMode = 'cruise', last = 0, lastSector = '';
@@ -166,10 +173,10 @@ function terrainColor(x, y, z) {
                 Math.abs(groundHeight(x,z+3)-groundHeight(x,z-3));
   const distanceToLake = lakeProximity(x,z);
   if (distanceToLake < 1.28) return new THREE.Color(distanceToLake < .9 ? 0x746c53 : 0x8e8065);
-  const forest = y > 115 ? [0x7b806f,0x8d896e,0x868f7f] :
-                 slope>6 ? [0x64705a,0x676c54,0x716f5d] :
-                 [0x4a6540,0x537145,0x62764d,0x516d44,0x6b7445];
-  const c = new THREE.Color(forest[Math.floor(n * forest.length)]);
+  const palette=terrainColors[biomeIndex(z)];
+  const rough=y>115||slope>6;
+  const forest=rough?[0x777d6b,0x858271,0x6a756c]:palette;
+  const c=new THREE.Color(forest[Math.floor(n*forest.length)]);
   const tint = (hash(Math.floor(x / 33), Math.floor(z / 33)) - .5) * .14;
   c.offsetHSL(0, 0, tint);
   return c;
@@ -274,7 +281,8 @@ function setInstance(mesh, i, x, y, z, sx, sy, sz, rotation = 0, color = null) {
   if (color !== null) mesh.setColorAt(i, new THREE.Color(color));
 }
 function addForest(group, cx, cz, near) {
-  const attempts = near ? (mobile ? 300 : 420) : 85, trees = [], broad = [], rocks = [];
+  const b=biomeVegetation((cz+.5)*TILE);
+  const attempts=Math.round((near?(mobile?245:350):75)*b.density),trees=[],broad=[],rocks=[];
   for (let i = 0; i < attempts; i++) {
     const rx = hash(cx * 739 + i * 17, cz * 1909 + 81);
     const rz = hash(cx * 2203 + i * 31, cz * 499 + 12);
@@ -284,9 +292,11 @@ function addForest(group, cx, cz, near) {
         objectiveApproachClearance(wx,wz) ||
         scenicTrailClearance(wx,wz) || lakeProximity(wx,wz) < 1.12) continue;
     const size = (near ? 10 : 7) + 15 * hash(cx * 299 + i, cz * 41 + i * 61);
-    const tree = { x, z, h, size, r: 1.7 + size * .19, color: greenPalette[Math.floor(hash(i + cx * 9, cz * 7 + i) * greenPalette.length)], turn: hash(i, cz * 2 + cx) * Math.PI * 2 };
-    if (i % 13 === 0) rocks.push({ x, z, h, s: 1 + hash(i + cx, cz) * 2.3 });
-    else if (i % 6 === 0) broad.push(tree);
+    const tree = { x, z, h, size, r: 1.7 + size * .19,
+      color:biomeFoliage(wz,hash(i+cx*9,cz*7+i)),
+      turn:hash(i,cz*2+cx)*Math.PI*2 };
+    if(i%b.rocksEvery===0)rocks.push({x,z,h,s:1+hash(i+cx,cz)*2.3});
+    else if(i%b.deciduousEvery===0) broad.push(tree);
     else trees.push(tree);
   }
   if (trees.length || broad.length) {
@@ -311,7 +321,7 @@ function addForest(group, cx, cz, near) {
     const trunks = instanced(treeTrunk, barkMat, broad.length);
     const leaves = instanced(broadGeo, leafMat, broad.length * 3, true);
     broad.forEach((t, i) => {
-      const c = broadPalette[Math.floor(hash(i * 17 + cx, cz * 23) * broadPalette.length)];
+      const c=biomeFoliage(cz*TILE+t.z,hash(i*17+cx,cz*23),true);
       setInstance(trunks, i, t.x, t.h + t.size * .38, t.z, .85, t.size * .75, .85, t.turn);
       // Three offset leaf masses make a visible, rounded, volumetric canopy.
       setInstance(leaves, i * 3, t.x, t.h + t.size * .80, t.z, t.r * 1.05, t.size * .29, t.r * 1.04, t.turn, c);
@@ -1226,7 +1236,22 @@ function frame(now) {
   }
   const height = Math.max(0, flight.y - groundHeight(flight.x, flight.z));
   clouds.update(flight.x,flight.y,flight.z,now/1000);
-  scene.fog.density = .00034 / (1 + height / 2100);
+  // Three biomes blend light, sky, fog and vegetation progressively while
+  // crossing valleys, not as abrupt preset changes at a loading screen.
+  const biomeTransition=biomeBlend(flight.z);
+  const A=biomeColors[biomeTransition.from],B=biomeColors[biomeTransition.to];
+  const t=biomeTransition.t;
+  sky.material.uniforms.uHorizon.value.copy(A.horizon).lerp(B.horizon,t);
+  sky.material.uniforms.uZenith.value.copy(A.zenith).lerp(B.zenith,t);
+  sky.material.uniforms.uSunTint.value.copy(A.sun).lerp(B.sun,t);
+  scene.fog.color.copy(A.fog).lerp(B.fog,t);
+  hemi.color.copy(A.hemi).lerp(B.hemi,t);
+  sunlight.color.copy(A.sun).lerp(B.sun,t);
+  sunlight.intensity=BIOMES[biomeTransition.from].sunIntensity+
+    (BIOMES[biomeTransition.to].sunIntensity-BIOMES[biomeTransition.from].sunIntensity)*t;
+  const mist=BIOMES[biomeTransition.from].fogFactor+
+    (BIOMES[biomeTransition.to].fogFactor-BIOMES[biomeTransition.from].fogFactor)*t;
+  scene.fog.density=.00034*mist/(1+height/2100);
   const nextFar = Math.max(6500, Math.min(1600000, height * 3.4 + 4000));
   if (Math.abs(camera.far - nextFar) > 10) {
     camera.far = nextFar;
@@ -1278,7 +1303,8 @@ window.__openSkySnapshot = () => ({
   carrierVisors:intactViews.flatMap(v=>v.children).filter(m=>m.userData?.visualDetail==='carrier-visor').length,
   truckWindows:intactViews.flatMap(v=>v.children).filter(m=>m.userData?.visualDetail==='truck-windshield').length,
   redOutlines:outlineViews.filter(o=>o.group.visible).length,
-  scenicSites:FOREST_SITES.length,
+  scenicSites:FOREST_SITES.length,biome:biomePalette(flight.z).id,
+  landscapeNames:BIOMES.map(b=>b.name),skyHorizon:sky.material.uniforms.uHorizon.value.getHex(),
   dpr:budget.dpr,graphicsReady,resumeMode,renderCalls:renderer.info.render.calls,
   geometries:renderer.info.memory.geometries,primitiveGeometries:primitives.stats.total,
   slopedHullGeometries:armourMeshes.size,
