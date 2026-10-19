@@ -62,6 +62,8 @@ export function forestTrace(encounter,flight){
     if(v.destroyed||v.sector!==sector||encounter.discovered?.has(v.id))continue;
     nearest=Math.min(nearest,Math.hypot(v.x-flight.x,v.z-flight.z));
   }
+  const remaining=encounter.vehicles.some(v=>v.sector===sector&&!v.destroyed);
+  if(!remaining)return {strength:'clear',label:`AREA CLEAR · ${REGION_SHORT[sector]}`};
   const strength=nearest<103?'near':nearest<205?'trace':'quiet';
   const lead=strength==='near'?'SIGNS NEARBY':
     strength==='trace'?'FAINT TRACES':'SEARCH';
