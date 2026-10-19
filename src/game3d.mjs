@@ -178,6 +178,7 @@ let qaFrozen=false;
 let resumeMode='flying',graphicsReady=true,contextCopy=null;
 let encounter = makeEncounter(), scorecard = makeScorecard(), lastAward = null,
     impactAge = 0, impactType = '', impactId = -1, roundBannerTime=0, roundBannerText='', advancedSector=false;
+let lastSightCheck=-Infinity;
 let pointer = null;
 const keys = new Set();
 
@@ -1111,6 +1112,7 @@ muteButton.addEventListener('click', () => {
 function startFlight() {
   sound.unlock().then(() => sound.cue('start')); sound.setActive(true);
   encounter = makeEncounter(playthroughSeed+(++playthroughNumber)*193); scorecard = makeScorecard(); lastAward=null;
+  lastSightCheck=-Infinity;
   lastCheckpointSector=0;visitedGROVES.clear();
   syncTargets(); roundBannerTime=0; roundBannerText='';
   spawnDrone(); mode = 'flying'; view = 'chase'; pointer = null;
@@ -1332,12 +1334,19 @@ function frame(now) {
     const previous={x:flight.x,y:flight.y,z:flight.z};
     advanceFlight(flight, command, dt);
     updateEncounter(encounter,dt);
-    const found=discoverNearby(encounter,flight,groundHeight);
-    if(found.length){
-      const reward=registerExploration(scorecard,'vehicle',found.length);
-      roundBannerTime=1.8;
-      roundBannerText=`${reward.label} · +${reward.points}`;
-      sound.cue('spot');
+    // Cap tree-occlusion discovery checks at roughly eight per second. This
+    // lets a player actually search behind canopies without a mobile CPU tax
+    // on all sixty rendered frames. The close approach always catches up.
+    if(encounter.clock-lastSightCheck>=.12){
+      lastSightCheck=encounter.clock;
+      const found=discoverNearby(encounter,flight,groundHeight,
+        (eye,object)=>Boolean(forestContact(eye,object)));
+      if(found.length){
+        const reward=registerExploration(scorecard,'vehicle',found.length);
+        roundBannerTime=1.8;
+        roundBannerText=`${reward.label} · +${reward.points}`;
+        sound.cue('spot');
+      }
     }
     // Optional exploration challenge: investigate natural off-road camp sites.
     // These are scenery discoveries, not military targeting markers or tools.
