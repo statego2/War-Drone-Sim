@@ -1434,7 +1434,7 @@ if(location.hostname==='127.0.0.1'){
     flight.heading=0;flight.pitch=0;flight.bank=0;
     flight.vx=flight.vy=flight.vz=0;
     camera.position.set(0,flight.y+8,-23);
-    cameraYaw=0;cameraPitch=.03;
+    cameraYaw=0;cameraPitch=forestChasePitch({height:74,pitch:0});
     lastSector='';rebuildTiles(true);moveTiles();updateFarLand();updateHUD();
     return {region:BIOMES[index].id,position:z};
   };
