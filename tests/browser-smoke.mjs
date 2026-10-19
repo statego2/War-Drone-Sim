@@ -57,6 +57,8 @@ try{
   assert.equal(running.scenicSites,3,'three decorative off-road camps accompany the wider encounter arenas');
   assert.equal(running.landmarksAuthored,3,'three distinct cinematic natural landmarks orient exploration');
   assert.equal(running.livingForestBirds,18,'three animated flocks share one instanced mesh');
+  assert.ok(running.riverPoints>80,'misty valley contains a meandering physical stream');
+  assert.equal(running.riverBridge,true,'river crosses the road via a stone bridge');
   assert.deepEqual(running.landscapeNames,['PINE SHADOWS','MISTY RIVER','AMBER HIGHLANDS']);
   assert.equal(running.biome,'pine','opening landscape is a dark pine forest');
   assert.equal(running.physicalArea,0,'entry is the first physical forest region');
@@ -87,7 +89,7 @@ try{
   assert.equal(running.points,running.discovered.length*35,
     'exploring nearby objects awards bounded discovery points exactly once');
   assert.match(await page.locator('#arcade-score').innerText(),/^\d+ PTS/);
-  assert.match(await page.locator('#target-compass').innerText(),/(SEARCH|M)$/);
+  assert.match(await page.locator('#target-compass').innerText(),/(TRAILS|BANKS|CLEARINGS|M)$/);
   assert.equal(await page.locator('#progress span:not(.hidden)').count(),5,'entry clearing has five goals');
   assert.ok(running.speed>43,'neutral flight maintains automatic forward cruise');
   assert.equal(await page.locator('#boost').count(),0,'one-finger flight must not show a speed-mode button');

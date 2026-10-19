@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {canDiscover,discoverNearby,explorationHint,DISCOVERY_RANGE} from '../src/exploration.mjs';
 import {makeEncounter,applyContact} from '../src/encounter.mjs';
+import {roadCenter} from '../src/flight3d.mjs';
 
 test('a launch does not expose every target through trees',()=>{
   const encounter=makeEncounter();
@@ -10,7 +11,7 @@ test('a launch does not expose every target through trees',()=>{
   assert.equal(canDiscover(v,far),false);
   assert.deepEqual(discoverNearby(encounter,far),[]);
   assert.equal(encounter.discovered.size,0);
-  assert.match(explorationHint(encounter).clue,/SEARCH/);
+  assert.match(explorationHint(encounter).clue,/PINES · FOLLOW DIRT TRAILS/);
 });
 test('discovery requires actual local looking, not a long-range instant GPS',()=>{
   const v={id:0,x:0,y:10,z:0,sector:0,destroyed:false};
@@ -40,4 +41,14 @@ test('search discoveries persist through drone retries and advancing sectors',()
   assert.equal(explorationHint(e).sector,1);
   assert.equal(explorationHint(e).revealed,0);
   assert.equal(e.discovered.has(0),true);
+});
+
+test('hidden side-clearing props demand actual exploration, not straight asphalt cruising',()=>{
+  const e=makeEncounter(),hidden=e.vehicles[1];
+  assert.ok(Math.abs(hidden.offset)>36,'second prop belongs to a deep clearing');
+  const road={x:roadCenter(hidden.z-30),y:hidden.y+19,z:hidden.z-30,heading:0};
+  assert.equal(canDiscover(hidden,road),false,'a driver on the main road has no magical reveal');
+  const near={x:hidden.x,y:hidden.y+9,z:hidden.z-12,heading:0};
+  assert.equal(canDiscover(hidden,near),true,'actually entering the clearing reveals the prop');
+  assert.equal(e.vehicles[0].offset,-12,'the accessible learning tank is unchanged');
 });
