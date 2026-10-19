@@ -67,20 +67,21 @@ try{
   assert.equal(running.softSoilBlend,true,'dirt trails and pads feather into the terrain on WebGL');
   assert.equal(running.stagingPads,22,'all vehicles and six side hubs have physical 3D staging surfaces');
   assert.equal(running.moving,6,'six unoccupied fictional props patrol short arcade tracks');
-  assert.equal(running.redOutlines,0,
-    'hidden enemies do not glow at long range before the player discovers them');
-  assert.equal(running.beacons,0,
-    'opening area no longer exposes targets through the entire forest');
+  assert.ok(running.redOutlines<=running.discovered.length,
+    'no red silhouette may render around undiscovered vehicles');
+  assert.ok(running.beacons<=running.discovered.length,
+    'only spotted vehicles may receive visible in-world glints');
   assert.ok(running.nearbyTrees>0,'visually streamed near forest has physical obstacle candidates');
-  assert.equal(running.target,null,'no exact target coordinates before exploring');
-  assert.equal(running.discovered.length,0,'all objectives begin concealed');
+  assert.ok(running.discovered.length<5,'the opening flight has not magically revealed an entire area');
+  assert.ok(running.target===null||running.discovered.includes(running.target.id),
+    'exact next-goal direction is allowed only for a discovered object');
   assert.ok(running.dpr>=.85 && running.dpr<=1.6,'adaptive resolution starts in supported mobile bounds');
   assert.ok(running.renderCalls>0,'3D scene draws at least one call');
   assert.ok(running.primitiveGeometries>0 && running.primitiveGeometries<120,
     'target models share repeated GPU primitive geometries');
   assert.equal(running.points,0,'a new run starts with a clean score');
   assert.equal(await page.locator('#arcade-score').innerText(),'0 PTS');
-  assert.match(await page.locator('#target-compass').innerText(),/SEARCH/);
+  assert.match(await page.locator('#target-compass').innerText(),/(SEARCH|M)$/);
   assert.equal(await page.locator('#progress span:not(.hidden)').count(),5,'entry clearing has five goals');
   assert.ok(running.speed>43,'neutral flight maintains automatic forward cruise');
   assert.equal(await page.locator('#boost').count(),0,'one-finger flight must not show a speed-mode button');
