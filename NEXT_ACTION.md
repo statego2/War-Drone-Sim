@@ -74,6 +74,30 @@ Owner reported the first tank was very difficult to hit, reversing sent the dron
 - **Cross-browser QA [#111](https://github.com/statego2/War-Drone-Sim/pull/111):** independent desktop Linux WebKit portrait Three.js boot alongside Chromium; full 16-target scene, active GPU draw calls and authentic screenshot passed. Not physical iPhone Safari.
 - **Screenshot-driven trail correction [#112](https://github.com/statego2/War-Drone-Sim/pull/112):** narrow grassy-dirt trails, smaller staging pads and transparent feathered 3D dirt vertices replace visually oversized opaque beige slabs. Both desktop Chromium and WebKit CI pass; screenshot demonstrates the actual change.
 
+## 2026-10-19 — Forest Exploration & Art Direction v23–v33
+
+**Player experience:** This is now a three-landscape forest **search → discovery → satisfying arcade collision → fast retry** loop, not a row of red highlighted targets on an empty main road. The old assumptions that every target is visible immediately or that each sector must be fully completed before travelling on are obsolete.
+
+### Shipped and verified in code / browser regression
+- [#113](https://github.com/statego2/War-Drone-Sim/pull/113): actual proximity/orientation/terrain discovery; initially no exact target GPS/halo; player earns precise cues only after seeing an object. Smaller safe tree pockets and thicker forest cover.
+- [#114](https://github.com/statego2/War-Drone-Sim/pull/114): visually distinct Pine Shadows, Misty River, Amber Highlands biomes; transitional fog/lighting/sky, foliage species/colors, vegetation and rocks.
+- [#115](https://github.com/statego2/War-Drone-Sim/pull/115): +35 point first vehicle discoveries, +75 optional camp exploration discoveries, pleasant non-alarm cues.
+- [#116](https://github.com/statego2/War-Drone-Sim/pull/116): 3 natural 3D landmarks — fallen-log grove, spring, sandstone/rock arch.
+- [#117](https://github.com/statego2/War-Drone-Sim/pull/117): airy wispy skies and consistent sRGB shader color for improved portrait readability.
+- [#118](https://github.com/statego2/War-Drone-Sim/pull/118): authentic WebKit three-biome screenshot regression captures; all scenery remains procedural and locally hosted.
+- [#119](https://github.com/statego2/War-Drone-Sim/pull/119): freely explore any forest biome without clearing earlier objectives; HUD and respawn use actual current area.
+- [#123](https://github.com/statego2/War-Drone-Sim/pull/123): physical curved river and stone bridge through Misty River.
+- [#125](https://github.com/statego2/War-Drone-Sim/pull/125): 15 non-tutorial fictional vehicles change position slightly each new run inside cleared pockets, deterministic tests verify 3D/collision alignment.
+- [#128](https://github.com/statego2/War-Drone-Sim/pull/128): approximate SEARCH/FAINT TRACES/SIGNS NEARBY rather than false precision; scripted seeded non-linear full 16-target search-clear test.
+- [#129](https://github.com/statego2/War-Drone-Sim/pull/129): one-time entry moments per landscape, boundary-hysteresis prevents sound spamming.
+- Complementary merged landscape work from other development branches: realistic-looking stylized canopy occlusion for discoverability, visual foliage and birds, themed ambience and light fog banks, downward-focused chase-camera framing. Verify newest main commit and CI, not an old branch.
+
+### Strict actual-device acceptance
+1. Open **https://statego2.github.io/War-Drone-Sim/** directly in iPhone Safari, confirm the lower build hash matches current deployed main. The legacy Canvas page is never a successful test.
+2. In one play session of 10–15 drones, find a target by actually exploring a side clearing; fly into and out of the Misty River and Amber Highlands; visit a landmark; reverse, turn around after overshooting, and make a fast nose-dive; destroy both fixed and moving props.
+3. Observe whether the forest is visually appealing and *FUN*, especially search time, how discoverable hidden props feel, environmental variety, and whether an unspotted prop can appear unfairly invisible. Check sound pleasantness, temporary screen pauses, crashless respawns, Safari heat, FPS and layout after 10 minutes.
+4. Before new content, prioritize exactly the top reproducible owner problem. Green CI proves technical correctness of exercised cases, **not** fun, visual approval, real iPhone thermals or human playability.
+
 ## Quality and release truth
 
 Desktop Chromium (software WebGL) automated checks and uploaded screenshots establish that a 3D forest, road, drone and UI render and the tested interactions execute. They **do not** establish iPhone Safari performance, 16-target human playability, fun, audio comfort, thermals, WebGL restoration on iOS, or the quality of collision feel.
