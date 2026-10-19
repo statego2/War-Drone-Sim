@@ -56,6 +56,7 @@ try{
   assert.equal(running.vehicles.length,16,'full forest level has sixteen persistent targets');
   assert.equal(running.scenicSites,3,'three decorative off-road camps accompany the wider encounter arenas');
   assert.equal(running.landmarksAuthored,3,'three distinct cinematic natural landmarks orient exploration');
+  assert.equal(running.livingForestBirds,18,'three animated flocks share one instanced mesh');
   assert.deepEqual(running.landscapeNames,['PINE SHADOWS','MISTY RIVER','AMBER HIGHLANDS']);
   assert.equal(running.biome,'pine','opening landscape is a dark pine forest');
   assert.equal(running.physicalArea,0,'entry is the first physical forest region');
