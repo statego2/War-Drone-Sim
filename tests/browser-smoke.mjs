@@ -56,6 +56,8 @@ try{
   assert.equal(running.vehicles.length,16,'full forest level has sixteen persistent targets');
   assert.equal(running.scenicSites,3,'three decorative off-road camps accompany the wider encounter arenas');
   assert.equal(running.landmarksAuthored,3,'three distinct cinematic natural landmarks orient exploration');
+  assert.ok(running.riverStretch>400,'the wetland biome has a substantial offroad water corridor');
+  assert.equal(running.livingForestBirds,18,'three animated flocks share one instanced mesh');
   assert.ok(running.riverPoints>80,'misty valley contains a meandering physical stream');
   assert.equal(running.riverBridge,true,'river crosses the road via a stone bridge');
   assert.deepEqual(running.landscapeNames,['PINE SHADOWS','MISTY RIVER','AMBER HIGHLANDS']);
@@ -93,7 +95,7 @@ try{
   assert.match(await page.locator('#arcade-score').innerText(),/^\d+ PTS/);
   assert.match(await page.locator('#target-compass').innerText(),
     /(PINES|RIVER|RIDGE|M)$/,
-    'unknown goals show environmental clues rather than instant numerical GPS');
+    'unknown objectives show environmental clues, not exact numerical GPS');
   assert.equal(await page.locator('#progress span:not(.hidden)').count(),5,'entry clearing has five goals');
   assert.ok(running.speed>43,'neutral flight maintains automatic forward cruise');
   assert.equal(await page.locator('#boost').count(),0,'one-finger flight must not show a speed-mode button');
