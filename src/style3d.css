@@ -169,3 +169,52 @@
   letter-spacing:1.1px;z-index:1;pointer-events:none;
   font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
 }
+
+/* v34 — premium uncluttered cockpit. Only mission progress and earned search
+   guidance remain in the default flying view; details are opt-in from pause. */
+#game[data-cockpit-mode="minimal"] #hud .hud-right{display:none;}
+#game[data-cockpit-mode="minimal"] #hud{right:15px;}
+#game[data-cockpit-mode="minimal"] #target-compass{
+  background:rgba(8,26,27,.70);border-color:rgba(228,187,130,.37);
+  box-shadow:0 7px 22px rgba(8,20,16,.18);
+}
+
+/* Settings live IN the pause sheet, never in the flight touch zone.
+   These final rules intentionally supersede early prototype action decks. */
+#flight-actions.pause-settings{
+  position:static;display:none;width:100%;max-width:none;min-width:0;
+  margin:12px 0 0;left:auto;right:auto;bottom:auto;
+  padding:12px 0 0;border-top:1px solid rgba(241,238,227,.20);
+  background:none;z-index:auto;
+}
+.panel.paused #flight-actions.pause-settings{display:block;}
+.pause-settings-title{
+  display:block;color:#e4bb82;font-size:10px;font-weight:850;
+  letter-spacing:1.8px;margin-bottom:10px;
+}
+.pause-settings-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;}
+.panel.paused #flight-actions .flight-tool{
+  width:100%;min-width:0!important;max-width:none;min-height:46px;
+  height:auto;padding:9px 5px;margin:0;
+  display:flex;align-items:center;justify-content:center;text-align:center;
+  line-height:1.15;letter-spacing:.2px;font-size:10px;font-weight:800;
+  border-radius:9px;white-space:normal;overflow-wrap:anywhere;
+  border:1px solid rgba(228,187,130,.43);
+  background:rgba(10,32,30,.82);color:#f1eee3;box-shadow:none;
+}
+.panel.paused #flight-actions .flight-tool[aria-pressed="true"]{
+  border-color:#e4bb82;background:rgba(228,187,130,.18);color:#f9edcb;
+}
+.panel.paused .controls,.panel.paused .footer{display:none;}
+.panel.paused h1{font-size:clamp(37px,11vw,56px);margin:9px 0 13px;line-height:.92;}
+.panel.paused p{font-size:13px;line-height:1.45;margin-bottom:12px;}
+.panel.paused #primary{min-height:49px;padding:14px 18px;}
+@media(max-height:640px){
+  .panel.paused {padding-top:calc(env(safe-area-inset-top) + 12px);
+    padding-bottom:calc(env(safe-area-inset-bottom) + 12px);}
+  .panel.paused h1{font-size:36px;margin:6px 0 10px;}
+  .panel.paused p{font-size:12px;margin-bottom:9px;}
+  #flight-actions.pause-settings{margin-top:8px;padding-top:9px;}
+  .pause-settings-title{margin-bottom:6px;}
+  .pause-settings-grid{gap:5px;}
+}
