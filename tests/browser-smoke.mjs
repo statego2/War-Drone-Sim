@@ -41,6 +41,23 @@ try{
   await mkdir(join(root,'artifacts'),{recursive:true});
   assert.equal(await page.locator('#hint').isVisible(),false,'flight hints stay off the home screen');
   await page.screenshot({path:join(root,'artifacts','01-home-portrait.png')});
+  // The cinematic title and FLY call to action must remain readable without
+  // scrolling or spilling out of a short portrait phone screen.
+  await page.setViewportSize({width:320,height:568});
+  const homeBounds=await page.evaluate(()=>{
+    const boxes=['h1','#primary','.panel.home p'].map(selector=>{
+      const {x,y,width,height}=document.querySelector(selector).getBoundingClientRect();
+      return {selector,x,y,width,height};
+    });
+    return boxes;
+  });
+  for(const rect of homeBounds)assert.ok(rect.x>=0 && rect.y>=0 &&
+      rect.x+rect.width<=321 && rect.y+rect.height<=569,
+    'small portrait launch elements fit the viewport: '+JSON.stringify(rect));
+  assert.ok(homeBounds[0].y+homeBounds[0].height<homeBounds[1].y,
+    'FLY button sits below the cinematic title without overlap');
+  await page.screenshot({path:join(root,'artifacts','01b-home-compact.png')});
+  await page.setViewportSize({width:390,height:844});
   await page.locator('#primary').click();
   await page.waitForSelector('#hud:not(.hidden)');
   await page.waitForTimeout(900);
