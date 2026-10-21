@@ -12,7 +12,9 @@ export function createRenderBudget({
   let samples=[],last={p75:0,p95:0,frames:0};
   function sample(ms,active=true) {
     // Browser background throttling and Safari lifecycle jumps are not GPU load.
-    if(!active || !Number.isFinite(ms) || ms<1 || ms>120)return null;
+    // Slow but still actively rendered phones can exceed 120ms/frame.
+// Paused or truly suspended frames are filtered by active and the gap cap.
+    if(!active || !Number.isFinite(ms) || ms<1 || ms>360)return null;
     samples.push(ms);
     if(samples.length<sampleCount)return null;
     samples.sort((a,b)=>a-b);

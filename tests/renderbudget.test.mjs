@@ -47,3 +47,12 @@ test('pause, background gaps and unbounded frame values do not reduce resolution
   q.sample(35);q.reset();
   assert.equal(q.stats.pending,0);
 });
+
+test('active software-WebGL 5fps frames can downscale resolution instead of being ignored',()=>{
+  const q=createRenderBudget({initialDpr:1.4,sampleCount:8,cooldownWindows:0});
+  let changed=null;
+  for(let i=0;i<8;i++)changed=q.sample(200,true);
+  assert.equal(changed,1.26);
+  assert.equal(q.stats.p75,200);
+  assert.equal(q.sample(500,true),null,'large suspended-frame gap is still discarded');
+});

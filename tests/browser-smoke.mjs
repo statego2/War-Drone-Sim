@@ -60,6 +60,10 @@ try{
   assert.match(await page.locator('#build-version').innerText(),/^BUILD (?:LOCAL|[a-f0-9]{7,12})$/,
     'mobile build identity must stay legible through gameplay');
   assert.equal(running.vehicles.length,16,'full forest level has sixteen persistent targets');
+  assert.ok(Number.isFinite(running.simulatedFlightSeconds)&&running.simulatedFlightSeconds>0,
+    'browser exposes elapsed flight simulation time independently of slow WebGL wall time');
+  assert.ok(running.simulationBacklog>=0 && running.simulationBacklog<=.36,
+    'bounded frame clock never accumulates an unbounded physics catch-up queue');
   assert.equal(running.scenicSites,3,'three decorative off-road camps accompany the wider encounter arenas');
   assert.equal(running.landmarksAuthored,3,'three distinct cinematic natural landmarks orient exploration');
   assert.equal(running.mistTypes,3,'each forest biome has its own low-lying mist treatment');
@@ -151,6 +155,10 @@ try{
   await page.locator('#pause').click();
   assert.ok(await page.locator('#overlay').isVisible());
   assert.equal(await page.locator('#hint').isVisible(),false,'flight hints stay off pause menu');
+  const pausedClock=(await page.evaluate(()=>window.__openSkySnapshot())).simulatedFlightSeconds;
+  await page.waitForTimeout(200);
+  assert.equal((await page.evaluate(()=>window.__openSkySnapshot())).simulatedFlightSeconds,
+    pausedClock,'simulation clock does not advance flight while the pause sheet is open');
   assert.equal(await page.locator('#sound-toggle').isVisible(),true,
     'sound can be changed from the pause sheet');
   await page.locator('#sound-toggle').click();

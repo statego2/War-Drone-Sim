@@ -1,5 +1,13 @@
 # NEXT ACTION — War Drone Sim
 
+## 2026-10-21 — Bounded frame clock v35 (issue #81)
+
+Implementing low-framerate simulation pacing on [issue #81](https://github.com/statego2/War-Drone-Sim/issues/81): a small local fixed-budget accumulator replaces the old **100ms per rendered frame** time-dilation clamp. At steady **60, 30, 10 and 5fps**, simulated time equals wall time (deterministic pure-clock tests); after a temporary GPU stall, a maximum **220ms simulation step**, **360ms backlog**, and **850ms gap cutoff** bound catch-up cost. WebGL resolution sampling continues to use **actual wall-frame intervals**, not compensated simulation delta; paused tabs do not accrue missed play time. The 3D runtime exposes read-only simulation-time and backlog values for browser regressions.
+
+**Test evidence:** six focused Node frame-clock tests were executed successfully in isolated local Node; the new Playwright staged-artifact assertions for active time / pause invariants and all repository CI are pending the PR head checks. No real-device FPS or subjective feel has been measured. Existing swept vehicle/tree contact and one-drone respawn remain unchanged, but need physical-phone validation when frame pacing is poor.
+
+**Next:** confirm CI, inspect any smoke regression under software WebGL, verify real Safari. If sustained sub-5fps hardware remains unplayable, reduce world draw work rather than increasing unbounded simulation catch-up.
+
 ## 2026-10-21 — Premium cockpit / pause settings v34
 
 [PR #137](https://github.com/statego2/War-Drone-Sim/pull/137) implements the approved lightweight portrait-HUD direction without disturbing the sixteen-prop, three-biome exploration loop. The default cockpit hides the altitude/speed/vertical-rate cluster; progress, score, and earned discovery guidance stay visible. The player can now change FPV/chase, sound and compact/detailed HUD **from the pause sheet** instead of cluttering the one-finger flight canvas. Local HUD preference survives reload and degrades safely if storage is unavailable.

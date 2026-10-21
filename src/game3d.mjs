@@ -28,6 +28,7 @@ import {channelClearance,STREAM_START,STREAM_END} from './wetlands.mjs';
 import {createWildlife} from './wildlife3d.mjs';
 import {RIVER,riverCrossing,riverStrip} from './riverlandscape.mjs';
 import {areaArrival} from './areaarrival.mjs';
+import {createFrameClock} from './frameclock.mjs';
 import { COCKPIT_STORAGE_KEY, readCockpitMode, saveCockpitMode, toggleCockpitMode } from './cockpitprefs.mjs';
 
 // A floating-origin, streamed polygonal world. No real-drone targeting or hardware integration.
@@ -69,6 +70,7 @@ const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.27;
+const simulationClock=createFrameClock();
 const budget=createRenderBudget({
   initialDpr:Math.min(window.devicePixelRatio||1,mobile?1.45:1.85),
   maxDpr:Math.min(window.devicePixelRatio||1,mobile?1.6:2),
@@ -1111,7 +1113,7 @@ window.addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
 window.addEventListener('blur', () => {
   pointer=null;keys.clear();
   if(mode==='flying'||mode==='impact')setPause();
-  budget.reset();
+  budget.reset();simulationClock.reset();
 });
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
@@ -1384,7 +1386,12 @@ function frame(now) {
     requestAnimationFrame(frame);
     return;
   }
-  const dt = Math.min((now - last) / 1000 || .016, .1); last = now;
+  // Never use the capped simulation step to measure renderer frame pacing.
+  // The bounded clock preserves 5–10fps world time and recovers from short
+  // stalls without permitting a destructive multi-second contact jump.
+  const wallDt=last>0?Math.max(0,(now-last)/1000):.016;
+  last=now;
+  const dt=simulationClock.sample(wallDt,(mode==='flying'&&!qaFrozen)||mode==='impact');
   if (mode === 'flying'&&!qaFrozen) {
     roundBannerTime=Math.max(0,roundBannerTime-dt);
     // CRUISE/FAST/HOVER/REVERSE no longer require a mode button. The
@@ -1511,7 +1518,7 @@ function frame(now) {
   smokeViews.forEach((smoke,i)=>{ if(smoke.visible){smoke.position.y=encounter.vehicles[i].y+5+Math.sin(now*.0006+i)*1.2;smoke.rotation.y+=dt*.17;} });
   for (let i = 0; i < rotors.length; i++) rotors[i].rotation.y += dt * (i % 2 ? -43 : 43);
   renderer.render(scene, camera);
-  const nextDpr=budget.sample(dt*1000,mode==='flying');
+  const nextDpr=budget.sample(wallDt*1000,mode==='flying');
   if(nextDpr!==null){
     renderer.setPixelRatio(nextDpr);
     resize();
@@ -1528,7 +1535,7 @@ window.__openSkySnapshot = () => ({
   cameraYaw, cameraPitch, throttleMode, gesture: inputState(), speed:flight.speed,
   vx:flight.vx,vy:flight.vy,vz:flight.vz,pitch:flight.pitch,bank:flight.bank,sideRate:flight.sideRate,pullback:flight.pullback||0,brakeIntent:flight.brakeIntent||0,reverseIntent:flight.reverseIntent||0,
   ground: groundHeight(flight.x, flight.z), mode, audioEnabled: sound.enabled
-  , cockpitMode, hits:encounter.hits, drones:encounter.drones, sector:activeSectorIndex(encounter),
+  , cockpitMode, simulatedFlightSeconds:flight.time, simulationBacklog:simulationClock.backlog, hits:encounter.hits, drones:encounter.drones, sector:activeSectorIndex(encounter),
   seed:encounter.variationSeed,total:LEVEL_TARGETS, vehicles:encounter.vehicles.map(v=>v.destroyed),
   hiddenPositions:encounter.vehicles.map(v=>[v.homeX,v.homeZ]),
   displacedModels:encounter.vehicles.filter(v=>{
