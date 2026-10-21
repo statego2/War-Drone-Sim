@@ -49,6 +49,12 @@ try{
   assert.ok(hintBox && hudBox && hintBox.y>hudBox.y+hudBox.height+80,
     'first-flight hint stays below the HUD instead of overlapping sector and altitude');
   assert.ok(hintBox.y>400,'first-flight hint stays in the lower third of portrait');
+  assert.equal(await page.locator('#hud .hud-right').isVisible(),false,
+    'minimal default hides altitude, speed and vertical rate to reveal more forest');
+  assert.equal(await page.locator('#sound-toggle').isVisible(),false,
+    'in-flight viewport is not obstructed by sound and camera buttons');
+  assert.equal(await page.locator('#view-mode').isVisible(),false,
+    'camera settings are accessible from pause rather than the flight canvas');
   await page.screenshot({path:join(root,'artifacts','02-flight-opening.png')});
   const running=await page.evaluate(()=>window.__openSkySnapshot());
   assert.match(await page.locator('#build-version').innerText(),/^BUILD (?:LOCAL|[a-f0-9]{7,12})$/,
@@ -142,14 +148,33 @@ try{
   const diving=await page.evaluate(()=>window.__openSkySnapshot());
   await page.mouse.up();
   assert.ok(diving.pitch>.7 && diving.vy<diagonal.vy-3,'downward gesture pitches and decelerates the immediate prior climb');
-  await page.locator('#sound-toggle').click();
-  assert.equal(await page.locator('#sound-toggle').innerText(),'MUTED');
   await page.locator('#pause').click();
   assert.ok(await page.locator('#overlay').isVisible());
   assert.equal(await page.locator('#hint').isVisible(),false,'flight hints stay off pause menu');
+  assert.equal(await page.locator('#sound-toggle').isVisible(),true,
+    'sound can be changed from the pause sheet');
+  await page.locator('#sound-toggle').click();
+  assert.equal(await page.locator('#sound-toggle').innerText(),'MUTED');
+  await page.locator('#view-mode').click();
+  assert.equal(await page.locator('#view-mode').innerText(),'CHASE',
+    'camera toggles from pause without a second flight gesture');
+  await page.locator('#cockpit-toggle').click();
+  assert.equal(await page.locator('#cockpit-toggle').innerText(),'HUD · DETAILS');
+  assert.equal((await page.evaluate(()=>window.__openSkySnapshot())).cockpitMode,'detailed');
   await page.screenshot({path:join(root,'artifacts','03-pause-menu.png')});
   await page.locator('#primary').click();
   assert.ok(await page.locator('#hud').isVisible());
+  assert.equal(await page.locator('#hud .hud-right').isVisible(),true,
+    'detailed instruments show again when explicitly requested');
+  assert.equal(await page.locator('#sound-toggle').isVisible(),false,
+    'pause controls leave the viewport on resume');
+  await page.locator('#pause').click();
+  await page.locator('#view-mode').click();
+  await page.locator('#cockpit-toggle').click();
+  assert.equal(await page.locator('#cockpit-toggle').innerText(),'HUD · COMPACT');
+  await page.locator('#primary').click();
+  assert.equal(await page.locator('#hud .hud-right').isVisible(),false,
+    'minimal cockpit is restored without restarting a run');
   await page.locator('#pause').click();
   const preRedeploy=await page.evaluate(()=>window.__openSkySnapshot());
   await page.locator('#redeploy').click();
@@ -189,7 +214,7 @@ try{
   await page.setViewportSize({width:320,height:568});
   await page.locator('#pause').click();
   const layout=await page.evaluate(()=>{
-    const ids=['primary','redeploy','restart-level'];
+    const ids=['primary','redeploy','restart-level','view-mode','sound-toggle','cockpit-toggle'];
     return ids.map(id=>{
       const rect=document.getElementById(id).getBoundingClientRect();
       return {id,x:rect.x,y:rect.y,width:rect.width,height:rect.height};
