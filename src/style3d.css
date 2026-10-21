@@ -218,3 +218,55 @@
   .pause-settings-title{margin-bottom:6px;}
   .pause-settings-grid{gap:5px;}
 }
+
+/* v36 — cinematic first impression, no photo downloads or expensive post-FX.
+   Preserve a full-width forest reveal above the CTA on portrait devices. */
+.panel.home {
+  background:
+    linear-gradient(180deg,rgba(9,27,25,.02) 0%,rgba(9,27,25,.02) 26%,
+      rgba(7,26,24,.34) 49%,rgba(8,24,22,.88) 75%,#0b201d 100%);
+}
+.panel.home .panel-content {position:relative;padding-bottom:min(3vh,20px);}
+.panel.home .panel-content::before {
+  content:"";display:block;height:2px;width:62px;margin:0 0 22px;
+  border-radius:2px;background:linear-gradient(90deg,#f1eee3,#e4bb82 74%,transparent);
+  box-shadow:0 0 22px rgba(228,187,130,.25);
+}
+.panel.home .kicker {
+  color:#ead5aa;font-size:10px;font-weight:800;letter-spacing:2.1px;
+  text-shadow:0 2px 14px rgba(0,0,0,.5);
+}
+.panel.home h1 {
+  margin:16px 0 22px;font-size:clamp(51px,15.3vw,83px);
+  line-height:.84;letter-spacing:-.075em;font-weight:900;
+  text-shadow:0 7px 35px rgba(3,14,12,.38);
+}
+.panel.home h1 em {color:#ecc58e;font-style:normal;}
+.panel.home p {
+  color:#f1ede3;font-size:clamp(13px,3.6vw,15px);line-height:1.52;
+  letter-spacing:.12px;max-width:330px;margin-bottom:21px;
+  text-wrap:pretty;text-shadow:0 2px 14px rgba(0,0,0,.38);
+}
+.panel.home #primary {
+  min-height:58px;border-radius:11px;padding:16px 21px;
+  background:linear-gradient(110deg,#fff7e5 0%,#e9c38c 100%);
+  color:#17312a;box-shadow:0 10px 38px rgba(6,22,17,.28),
+    inset 0 1px 0 rgba(255,255,255,.65);
+  transition:transform .16s ease,filter .16s ease,box-shadow .16s ease;
+}
+.panel.home #primary:active {transform:scale(.985);filter:brightness(.96);}
+.panel.home .controls {color:#e4e3d5;opacity:.82;font-size:11px;}
+.panel.home .footer {color:#cfc9b8;opacity:.66;font-size:9px;}
+@media (max-height:640px){
+  .panel.home {padding-top:calc(env(safe-area-inset-top) + 12px);
+    padding-bottom:calc(env(safe-area-inset-bottom) + 11px);}
+  .panel.home .panel-content::before{margin-bottom:12px;}
+  .panel.home h1 {font-size:clamp(43px,14.5vw,64px);margin:11px 0 13px;}
+  .panel.home p {margin-bottom:13px;font-size:12px;line-height:1.45;}
+  .panel.home #primary {min-height:50px;padding:13px 17px;}
+  .panel.home .controls {margin-top:9px;}
+  .panel.home .footer {margin-top:12px;margin-bottom:0;}
+}
+@media (prefers-reduced-motion:reduce){
+  .panel.home #primary {transition:none;}
+}

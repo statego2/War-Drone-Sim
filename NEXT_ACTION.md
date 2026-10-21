@@ -1,5 +1,11 @@
 # NEXT ACTION — War Drone Sim
 
+## 2026-10-21 — Premium forest launch v36 (CD-01)
+
+A reversible presentation-only slice of the approved [Premium Cinematic Arcade creative direction](docs/29_APPROVED_CREATIVE_DIRECTION_V2.md): a quieter full-bleed forest home, stronger ivory/gold hero typography, one pronounced FLY call-to-action and compact Greek exploration copy. No downloaded imagery, shaders, startup delay, extra modes, telemetry or physics changes. Added a staged Pages Chromium **320×568 launch fit check** and compact-home QA screenshot alongside the existing 390×844 reference.
+
+**Evidence:** CSS and markup are implemented in the feature branch; staged Pages browser acceptance/CI and owner iPhone visual approval remain pending. Playtest on a real narrow portrait phone before treating this as finished art; retain immediate FLY input and exact 3D build stamp.
+
 ## 2026-10-21 — Bounded frame clock v35 (issue #81)
 
 Implemented and merged as [PR #138](https://github.com/statego2/War-Drone-Sim/pull/138), addressing the code component of [issue #81](https://github.com/statego2/War-Drone-Sim/issues/81): a small local fixed-budget accumulator replaces the old **100ms per rendered frame** time-dilation clamp. At steady **60, 30, 10 and 5fps**, simulated time equals wall time (deterministic pure-clock tests); after a temporary GPU stall, a maximum **220ms simulation step**, **360ms backlog**, and **850ms gap cutoff** bound catch-up cost. WebGL resolution sampling continues to use **actual wall-frame intervals**, not compensated simulation delta; paused tabs do not accrue missed play time. The 3D runtime exposes read-only simulation-time and backlog values for browser regressions.
