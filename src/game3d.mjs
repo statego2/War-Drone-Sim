@@ -28,6 +28,7 @@ import {channelClearance,STREAM_START,STREAM_END} from './wetlands.mjs';
 import {createWildlife} from './wildlife3d.mjs';
 import {RIVER,riverCrossing,riverStrip} from './riverlandscape.mjs';
 import {areaArrival} from './areaarrival.mjs';
+import { COCKPIT_STORAGE_KEY, readCockpitMode, saveCockpitMode, toggleCockpitMode } from './cockpitprefs.mjs';
 
 // A floating-origin, streamed polygonal world. No real-drone targeting or hardware integration.
 const $ = id => document.getElementById(id);
@@ -35,6 +36,7 @@ const canvas = $('scene'), overlay = $('overlay'), primary = $('primary');
 const hud = $('hud'), pauseButton = $('pause'), distanceEl = $('distance');
 const altitudeEl = $('altitude'), speedEl = $('speed'), hint = $('hint');
 const viewButton = $('view-mode'), muteButton = $('sound-toggle');
+const cockpitButton = $('cockpit-toggle');
 const warning = $('warning');
 const redeployButton=$('redeploy'),restartButton=$('restart-level');
 let restartArmed=false;
@@ -46,6 +48,21 @@ let lastArrivalArea=0;
 const visitedAreas=new Set([0]);
 const visitedGROVES=new Set();
 const sound = createFlightAudio();
+// Optional detailed instruments are available from pause; default flight
+// remains a clean one-finger portrait view. Storage failures are harmless.
+let cockpitMode=readCockpitMode(()=>localStorage.getItem(COCKPIT_STORAGE_KEY));
+function syncCockpitMode(){
+  $('game').dataset.cockpitMode=cockpitMode;
+  cockpitButton.textContent=cockpitMode==='minimal'?'HUD · COMPACT':'HUD · DETAILS';
+  cockpitButton.setAttribute('aria-pressed',String(cockpitMode==='detailed'));
+}
+syncCockpitMode();
+cockpitButton.addEventListener('click',()=>{
+  cockpitMode=saveCockpitMode(toggleCockpitMode(cockpitMode),
+    value=>localStorage.setItem(COCKPIT_STORAGE_KEY,value));
+  syncCockpitMode();
+  sound.cue('view');
+});
 const scenery = createScenery(THREE, { TILE, hash, groundHeight, roadCenter, lakeProximity });
 const mobile = matchMedia('(pointer: coarse)').matches;
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
@@ -1130,6 +1147,7 @@ canvas.addEventListener('webglcontextrestored',()=>{
 function toggleView() {
   view = view === 'chase' ? 'fpv' : 'chase';
   viewButton.textContent = view === 'chase' ? 'FPV' : 'CHASE';
+  viewButton.setAttribute('aria-pressed',String(view==='fpv'));
   drone.visible = view === 'chase';
   sound.cue('view');
 }
@@ -1152,12 +1170,13 @@ function startFlight() {
   spawnDrone(); mode = 'flying'; view = 'chase'; pointer = null;
   cameraYaw = flight.heading; cameraPitch=.05; throttleMode='cruise';
   drone.visible = true; viewButton.textContent = 'FPV';
+  viewButton.setAttribute('aria-pressed','false');
   hint.textContent = 'Πάνω: ανέβα / φρένα / πίσω · κάτω: βουτιά · πλάγια: κατεύθυνση';
   hint.style.opacity='1';
   overlay.className = 'panel hidden'; hud.classList.remove('hidden');
-  pauseButton.classList.remove('hidden'); viewButton.classList.remove('hidden');
+  pauseButton.classList.remove('hidden'); viewButton.classList.add('hidden');
   warning.textContent = '';
-  muteButton.classList.remove('hidden');
+  muteButton.classList.add('hidden');
    lastSector = ''; rebuildTiles(true); moveTiles(); updateFarLand(); last = performance.now();
 }
 function spawnDrone() {
@@ -1235,7 +1254,7 @@ function setPause() {
   resumeMode=next.resumeMode;
   mode=next.mode;pointer=null;keys.clear();sound.setActive(false);budget.reset();
   hud.classList.add('hidden'); pauseButton.classList.add('hidden');
-  viewButton.classList.add('hidden'); muteButton.classList.add('hidden');
+  viewButton.classList.remove('hidden'); muteButton.classList.remove('hidden');
    overlay.className = 'panel paused';
   overlay.querySelector('.kicker').textContent = 'ENCOUNTER · PAUSED';
   overlay.querySelector('h1').innerHTML = 'ABOVE<br><em>THE TREES</em>';
@@ -1252,7 +1271,7 @@ redeployButton.addEventListener('click',()=>{
   spawnDrone();mode='flying';resumeMode='flying';
   overlay.className='panel hidden';
   hud.classList.remove('hidden');pauseButton.classList.remove('hidden');
-  viewButton.classList.remove('hidden');muteButton.classList.remove('hidden');
+  viewButton.classList.add('hidden');muteButton.classList.add('hidden');
   warning.textContent='NEW DRONE';
   roundBannerTime=1.4;roundBannerText='REDEPLOYED · DRONE '+encounter.drones;
   lastSector='';rebuildTiles(true);moveTiles();updateFarLand();updateHUD();
@@ -1277,7 +1296,7 @@ primary.addEventListener('click', () => {
     if(mode==='flying')sound.unlock().then(()=>sound.cue('start'));
     sound.setActive(mode==='flying');
     hud.classList.remove('hidden');pauseButton.classList.remove('hidden');
-    viewButton.classList.remove('hidden');muteButton.classList.remove('hidden');
+    viewButton.classList.add('hidden');muteButton.classList.add('hidden');
     budget.reset();last=performance.now();
   } else startFlight();
 });
@@ -1509,7 +1528,7 @@ window.__openSkySnapshot = () => ({
   cameraYaw, cameraPitch, throttleMode, gesture: inputState(), speed:flight.speed,
   vx:flight.vx,vy:flight.vy,vz:flight.vz,pitch:flight.pitch,bank:flight.bank,sideRate:flight.sideRate,pullback:flight.pullback||0,brakeIntent:flight.brakeIntent||0,reverseIntent:flight.reverseIntent||0,
   ground: groundHeight(flight.x, flight.z), mode, audioEnabled: sound.enabled
-  , hits:encounter.hits, drones:encounter.drones, sector:activeSectorIndex(encounter),
+  , cockpitMode, hits:encounter.hits, drones:encounter.drones, sector:activeSectorIndex(encounter),
   seed:encounter.variationSeed,total:LEVEL_TARGETS, vehicles:encounter.vehicles.map(v=>v.destroyed),
   hiddenPositions:encounter.vehicles.map(v=>[v.homeX,v.homeZ]),
   displacedModels:encounter.vehicles.filter(v=>{
