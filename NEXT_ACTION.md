@@ -1,6 +1,14 @@
 # NEXT ACTION — War Drone Sim
 
-**Updated 2026-10-19.** Canonical game: [mobile portrait browser build](https://statego2.github.io/War-Drone-Sim/). Source of truth: merged `main`; open PRs are not shipped until merge and Pages completes.
+## 2026-10-21 — Premium cockpit / pause settings v34
+
+[PR #137](https://github.com/statego2/War-Drone-Sim/pull/137) implements the approved lightweight portrait-HUD direction without disturbing the sixteen-prop, three-biome exploration loop. The default cockpit hides the altitude/speed/vertical-rate cluster; progress, score, and earned discovery guidance stay visible. The player can now change FPV/chase, sound and compact/detailed HUD **from the pause sheet** instead of cluttering the one-finger flight canvas. Local HUD preference survives reload and degrades safely if storage is unavailable.
+
+**Evidence:** four focused Node preference tests passed in local isolated execution; the GitHub PR head `fbe8ec7` completed all three GitHub Actions CI jobs: full `npm test`/Node syntax, staged Pages Chromium interaction smoke, and desktop WebKit boot. The pending documentation update does not change runtime logic, but always check the latest PR head before merging. Neither desktop renderer proves actual iPhone touch feel, phone frame pacing, thermals, nor subjective enjoyment.
+
+**Next product gate:** standalone iPhone Safari QA against the Pages BUILD stamp; verify first-tank reachability, swipe reverse, fast dive, steering, audio comfort and pause settings at 320–390 CSS pixels wide. Confirm all three biomes and at least one hidden target per biome. If the new pause sheet is cramped on iPhone SE-sized viewports, adjust CSS only; keep the game free of permanent flight-mode controls.
+
+**Updated 2026-10-21.** Canonical game: [mobile portrait browser build](https://statego2.github.io/War-Drone-Sim/). Source of truth: merged `main`; open PRs are not shipped until merge and Pages completes.
 
 ## Forest exploration + artistic quality release v23–v33 (2026-10-19)
 

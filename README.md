@@ -33,7 +33,7 @@ On 2026-10-08 the owner approved **Premium Cinematic Arcade**: a beautiful golde
 - [Gameplay GP-00…GP-06 sequencing](docs/27_GAMEPLAY_FOCUS_PLAN.md)
 - [Open graphics overhaul PR #66](https://github.com/statego2/War-Drone-Sim/pull/66) — technical design-only proposal to reconcile, not a second approved art direction.
 
-Visual redesign is **not yet implemented** in the playable build; phone proof and performance acceptance remain pending.
+The approved visual direction is **partially implemented**: procedural three-biome forest art, exploration feedback and the [v34 compact cockpit / pause settings](https://github.com/statego2/War-Drone-Sim/pull/137) now exist in code. Full art sign-off, real phone performance and game-feel acceptance **remain pending**.
 
 ## Work status
 

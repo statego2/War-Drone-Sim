@@ -19,10 +19,6 @@
     </div>
     <div id="hint">Πάνω: ανέβα / φρένα / πίσω · κάτω: βουτιά · πλάγια: κατεύθυνση</div>
     <button id="pause" class="hidden" type="button" aria-label="Παύση">Ⅱ</button>
-    <div id="flight-actions" aria-label="Επιλογές πτήσης">
-      <button id="view-mode" class="flight-tool hidden" type="button" aria-label="Αλλαγή κάμερας">FPV</button>
-      <button id="sound-toggle" class="flight-tool hidden" type="button" aria-label="Εναλλαγή ήχου" aria-pressed="true">SOUND ON</button>
-    </div>
     <section id="overlay" class="panel home">
       <div class="panel-content">
         <div class="kicker">FOREST LEVEL · ONE FLIGHT AT A TIME</div>
@@ -32,6 +28,14 @@
         <div class="pause-actions" aria-label="Επιλογές παύσης">
           <button id="redeploy" type="button">NEW DRONE · KEEP PROGRESS</button>
           <button id="restart-level" type="button">RESTART LEVEL</button>
+        </div>
+        <div id="flight-actions" class="pause-settings" aria-label="Ρυθμίσεις πτήσης">
+          <span class="pause-settings-title">FLIGHT SETTINGS</span>
+          <div class="pause-settings-grid">
+            <button id="view-mode" class="flight-tool hidden" type="button" aria-label="Αλλαγή κάμερας" aria-pressed="false">FPV</button>
+            <button id="sound-toggle" class="flight-tool hidden" type="button" aria-label="Εναλλαγή ήχου" aria-pressed="true">SOUND ON</button>
+            <button id="cockpit-toggle" class="flight-tool" type="button" aria-label="Λεπτομέρειες οργάνων πτήσης" aria-controls="hud" aria-pressed="false">HUD · COMPACT</button>
+          </div>
         </div>
         <div class="controls">Ένα δάχτυλο · πάνω / κάτω / αριστερά / δεξιά</div>
       </div>
