@@ -2,9 +2,9 @@
 
 ## 2026-10-21 — Premium forest launch v36 (CD-01)
 
-A reversible presentation-only slice of the approved [Premium Cinematic Arcade creative direction](docs/29_APPROVED_CREATIVE_DIRECTION_V2.md): a quieter full-bleed forest home, stronger ivory/gold hero typography, one pronounced FLY call-to-action and compact Greek exploration copy. No downloaded imagery, shaders, startup delay, extra modes, telemetry or physics changes. Added a staged Pages Chromium **320×568 launch fit check** and compact-home QA screenshot alongside the existing 390×844 reference.
+Merged as [PR #139](https://github.com/statego2/War-Drone-Sim/pull/139): a reversible presentation-only slice of the approved [Premium Cinematic Arcade creative direction](docs/29_APPROVED_CREATIVE_DIRECTION_V2.md): a quieter full-bleed forest home, stronger ivory/gold hero typography, one pronounced FLY call-to-action and compact Greek exploration copy. No downloaded imagery, shaders, startup delay, extra modes, telemetry or physics changes. Added a staged Pages Chromium **320×568 launch fit check** and compact-home QA screenshot alongside the existing 390×844 reference.
 
-**Evidence:** CSS and markup are implemented in the feature branch; staged Pages browser acceptance/CI and owner iPhone visual approval remain pending. Playtest on a real narrow portrait phone before treating this as finished art; retain immediate FLY input and exact 3D build stamp.
+**Evidence:** all three GitHub Actions jobs passed for PR #139 head `bc724b3`: full Node suite and syntax checks, staged-Pages Chromium browser smoke including 320×568 launch fit/screenshot, and desktop WebKit portrait boot. CSS and markup were merged into `main`. Owner iPhone visual approval remains pending. Playtest on a real narrow portrait phone before treating this as finished art; retain immediate FLY input and exact 3D build stamp.
 
 ## 2026-10-21 — Bounded frame clock v35 (issue #81)
 
